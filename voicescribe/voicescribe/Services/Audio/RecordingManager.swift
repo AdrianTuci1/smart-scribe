@@ -1,0 +1,161 @@
+import Foundation
+import Combine
+import AVFoundation
+
+/// Central manager for coordinating audio recording and batch transcription
+class RecordingManager: ObservableObject {
+    static let shared = RecordingManager()
+    
+    // MARK: - Published Properties
+    @Published var isRecording: Bool = false
+    @Published var amplitudes: [CGFloat] = Array(repeating: 0, count: 7)
+    @Published var sessionState: TranscriptionSessionState = .idle
+    @Published var lastTranscription: String = ""
+    
+    // MARK: - Private Properties
+    private let audioService = AudioCaptureService.shared
+    private let transcriptionService = TranscriptionService.shared
+    private var cancellables = Set<AnyCancellable>()
+    private var amplitudeHistory: [Float] = []
+    
+    private init() {
+        setupBindings()
+    }
+    
+    // MARK: - Setup
+    
+    private func setupBindings() {
+        // Bind transcription session state
+        transcriptionService.$sessionState
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$sessionState)
+        
+        // Bind audio amplitude to waveform visualization
+        audioService.$currentAmplitude
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] amplitude in
+                self?.updateAmplitudes(amplitude)
+            }
+            .store(in: &cancellables)
+        
+        // Handle transcription results
+        transcriptionService.$sessionState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                if case .completed(let text) = state {
+                    self?.lastTranscription = text
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Handle audio chunks
+        audioService.onAudioChunk = { [weak self] chunk in
+            Task {
+                do {
+                    try await self?.transcriptionService.addAudioChunk(chunk)
+                } catch {
+                    print("RecordingManager: Failed to send audio chunk: \(error)")
+                    DispatchQueue.main.async {
+                        self?.sessionState = .error(error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func updateAmplitudes(_ amplitude: Float) {
+        // Shift amplitudes left and add new one
+        var newAmplitudes = amplitudes
+        newAmplitudes.removeFirst()
+        // Scale amplitude to visual range (3-25)
+        let scaledAmplitude = CGFloat(3 + amplitude * 22)
+        newAmplitudes.append(scaledAmplitude)
+        amplitudes = newAmplitudes
+    }
+    
+    // MARK: - Public Methods
+    
+    /// Start recording audio and prepare for batch transcription
+    func startRecording() {
+        // Check microphone permission and start recording
+        audioService.checkMicrophonePermission { [weak self] granted in
+            if granted {
+                Task {
+                    do {
+                        // Start transcription session
+                        try await self?.transcriptionService.startTranscription(userId: self?.getUserId() ?? "default_user")
+                        
+                        // Start audio recording
+                        try self?.audioService.startRecording()
+                        
+                        DispatchQueue.main.async {
+                            self?.isRecording = true
+                        }
+                        print("RecordingManager: Recording started")
+                    } catch {
+                        print("RecordingManager: Failed to start recording: \(error)")
+                        DispatchQueue.main.async {
+                            self?.sessionState = .error(error.localizedDescription)
+                        }
+                    }
+                }
+            } else {
+                print("RecordingManager: Microphone permission denied")
+            }
+        }
+    }
+    
+    /// Stop recording and finalize transcription
+    func stopRecording() {
+        audioService.stopRecording()
+        
+        Task {
+            do {
+                try await transcriptionService.finishTranscription()
+            } catch {
+                print("RecordingManager: Failed to finish transcription: \(error)")
+                DispatchQueue.main.async {
+                    self.sessionState = .error(error.localizedDescription)
+                }
+            }
+        }
+        
+        DispatchQueue.main.async {
+            self.isRecording = false
+            // Reset amplitudes to baseline
+            self.amplitudes = Array(repeating: 3, count: 7)
+        }
+        
+        print("RecordingManager: Recording stopped")
+    }
+    
+    /// Cancel recording without saving
+    func cancelRecording() {
+        audioService.stopRecording()
+        transcriptionService.cancelTranscription()
+        
+        DispatchQueue.main.async {
+            self.isRecording = false
+            self.amplitudes = Array(repeating: 3, count: 7)
+            self.lastTranscription = ""
+        }
+        
+        print("RecordingManager: Recording cancelled")
+    }
+    
+    /// Toggle recording state
+    func toggleRecording() {
+        if isRecording {
+            stopRecording()
+        } else {
+            startRecording()
+        }
+    }
+    
+    // MARK: - Private Methods
+    
+    private func getUserId() -> String {
+        // Get user ID from auth service
+        return AuthService.shared.currentUser?.userId ?? "default_user"
+    }
+}

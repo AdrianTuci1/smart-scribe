@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: ./elixir_voicescribe_backend
+      dockerfile: Dockerfile
+    image: elixir_voicescribe_backend:latest
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    environment:
+      - PORT=4000
+      - PHX_SERVER=true
+      - PHX_HOST=localhost
+      # Fallback secret key for local testing if not in .env
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-hzW+7/p/q/w/e/r/t/y/u/i/o/p/a/s/d/f/g/h/j/k/l/z/x/c/v/b/n/m/1/2/3/4/5/6}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-eu-central-1}
+    restart: unless-stopped

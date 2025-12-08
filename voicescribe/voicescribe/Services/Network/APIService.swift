@@ -1,0 +1,293 @@
+import Foundation
+
+class APIService {
+    static let shared = APIService()
+    private let baseURL: URL
+    private var authToken: String?
+    
+    private init() {
+        self.baseURL = URL(string: CognitoConfig.apiBaseUrl)!
+    }
+    
+    // MARK: - Authentication
+    
+    func setAuthToken(_ token: String?) {
+        self.authToken = token
+    }
+    
+    func login(username: String, password: String) async throws -> AuthResponse {
+        let url = baseURL.appendingPathComponent("auth/login")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let loginData = [
+            "username": username,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: loginData)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(AuthResponse.self, from: data)
+    }
+    
+    func signUp(username: String, email: String, password: String) async throws -> SignUpResponse {
+        let url = baseURL.appendingPathComponent("auth/signup")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let signUpData = [
+            "username": username,
+            "email": email,
+            "password": password
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: signUpData)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(SignUpResponse.self, from: data)
+    }
+    
+    func confirmSignUp(username: String, confirmationCode: String) async throws -> ConfirmResponse {
+        let url = baseURL.appendingPathComponent("auth/confirm")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let confirmData = [
+            "username": username,
+            "confirmation_code": confirmationCode
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: confirmData)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(ConfirmResponse.self, from: data)
+    }
+    
+    func refreshToken(refreshToken: String) async throws -> RefreshResponse {
+        let url = baseURL.appendingPathComponent("auth/refresh")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let refreshData = [
+            "refresh_token": refreshToken
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: refreshData)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(RefreshResponse.self, from: data)
+    }
+    
+    func logout() async throws {
+        let url = baseURL.appendingPathComponent("auth/logout")
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        // Add authentication token
+        if let token = authToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    // MARK: - API Methods
+    
+    private func createRequest(url: URL, method: String = "GET") -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        
+        // Add authentication token if available
+        if let token = authToken {
+            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        return request
+    }
+    
+    func fetchSnippets() async throws -> [Snippet] {
+        let url = baseURL.appendingPathComponent("config/snippets")
+        let request = createRequest(url: url)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([Snippet].self, from: data)
+    }
+    
+    func saveSnippets(_ snippets: [Snippet]) async throws {
+        let url = baseURL.appendingPathComponent("config/snippets/save")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let snippetsData = try JSONEncoder().encode(snippets)
+        request.httpBody = snippetsData
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    func fetchDictionary() async throws -> [DictionaryEntry] {
+        let url = baseURL.appendingPathComponent("config/dictionary")
+        let request = createRequest(url: url)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([DictionaryEntry].self, from: data)
+    }
+    
+    func saveDictionary(_ dictionary: [DictionaryEntry]) async throws {
+        let url = baseURL.appendingPathComponent("config/dictionary/save")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let dictionaryData = try JSONEncoder().encode(dictionary)
+        request.httpBody = dictionaryData
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    func fetchStylePreferences() async throws -> StylePreference {
+        let url = baseURL.appendingPathComponent("config/style_preferences")
+        let request = createRequest(url: url)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(StylePreference.self, from: data)
+    }
+    
+    func saveStylePreferences(_ preferences: StylePreference) async throws {
+        let url = baseURL.appendingPathComponent("config/style_preferences/save")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let preferencesData = try JSONEncoder().encode(preferences)
+        request.httpBody = preferencesData
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    func fetchNotes() async throws -> [Note] {
+        let url = baseURL.appendingPathComponent("notes")
+        let request = createRequest(url: url)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode([Note].self, from: data)
+    }
+    
+    func createNote(_ note: Note) async throws -> Note {
+        let url = baseURL.appendingPathComponent("notes")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let noteData = try JSONEncoder().encode(note)
+        request.httpBody = noteData
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(Note.self, from: data)
+    }
+    
+    func deleteNote(id: String) async throws {
+        let url = baseURL.appendingPathComponent("notes/\(id)")
+        let request = createRequest(url: url, method: "DELETE")
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    // MARK: - Transcription Methods
+    
+    func startTranscriptionSession(userId: String) async throws -> StartTranscriptionResponse {
+        let url = baseURL.appendingPathComponent("transcribe/start")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestData = ["user_id": userId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        return try JSONDecoder().decode(StartTranscriptionResponse.self, from: data)
+    }
+    
+    func uploadTranscriptionChunk(userId: String, chunk: String) async throws {
+        let url = baseURL.appendingPathComponent("transcribe/chunk")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestData = [
+            "user_id": userId,
+            "chunk": chunk
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    func finishTranscriptionSession(userId: String) async throws {
+        let url = baseURL.appendingPathComponent("transcribe/finish")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestData = ["user_id": userId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
+        
+        _ = try await URLSession.shared.data(for: request)
+    }
+    
+    func getTranscriptionStatus(userId: String) async throws -> TranscriptionStatusResponse {
+        let url = baseURL.appendingPathComponent("transcribe/status")
+        
+        // Add user_id as query parameter
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "user_id", value: userId)]
+        let finalUrl = components?.url ?? url
+        
+        let requestWithQuery = createRequest(url: finalUrl, method: "GET")
+        
+        let (data, _) = try await URLSession.shared.data(for: requestWithQuery)
+        return try JSONDecoder().decode(TranscriptionStatusResponse.self, from: data)
+    }
+}
+
+// MARK: - Response Models
+
+struct AuthResponse: Codable {
+    let success: Bool
+    let data: AuthData?
+    let error: String?
+    
+    struct AuthData: Codable {
+        let access_token: String
+        let id_token: String
+        let refresh_token: String
+        let expires_in: Int
+    }
+}
+
+struct SignUpResponse: Codable {
+    let success: Bool
+    let data: SignUpData?
+    let error: String?
+    
+    struct SignUpData: Codable {
+        let user_confirmed: Bool
+        let user_sub: String
+    }
+}
+
+struct ConfirmResponse: Codable {
+    let success: Bool
+    let message: String?
+    let error: String?
+}
+
+struct RefreshResponse: Codable {
+    let success: Bool
+    let data: RefreshData?
+    let error: String?
+    
+    struct RefreshData: Codable {
+        let access_token: String
+        let id_token: String
+        let expires_in: Int
+    }
+}

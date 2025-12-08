@@ -1,0 +1,203 @@
+import SwiftUI
+
+struct NotesView: View {
+    @State private var notes: [Note] = []
+    @State private var voiceInputText: String = ""
+    @State private var isRecording: Bool = false
+    
+    private let syncService = DataSyncService.shared
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            Text("For quick thoughts you want to come back to")
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .padding(.top, 48)
+                .padding(.bottom, 32)
+            
+            // Voice input field
+            HStack(spacing: 16) {
+                TextField("", text: $voiceInputText, prompt: Text("Take a quick note with your voice").foregroundColor(.secondary))
+                    .textFieldStyle(.plain)
+                    .font(.body)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity)
+                
+                // Microphone button
+                Button(action: {
+                    isRecording.toggle()
+                    if !isRecording && !voiceInputText.isEmpty {
+                        saveNote()
+                    }
+                }) {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
+            }
+            .frame(height: 64)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
+            )
+            .padding(.horizontal, 48)
+            .padding(.bottom, 48)
+            
+            // Recents section
+            VStack(alignment: .leading, spacing: 16) {
+                // Recents header with icons
+                HStack {
+                    Text("RECENTS")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 16) {
+                        Button(action: {}) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: {}) {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: { loadSampleData() }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 48)
+                
+                Divider()
+                    .padding(.horizontal, 48)
+                
+                // Notes list or empty state
+                if notes.isEmpty {
+                    VStack(spacing: 16) {
+                        Text("No notes found")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 48)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(notes) { note in
+                                NoteRecentRow(note: note)
+                                    .onTapGesture {
+                                        voiceInputText = note.content
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, 48)
+                        .padding(.top, 8)
+                    }
+                }
+            }
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
+        .onAppear {
+            loadSampleData()
+        }
+    }
+    
+    private func saveNote() {
+        let newNote = Note(id: UUID(), content: voiceInputText, createdAt: Date(), updatedAt: Date())
+        notes.insert(newNote, at: 0)
+        
+        Task {
+            do {
+                try await syncService.syncNote(newNote)
+            } catch {
+                print("Failed to sync note: \(error)")
+            }
+        }
+        
+        voiceInputText = ""
+    }
+    
+    private func loadSampleData() {
+        Task {
+            do {
+                let fetchedNotes = try await syncService.fetchNotes()
+                DispatchQueue.main.async {
+                    if !fetchedNotes.isEmpty {
+                        self.notes = fetchedNotes
+                    } else {
+                        // Use sample data if no notes found
+                        self.notes = [
+                            Note(id: UUID(), content: "Remember to buy groceries tomorrow", createdAt: Date().addingTimeInterval(-3600), updatedAt: Date().addingTimeInterval(-3600)),
+                            Note(id: UUID(), content: "Call mom this weekend", createdAt: Date().addingTimeInterval(-7200), updatedAt: Date().addingTimeInterval(-7200)),
+                            Note(id: UUID(), content: "Finish project presentation by Friday", createdAt: Date().addingTimeInterval(-10800), updatedAt: Date().addingTimeInterval(-10800))
+                        ]
+                    }
+                }
+            } catch {
+                print("Failed to fetch notes: \(error)")
+                // Use sample data on error
+                DispatchQueue.main.async {
+                    if self.notes.isEmpty {
+                        self.notes = [
+                            Note(id: UUID(), content: "Remember to buy groceries tomorrow", createdAt: Date().addingTimeInterval(-3600), updatedAt: Date().addingTimeInterval(-3600)),
+                            Note(id: UUID(), content: "Call mom this weekend", createdAt: Date().addingTimeInterval(-7200), updatedAt: Date().addingTimeInterval(-7200)),
+                            Note(id: UUID(), content: "Finish project presentation by Friday", createdAt: Date().addingTimeInterval(-10800), updatedAt: Date().addingTimeInterval(-10800))
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct NoteRecentRow: View {
+    let note: Note
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(note.content)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                
+                Text(note.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        )
+    }
+}
+
