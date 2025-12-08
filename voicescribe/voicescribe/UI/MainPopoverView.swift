@@ -2,6 +2,10 @@ import SwiftUI
 
 struct MainPopoverView: View {
     @State private var selection: SidebarItem = .home
+    @State private var showingSettings = false
+    @State private var showingInvite = false
+    @State private var showingFreeMonth = false
+    @State private var showingHelp = false
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -23,13 +27,17 @@ struct MainPopoverView: View {
                     case .notes:
                         NotesView()
                     case .invite:
-                        InviteTeamView()
+                        // Don't show anything here, will be shown as a sheet
+                        HomeView()
                     case .freeMonth:
-                        FreeMonthView()
+                        // Don't show anything here, will be shown as a sheet
+                        HomeView()
                     case .settings:
-                        SettingsView()
+                        // Don't show anything here, will be shown as a sheet
+                        HomeView()
                     case .help:
-                        HelpView()
+                        // Don't show anything here, will be shown as a sheet
+                        HomeView()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -40,130 +48,74 @@ struct MainPopoverView: View {
             // User menu in the top right corner
             UserMenuView()
         }
-    }
-}
-
-// Placeholder views for menu items without full implementation
-struct InviteTeamView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.2.fill")
-                .font(.system(size: 64))
-                .foregroundColor(.accentColor)
-            Text("Invite Your Team")
-                .font(.title)
-                .fontWeight(.bold)
-            Text("Share VoiceScribe with your team members")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Button("Send Invitations") {
-                // TODO: Implement invite functionality
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(isPresented: $showingSettings)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-struct FreeMonthView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "gift.fill")
-                .font(.system(size: 64))
-                .foregroundColor(.purple)
-            Text("Get a Free Month")
-                .font(.title)
-                .fontWeight(.bold)
-            Text("Refer friends and get a free month of VoiceScribe Pro")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            Button("Share Referral Link") {
-                // TODO: Implement referral functionality
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+        .sheet(isPresented: $showingInvite) {
+            InviteTeamView()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-struct HelpView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Text("Help & Support")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
-            VStack(alignment: .leading, spacing: 16) {
-                HelpLink(
-                    icon: "book.fill",
-                    title: "Documentation",
-                    description: "Learn how to use VoiceScribe",
-                    action: { /* TODO */ }
-                )
-                
-                HelpLink(
-                    icon: "message.fill",
-                    title: "Contact Support",
-                    description: "Get help from our team",
-                    action: { /* TODO */ }
-                )
-                
-                HelpLink(
-                    icon: "keyboard.fill",
-                    title: "Keyboard Shortcuts",
-                    description: "View all keyboard shortcuts",
-                    action: { /* TODO */ }
-                )
-                
-                HelpLink(
-                    icon: "exclamationmark.bubble.fill",
-                    title: "Report a Bug",
-                    description: "Help us improve VoiceScribe",
-                    action: { /* TODO */ }
-                )
-            }
-            
-            Spacer()
+        .sheet(isPresented: $showingFreeMonth) {
+            FreeMonthView()
         }
-        .padding(32)
+        .sheet(isPresented: $showingHelp) {
+            HelpView()
+        }
+        .onChange(of: selection) { newSelection in
+            switch newSelection {
+            case .invite:
+                showingInvite = true
+                selection = .home // Reset to home after triggering
+            case .freeMonth:
+                showingFreeMonth = true
+                selection = .home // Reset to home after triggering
+            case .settings:
+                showingSettings = true
+                selection = .home // Reset to home after triggering
+            case .help:
+                showingHelp = true
+                selection = .home // Reset to home after triggering
+            default:
+                break
+            }
+        }
     }
 }
 
-struct HelpLink: View {
-    let icon: String
-    let title: String
-    let description: String
-    let action: () -> Void
+enum ViewType: CaseIterable {
+    case home
+    case dictionary
+    case snippets
+    case style
+    case notes
     
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundColor(.accentColor)
-                    .frame(width: 44)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Text(description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
+    var title: String {
+        switch self {
+        case .home:
+            return "Home"
+        case .dictionary:
+            return "Dictionary"
+        case .snippets:
+            return "Snippets"
+        case .style:
+            return "Style"
+        case .notes:
+            return "Notes"
         }
-        .buttonStyle(.plain)
+    }
+    
+    var icon: String {
+        switch self {
+        case .home:
+            return "square.grid.2x2"
+        case .dictionary:
+            return "book"
+        case .snippets:
+            return "scissors"
+        case .style:
+            return "textformat"
+        case .notes:
+            return "note.text"
+        }
     }
 }
 

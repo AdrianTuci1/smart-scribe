@@ -1,40 +1,139 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Binding var isPresented: Bool
     @State private var selectedCategory: SettingsCategory = .general
     
     var body: some View {
-        NavigationSplitView {
-            // Settings sidebar
-            List(SettingsCategory.allCases, id: \.self, selection: $selectedCategory) { category in
-                Label(category.displayName, systemImage: category.icon)
-            }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 250)
-        } detail: {
-            // Settings content based on selected category
-            Group {
-                switch selectedCategory {
-                case .general:
-                    GeneralSettingsView()
-                case .system:
-                    SystemSettingsView()
-                case .vibeCoding:
-                    VibeCodingSettingsView()
-                case .experimental:
-                    ExperimentalSettingsView()
-                case .account:
-                    AccountSettingsView()
-                case .team:
-                    TeamSettingsView()
-                case .plansBilling:
-                    PlansBillingSettingsView()
-                case .dataPrivacy:
-                    DataPrivacySettingsView()
+        ZStack {
+            // Backdrop
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isPresented = false
+                    }
                 }
+            
+            // Settings panel
+            HStack(spacing: 0) {
+                // Settings sidebar
+                VStack(alignment: .leading, spacing: 4) {
+                    // Header with close button
+                    HStack {
+                        Text("Settings")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                isPresented = false
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.bottom, 16)
+                    
+                    ForEach(SettingsCategory.allCases, id: \.self) { category in
+                        Button(action: {
+                            selectedCategory = category
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: category.icon)
+                                    .frame(width: 20)
+                                    .foregroundColor(selectedCategory == category ? .accentColor : .secondary)
+                                Text(category.displayName)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(selectedCategory == category ? Color.accentColor.opacity(0.15) : Color.clear)
+                            .cornerRadius(8)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 16)
+                .padding(.horizontal, 12)
+                .frame(width: 220)
+                .background(Color(NSColor.windowBackgroundColor))
+                
+                Divider()
+                
+                // Settings content based on selected category
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Header
+                        Text(selectedCategory.displayName)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .padding(.bottom, 20)
+                        
+                        switch selectedCategory {
+                        case .general:
+                            GeneralSettingsView()
+                        case .system:
+                            SystemSettingsView()
+                        case .vibeCoding:
+                            VibeCodingSettingsView()
+                        case .experimental:
+                            ExperimentalSettingsView()
+                        case .account:
+                            AccountSettingsView()
+                        case .team:
+                            TeamSettingsView()
+                        case .plansBilling:
+                            PlansBillingSettingsView()
+                        case .dataPrivacy:
+                            DataPrivacySettingsView()
+                        }
+                    }
+                    .padding(24)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(NSColor.windowBackgroundColor))
             }
-            .navigationTitle(selectedCategory.displayName)
-            .padding()
+            .frame(width: 800, height: 600)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+            )
         }
+    }
+}
+
+// MARK: - Settings Overlay Modifier
+
+struct SettingsOverlay: ViewModifier {
+    @Binding var isPresented: Bool
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            content
+            
+            if isPresented {
+                SettingsView(isPresented: $isPresented)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: isPresented)
+    }
+}
+
+extension View {
+    func settingsOverlay(isPresented: Binding<Bool>) -> some View {
+        modifier(SettingsOverlay(isPresented: isPresented))
     }
 }
 
@@ -107,64 +206,124 @@ struct GeneralSettingsView: View {
     let languages = ["English (US)", "English (UK)", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese"]
     
     var body: some View {
-        Form {
+        VStack(alignment: .leading, spacing: 20) {
             // Keyboard Shortcuts Section
-            Section(header: Text("Keyboard Shortcuts")) {
-                // Push to Talk
-                HStack {
-                    Text("Push to Talk")
-                    Spacer()
-                    Button(pushToTalkKey) {
-                        // Open dialog to change shortcut
+            SettingsSectionView(title: "Keyboard Shortcuts") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        HStack {
+                            Text("Push to Talk")
+                            Spacer()
+                            Button(pushToTalkKey) {
+                                // Open dialog to change shortcut
+                            }
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.tertiaryLabelColor).opacity(0.2))
+                            .cornerRadius(4)
+                        }
                     }
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(4)
-                }
-                
-                // Hands-Free Mode
-                HStack {
-                    Text("Hands-Free Mode")
-                    Spacer()
-                    Button(handsFreeModeKey) {
-                        // Open dialog to change shortcut
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Hands-Free Mode")
+                            Spacer()
+                            Button(handsFreeModeKey) {
+                                // Open dialog to change shortcut
+                            }
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.tertiaryLabelColor).opacity(0.2))
+                            .cornerRadius(4)
+                        }
                     }
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(4)
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Command Mode", isOn: $commandModeEnabled)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Paste Last Transcript", isOn: $pasteLastTranscriptEnabled)
+                    }
                 }
-                
-                // Command Mode
-                Toggle("Command Mode", isOn: $commandModeEnabled)
-                
-                // Paste Last Transcript
-                Toggle("Paste Last Transcript", isOn: $pasteLastTranscriptEnabled)
             }
             
             // Microphone Section
-            Section(header: Text("Microphone")) {
-                Picker("Microphone", selection: $selectedMicrophone) {
-                    ForEach(microphones, id: \.self) { microphone in
-                        Text(microphone).tag(microphone)
+            SettingsSectionView(title: "Microphone") {
+                SettingsRowView {
+                    Picker("Microphone", selection: $selectedMicrophone) {
+                        ForEach(microphones, id: \.self) { microphone in
+                            Text(microphone).tag(microphone)
+                        }
                     }
+                    .pickerStyle(MenuPickerStyle())
                 }
-                .pickerStyle(MenuPickerStyle())
             }
             
             // Languages Section
-            Section(header: Text("Languages")) {
-                Picker("Language", selection: $selectedLanguage) {
-                    ForEach(languages, id: \.self) { language in
-                        Text(language).tag(language)
+            SettingsSectionView(title: "Languages") {
+                SettingsRowView {
+                    Picker("Language", selection: $selectedLanguage) {
+                        ForEach(languages, id: \.self) { language in
+                            Text(language).tag(language)
+                        }
                     }
+                    .pickerStyle(MenuPickerStyle())
                 }
-                .pickerStyle(MenuPickerStyle())
             }
+            
+            Spacer()
         }
+    }
+}
+
+// MARK: - Reusable Settings Components
+
+struct SettingsSectionView<Content: View>: View {
+    let title: String
+    let content: Content
+    
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            content
+                .background(Color(NSColor.controlBackgroundColor))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                )
+        }
+    }
+}
+
+struct SettingsRowView<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
     }
 }
 
@@ -173,23 +332,32 @@ struct VibeCodingSettingsView: View {
     @State private var fileTaggingInChat = true
     
     var body: some View {
-        Form {
-            Section(header: Text("Vibe Coding Features")) {
-                Toggle("Variable Recognition", isOn: $variableRecognition)
-                Toggle("File Tagging in Chat", isOn: $fileTaggingInChat)
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsSectionView(title: "Vibe Coding Features") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Toggle("Variable Recognition", isOn: $variableRecognition)
+                            Text("Automatically recognize and highlight variables in your code")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Toggle("File Tagging in Chat", isOn: $fileTaggingInChat)
+                            Text("Automatically tag files when mentioned in chat for better organization")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
             }
             
-            Section(header: Text("Variable Recognition")) {
-                Text("Automatically recognize and highlight variables in your code")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Section(header: Text("File Tagging")) {
-                Text("Automatically tag files when mentioned in chat for better organization")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            Spacer()
         }
     }
 }
@@ -198,21 +366,34 @@ struct ExperimentalSettingsView: View {
     @State private var advancedVoiceCommands = false
     
     var body: some View {
-        Form {
-            Section(header: Text("Experimental Features")) {
-                Toggle("Command Mode - Enable Advanced Voice Commands", isOn: $advancedVoiceCommands)
-            }
-            
-            Section(header: Text("Warning")) {
+        VStack(alignment: .leading, spacing: 20) {
+            // Warning Section
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
                 Text("These features are experimental and may cause instability. Use with caution.")
                     .foregroundColor(.orange)
             }
+            .padding()
+            .background(Color.orange.opacity(0.1))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.orange.opacity(0.3), lineWidth: 0.5)
+            )
             
-            Section(header: Text("Command Mode")) {
-                Text("Enable advanced voice commands for more complex operations and automation")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            SettingsSectionView(title: "Experimental Features") {
+                SettingsRowView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Command Mode - Enable Advanced Voice Commands", isOn: $advancedVoiceCommands)
+                        Text("Enable advanced voice commands for more complex operations and automation")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
+            
+            Spacer()
         }
     }
 }
@@ -225,44 +406,125 @@ struct AccountSettingsView: View {
     @State private var showingDeleteConfirmation = false
     
     var body: some View {
-        Form {
-            Section(header: Text("Profile Information")) {
-                HStack {
-                    Text("First Name")
-                    TextField("First Name", text: $firstName)
+        VStack(alignment: .leading, spacing: 20) {
+            // User Profile Header
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 64, height: 64)
+                    
+                    Text(getInitials())
+                        .foregroundColor(.white)
+                        .font(.system(size: 24, weight: .medium))
                 }
                 
-                HStack {
-                    Text("Last Name")
-                    TextField("Last Name", text: $lastName)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(authService.userName ?? "User")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text(authService.userEmail ?? "user@example.com")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
                 
-                HStack {
-                    Text("Email")
-                    TextField("Email", text: $email)
-                }
-                
-                HStack {
-                    Text("Profile Picture")
-                    Spacer()
-                    Button("Upload") {
-                        // Upload profile picture
+                Spacer()
+            }
+            .padding()
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+            )
+            
+            SettingsSectionView(title: "Profile Information") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        HStack {
+                            Text("First Name")
+                                .frame(width: 100, alignment: .leading)
+                            TextField("First Name", text: $firstName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Last Name")
+                                .frame(width: 100, alignment: .leading)
+                            TextField("Last Name", text: $lastName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Email")
+                                .frame(width: 100, alignment: .leading)
+                            TextField("Email", text: $email)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Profile Picture")
+                            Spacer()
+                            Button("Upload") {
+                                // Upload profile picture
+                            }
+                            .buttonStyle(.bordered)
+                        }
                     }
                 }
             }
             
-            Section(header: Text("Account Actions")) {
-                Button("Sign Out") {
-                    Task {
-                        await authService.signOut()
+            SettingsSectionView(title: "Account Actions") {
+                VStack(spacing: 0) {
+                    Button(action: {
+                        Task {
+                            await authService.signOut()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.right.square")
+                            Text("Sign Out")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.primary)
+                    
+                    Divider()
+                    
+                    Button(action: {
+                        showingDeleteConfirmation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "trash")
+                            Text("Delete Account")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.red)
                 }
-                
-                Button("Delete Account") {
-                    showingDeleteConfirmation = true
-                }
-                .foregroundColor(.red)
             }
+            
+            Spacer()
         }
         .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -273,8 +535,20 @@ struct AccountSettingsView: View {
             Text("Are you sure you want to delete your account? This action cannot be undone.")
         }
         .onAppear {
-            // Load user data when view appears
             loadUserData()
+        }
+    }
+    
+    private func getInitials() -> String {
+        guard let name = authService.userName, !name.isEmpty else {
+            return "U"
+        }
+        
+        let components = name.components(separatedBy: " ")
+        if components.count >= 2 {
+            return "\(components.first?.first ?? Character("U"))\(components.last?.first ?? Character(""))"
+        } else {
+            return String(name.prefix(1)).uppercased()
         }
     }
     
@@ -295,36 +569,68 @@ struct TeamSettingsView: View {
     @State private var showingInviteConfirmation = false
     
     var body: some View {
-        Form {
-            Section(header: Text("Invite Your Teammates")) {
-                HStack {
-                    Text("Email 1")
-                    TextField("Enter email address", text: $email1)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsSectionView(title: "Invite Your Teammates") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        HStack {
+                            Text("Email 1")
+                                .frame(width: 60, alignment: .leading)
+                            TextField("Enter email address", text: $email1)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Email 2")
+                                .frame(width: 60, alignment: .leading)
+                            TextField("Enter email address", text: $email2)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Text("Email 3")
+                                .frame(width: 60, alignment: .leading)
+                            TextField("Enter email address", text: $email3)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        HStack {
+                            Spacer()
+                            Button("Send Invitations") {
+                                sendInvitations()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(email1.isEmpty && email2.isEmpty && email3.isEmpty)
+                        }
+                    }
                 }
-                
-                HStack {
-                    Text("Email 2")
-                    TextField("Enter email address", text: $email2)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                
-                HStack {
-                    Text("Email 3")
-                    TextField("Enter email address", text: $email3)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                
-                Button("Send Invitations") {
-                    sendInvitations()
-                }
-                .disabled(email1.isEmpty && email2.isEmpty && email3.isEmpty)
             }
             
-            Section(header: Text("Team Members")) {
-                Text("No team members yet")
-                    .foregroundColor(.secondary)
+            SettingsSectionView(title: "Team Members") {
+                SettingsRowView {
+                    HStack {
+                        Image(systemName: "person.2")
+                            .foregroundColor(.secondary)
+                        Text("No team members yet")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                }
             }
+            
+            Spacer()
         }
         .alert("Invitations Sent", isPresented: $showingInviteConfirmation) {
             Button("OK") { }
@@ -334,21 +640,17 @@ struct TeamSettingsView: View {
     }
     
     private func sendInvitations() {
-        // Send invitations functionality
         var emails = [String]()
         if !email1.isEmpty { emails.append(email1) }
         if !email2.isEmpty { emails.append(email2) }
         if !email3.isEmpty { emails.append(email3) }
         
-        // TODO: Implement actual invitation sending logic
         print("Sending invitations to: \(emails)")
         
-        // Clear fields after sending
         email1 = ""
         email2 = ""
         email3 = ""
         
-        // Show confirmation
         showingInviteConfirmation = true
     }
 }
@@ -372,65 +674,97 @@ struct PlansBillingSettingsView: View {
     }
     
     var body: some View {
-        Form {
-            Section(header: Text("Billing Cycle")) {
-                Picker("Billing Cycle", selection: $billingCycle) {
-                    Text("Monthly").tag("monthly")
-                    Text("Annual").tag("annual")
-                }
-                .pickerStyle(SegmentedPickerStyle())
-            }
-            
-            Section(header: Text("Available Plans")) {
-                ForEach(plans, id: \.id) { plan in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(plan.name)
-                                .font(.headline)
-                            Spacer()
-                            Text(billingCycle == "monthly" ? plan.price + "/mo" : plan.price + "/yr")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        ForEach(plan.features, id: \.self) { feature in
-                            HStack {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.green)
-                                    .font(.caption)
-                                Text(feature)
-                                    .font(.caption)
-                            }
-                        }
-                        
-                        if selectedPlan != plan.id {
-                            Button("Select") {
-                                selectedPlan = plan.id
-                                // TODO: Implement plan selection logic
-                            }
-                            .buttonStyle(.bordered)
-                        } else {
-                            Text("Current Plan")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.green.opacity(0.2))
-                                .cornerRadius(4)
-                        }
+        VStack(alignment: .leading, spacing: 20) {
+            // Billing Cycle Section
+            SettingsSectionView(title: "Billing Cycle") {
+                SettingsRowView {
+                    Picker("Billing Cycle", selection: $billingCycle) {
+                        Text("Monthly").tag("monthly")
+                        Text("Annual").tag("annual")
                     }
-                    .padding()
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(8)
-                    .padding(.bottom, 8)
+                    .pickerStyle(SegmentedPickerStyle())
+                    .labelsHidden()
                 }
             }
             
-            Section(header: Text("Billing History")) {
-                Button("View Billing History") {
-                    // View billing history
+            // Available Plans Section
+            SettingsSectionView(title: "Available Plans") {
+                VStack(spacing: 12) {
+                    ForEach(plans, id: \.id) { plan in
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text(plan.name)
+                                    .font(.headline)
+                                Spacer()
+                                Text(billingCycle == "monthly" ? plan.price + "/mo" : plan.price + "/yr")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(plan.features, id: \.self) { feature in
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                            .font(.caption)
+                                        Text(feature)
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                            
+                            if selectedPlan != plan.id {
+                                Button("Select Plan") {
+                                    selectedPlan = plan.id
+                                }
+                                .buttonStyle(.bordered)
+                            } else {
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                    Text("Current Plan")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundColor(.green)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.green.opacity(0.15))
+                                .cornerRadius(6)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(selectedPlan == plan.id ? Color.accentColor : Color(NSColor.separatorColor), lineWidth: selectedPlan == plan.id ? 2 : 0.5)
+                        )
+                    }
                 }
             }
+            
+            // Billing History Section  
+            SettingsSectionView(title: "Billing History") {
+                Button(action: {
+                    // View billing history
+                }) {
+                    HStack {
+                        Image(systemName: "doc.text")
+                        Text("View Billing History")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
+                .foregroundColor(.primary)
+            }
+            
+            Spacer()
         }
     }
 }
@@ -443,32 +777,87 @@ struct DataPrivacySettingsView: View {
     @State private var hipaaEnabled = false
     
     var body: some View {
-        Form {
-            Section(header: Text("Privacy Settings")) {
-                Toggle("Privacy Mode", isOn: $privacyMode)
-                Toggle("Context Awareness", isOn: $contextAwareness)
-            }
-            
-            Section(header: Text("Data Management")) {
-                Button("Hard Refresh All Notes") {
-                    showingHardRefreshConfirmation = true
-                }
-                
-                Button("Delete History of All Activity") {
-                    showingDeleteConfirmation = true
-                }
-                .foregroundColor(.red)
-            }
-            
-            Section(header: Text("HIPAA Compliance")) {
-                Toggle("Enable HIPAA", isOn: $hipaaEnabled)
-                
-                if hipaaEnabled {
-                    Button("View and Accept HIPAA Agreement") {
-                        // Show HIPAA agreement
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsSectionView(title: "Privacy Settings") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        Toggle("Privacy Mode", isOn: $privacyMode)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Context Awareness", isOn: $contextAwareness)
                     }
                 }
             }
+            
+            SettingsSectionView(title: "Data Management") {
+                VStack(spacing: 0) {
+                    Button(action: {
+                        showingHardRefreshConfirmation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Hard Refresh All Notes")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.primary)
+                    
+                    Divider()
+                    
+                    Button(action: {
+                        showingDeleteConfirmation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "trash")
+                            Text("Delete History of All Activity")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .foregroundColor(.red)
+                }
+            }
+            
+            SettingsSectionView(title: "HIPAA Compliance") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        Toggle("Enable HIPAA", isOn: $hipaaEnabled)
+                    }
+                    
+                    if hipaaEnabled {
+                        Divider()
+                        
+                        Button(action: {
+                            // Show HIPAA agreement
+                        }) {
+                            HStack {
+                                Image(systemName: "doc.text")
+                                Text("View and Accept HIPAA Agreement")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .foregroundColor(.primary)
+                    }
+                }
+            }
+            
+            Spacer()
         }
         .alert("Delete All Activity", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -501,35 +890,89 @@ struct SystemSettingsView: View {
     @State private var creatorMode = false
     
     var body: some View {
-        Form {
+        VStack(alignment: .leading, spacing: 20) {
             // App Settings Section
-            Section(header: Text("App Settings")) {
-                Toggle("Launch App at Login", isOn: $launchAtLogin)
-                Toggle("Show Flow Bar at All Times", isOn: $showFlowBarAlways)
-                Toggle("Show in Dock", isOn: $showInDock)
+            SettingsSectionView(title: "App Settings") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        Toggle("Launch App at Login", isOn: $launchAtLogin)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Show Flow Bar at All Times", isOn: $showFlowBarAlways)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Show in Dock", isOn: $showInDock)
+                    }
+                }
             }
             
             // Sounds Section
-            Section(header: Text("Sounds")) {
-                Toggle("Dictation Sound Effect", isOn: $dictationSoundEffect)
-                Toggle("Mute Music While Dictating", isOn: $muteMusicWhileDictating)
+            SettingsSectionView(title: "Sounds") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        Toggle("Dictation Sound Effect", isOn: $dictationSoundEffect)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Mute Music While Dictating", isOn: $muteMusicWhileDictating)
+                    }
+                }
             }
             
             // Extras Section
-            Section(header: Text("Extras")) {
-                Toggle("Auto Add to Directory", isOn: $autoAddToDirectory)
-                Toggle("Smart Formatting", isOn: $smartFormatting)
-                Toggle("Email Auto Signature", isOn: $emailAutoSignature)
-                Toggle("Creator Mode", isOn: $creatorMode)
+            SettingsSectionView(title: "Extras") {
+                VStack(spacing: 0) {
+                    SettingsRowView {
+                        Toggle("Auto Add to Directory", isOn: $autoAddToDirectory)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Smart Formatting", isOn: $smartFormatting)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Email Auto Signature", isOn: $emailAutoSignature)
+                    }
+                    
+                    Divider()
+                    
+                    SettingsRowView {
+                        Toggle("Creator Mode", isOn: $creatorMode)
+                    }
+                }
             }
             
             // Data Section
-            Section(header: Text("Data")) {
-                Button("Reset App") {
+            SettingsSectionView(title: "Data") {
+                Button(action: {
                     // Reset app functionality
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.counterclockwise")
+                        Text("Reset App")
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(PlainButtonStyle())
                 .foregroundColor(.red)
             }
+            
+            Spacer()
         }
     }
 }
