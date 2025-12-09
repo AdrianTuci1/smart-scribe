@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import AppKit
+import CryptoKit
 
 @MainActor
 class AuthService: ObservableObject {
@@ -17,6 +18,7 @@ class AuthService: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     private let apiService = APIService.shared
+    private var currentCodeVerifier: String?
     
     private init() {
         // Check current authentication status
@@ -179,12 +181,21 @@ class AuthService: ObservableObject {
     }
     
     func signInWithWebBrowser() {
+        let verifier = PKCE.generateVerifier()
+        currentCodeVerifier = verifier
+        UserDefaults.standard.set(verifier, forKey: "pkceCodeVerifier")
+        
+        let challenge = PKCE.challenge(for: verifier)
+        print("PKCE verifier generated (length \(verifier.count)), challenge: \(challenge)")
+        
         var components = URLComponents(string: "\(CognitoConfig.cognitoDomain)/login")
         components?.queryItems = [
             URLQueryItem(name: "client_id", value: CognitoConfig.clientId),
             URLQueryItem(name: "response_type", value: CognitoConfig.responseType),
             URLQueryItem(name: "scope", value: CognitoConfig.scope),
-            URLQueryItem(name: "redirect_uri", value: CognitoConfig.redirectUri)
+            URLQueryItem(name: "redirect_uri", value: CognitoConfig.redirectUri),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
         
         if let url = components?.url {
@@ -196,6 +207,16 @@ class AuthService: ObservableObject {
         // Extract authorization code from URL
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let code = components.queryItems?.first(where: { $0.name == "code" })?.value else {
+            errorMessage = "Missing authorization code in callback."
+            print("Auth callback missing code: \(url.absoluteString)")
+            return false
+        }
+        
+        let verifier = currentCodeVerifier ?? UserDefaults.standard.string(forKey: "pkceCodeVerifier")
+        
+        guard let codeVerifier = verifier else {
+            errorMessage = "Missing PKCE verifier. Please try signing in again."
+            print("Auth callback missing verifier for URL: \(url.absoluteString)")
             return false
         }
         
@@ -203,7 +224,8 @@ class AuthService: ObservableObject {
         errorMessage = nil
         
         do {
-            let tokenResponse = try await apiService.exchangeAuthCodeForTokens(code: code)
+            let tokenResponse = try await apiService.exchangeAuthCodeForTokens(code: code, codeVerifier: codeVerifier)
+            print("Token exchange succeeded for auth code.")
             let userInfo = decodeUserInfo(fromIDToken: tokenResponse.id_token, fallbackUsername: userName ?? "User")
             
             currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
@@ -222,11 +244,14 @@ class AuthService: ObservableObject {
             UserDefaults.standard.set(tokenResponse.access_token, forKey: "authToken")
             UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refreshToken")
             UserDefaults.standard.set(tokenResponse.id_token, forKey: "idToken")
+            UserDefaults.standard.removeObject(forKey: "pkceCodeVerifier")
+            currentCodeVerifier = nil
             
             return true
         } catch {
             isLoading = false
             errorMessage = "Authentication failed: \(error.localizedDescription)"
+            print("Token exchange failed: \(error.localizedDescription)")
             return false
         }
     }
@@ -289,10 +314,30 @@ private extension AuthService {
         }
         
         let email = payload["email"] as? String
-        let preferredUsername = payload["name"] as? String ?? payload["cognito:username"] as? String ?? email ?? fallbackUsername
-        let userId = payload["sub"] as? String ?? preferredUsername
+        let givenName = payload["given_name"] as? String
+        let familyName = payload["family_name"] as? String
+        let fullName = [givenName, familyName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
         
-        return AuthUserInfo(userId: userId, displayName: preferredUsername, email: email)
+        let nameClaim = payload["name"] as? String
+        let preferredUsername = payload["preferred_username"] as? String
+        let cognitoUsername = payload["cognito:username"] as? String
+        
+        // Prioritize explicit name claims, then email, and only then Cognito username/sub
+        // Use fallbackUsername as last resort instead of cognitoUsername
+        let displayName = [nameClaim,
+                           fullName.isEmpty ? nil : fullName,
+                           email,
+                           preferredUsername,
+                           fallbackUsername]
+            .compactMap { $0 }
+            .first ?? fallbackUsername
+        
+        let userId = payload["sub"] as? String ?? cognitoUsername ?? preferredUsername ?? fallbackUsername
+        
+        return AuthUserInfo(userId: userId, displayName: displayName, email: email)
     }
     
     func decodeJWTPayload(_ token: String) -> [String: Any]? {
@@ -307,6 +352,30 @@ private extension AuthService {
         
         guard let data = Data(base64Encoded: base64) else { return nil }
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
+}
+
+// MARK: - PKCE helpers
+
+private enum PKCE {
+    static func generateVerifier(length: Int = 64) -> String {
+        let allowed = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        let characters = (0..<length).compactMap { _ in allowed.randomElement() }
+        return String(characters)
+    }
+    
+    static func challenge(for verifier: String) -> String {
+        let data = Data(verifier.utf8)
+        let hashed = SHA256.hash(data: data)
+        return base64URLEncode(Data(hashed))
+    }
+    
+    private static func base64URLEncode(_ data: Data) -> String {
+        return data
+            .base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }
 

@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         // Handle URL opening
         for url in urls {
+            print("AppDelegate received URL: \(url.absoluteString)")
             handleIncomingURL(url)
         }
     }
@@ -64,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleIncomingURL(_ url: URL) {
         // Check if this is an authentication callback
         if url.scheme == "voicescribe" && url.host == "auth" {
+            print("Handling auth callback from AppDelegate for URL: \(url.absoluteString)")
             Task {
                 let success = await AuthService.shared.handleAuthCallback(url: url)
                 
@@ -73,6 +75,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     print("Authentication failed: \(AuthService.shared.errorMessage ?? "Unknown error")")
                 }
             }
+        } else {
+            print("Ignoring URL (scheme/host mismatch): \(url.absoluteString)")
         }
     }
 }

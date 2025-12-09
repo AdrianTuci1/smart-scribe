@@ -116,10 +116,17 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
   end
 
   def list_transcripts(user_id) do
-    Dynamo.query(@transcripts_table,
-      expression_attribute_values: [userId: user_id],
-      key_condition_expression: "userId = :userId"
-    ) |> ExAws.request()
+    try do
+      case Dynamo.query(@transcripts_table,
+        expression_attribute_values: [userId: user_id],
+        key_condition_expression: "userId = :userId"
+      ) |> ExAws.request() do
+        {:ok, result} -> {:ok, result}
+        {:error, reason} -> {:error, reason}
+      end
+    rescue
+      error -> {:error, error}
+    end
   end
 
   def update_transcript(user_id, transcript_id, transcript_data) do

@@ -134,10 +134,12 @@ class APIService {
     
     // MARK: - Cognito OAuth
     
-    func exchangeAuthCodeForTokens(code: String) async throws -> CognitoTokenResponse {
+    func exchangeAuthCodeForTokens(code: String, codeVerifier: String?) async throws -> CognitoTokenResponse {
         guard let tokenURL = URL(string: "\(CognitoConfig.cognitoDomain)/oauth2/token") else {
             throw NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid token URL"])
         }
+        
+        print("Exchanging auth code at: \(tokenURL.absoluteString)")
         
         var request = URLRequest(url: tokenURL)
         request.httpMethod = "POST"
@@ -149,6 +151,9 @@ class APIService {
             "code": code,
             "redirect_uri": CognitoConfig.redirectUri
         ]
+        if let codeVerifier {
+            bodyParams["code_verifier"] = codeVerifier
+        }
         
         // Include client secret when configured
         if !CognitoConfig.clientSecret.isEmpty && CognitoConfig.clientSecret != "your_client_secret" {
@@ -170,14 +175,26 @@ class APIService {
             .joined(separator: "&")
         request.httpBody = bodyString.data(using: .utf8)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-            let message = String(data: data, encoding: .utf8) ?? "HTTP Error \(httpResponse.statusCode)"
-            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+                let message = String(data: data, encoding: .utf8) ?? "HTTP Error \(httpResponse.statusCode)"
+                throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+            }
+            
+            return try JSONDecoder().decode(CognitoTokenResponse.self, from: data)
+        } catch {
+            if let urlError = error as? URLError {
+                let enriched = NSError(
+                    domain: "APIService",
+                    code: urlError.errorCode,
+                    userInfo: [NSLocalizedDescriptionKey: "Network error (\(urlError.code)) for \(tokenURL.host ?? tokenURL.absoluteString)"]
+                )
+                throw enriched
+            }
+            throw error
         }
-        
-        return try JSONDecoder().decode(CognitoTokenResponse.self, from: data)
     }
     
     // MARK: - API Methods

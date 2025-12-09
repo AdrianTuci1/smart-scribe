@@ -9,11 +9,22 @@ struct WisprFlowApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                MainPopoverViewWithoutUserMenu()
-            } else {
-                OnboardingView()
-            }
+            let content = hasCompletedOnboarding
+                ? AnyView(MainPopoverViewWithoutUserMenu())
+                : AnyView(OnboardingView())
+            
+            content
+                .onOpenURL { url in
+                    print("SwiftUI onOpenURL received: \(url.absoluteString)")
+                    Task {
+                        let success = await authService.handleAuthCallback(url: url)
+                        if success {
+                            print("Authentication handled via onOpenURL")
+                        } else {
+                            print("Failed to handle auth callback via onOpenURL: \(authService.errorMessage ?? "Unknown error")")
+                        }
+                    }
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)

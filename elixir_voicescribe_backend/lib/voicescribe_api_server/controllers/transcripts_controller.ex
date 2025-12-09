@@ -152,5 +152,11 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
   end
 
   defp decode_item(nil), do: %{}
-  defp decode_item(item), do: ExAws.Dynamo.decode_item(item)
+  defp decode_item(item) do
+    try do
+      ExAws.Dynamo.decode_item(item)
+    rescue
+      _ -> %{}
+    end
+  end
 end

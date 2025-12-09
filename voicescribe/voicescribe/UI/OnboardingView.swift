@@ -82,6 +82,13 @@ struct WelcomeStep: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                        
+                        if let error = authService.errorMessage {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
