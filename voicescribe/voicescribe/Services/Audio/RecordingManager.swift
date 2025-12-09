@@ -15,17 +15,21 @@ class RecordingManager: ObservableObject {
     // MARK: - Private Properties
     private let audioService = AudioCaptureService.shared
     private let transcriptionService = TranscriptionService.shared
-    private var cancellables = Set<AnyCancellable>()
+    private let apiService = APIService.shared
     private var amplitudeHistory: [Float] = []
+    
+    // Expose cancellables for external use
+    var cancellables = Set<AnyCancellable>()
     
     private init() {
         setupBindings()
+        setupAuthBindings()
     }
     
     // MARK: - Setup
     
     private func setupBindings() {
-        // Bind transcription session state
+        
         transcriptionService.$sessionState
             .receive(on: DispatchQueue.main)
             .assign(to: &$sessionState)
@@ -60,6 +64,21 @@ class RecordingManager: ObservableObject {
                     }
                 }
             }
+        }
+    }
+    
+    private func setupAuthBindings() {
+        // Update API service token when auth state changes
+        AuthService.shared.$token
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] token in
+                self?.apiService.setAuthToken(token)
+            }
+            .store(in: &cancellables)
+        
+        // Set initial token if available
+        if let token = AuthService.shared.token {
+            apiService.setAuthToken(token)
         }
     }
     
@@ -131,7 +150,7 @@ class RecordingManager: ObservableObject {
     
     /// Cancel recording without saving
     func cancelRecording() {
-        audioService.stopRecording()
+        
         transcriptionService.cancelTranscription()
         
         DispatchQueue.main.async {

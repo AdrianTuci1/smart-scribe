@@ -6,115 +6,70 @@ struct UserMenuView: View {
     @State private var showingManageAccount = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Avatar button in the top right corner
-            HStack {
-                Spacer()
+        HStack(spacing: 12) {
+            // Notification bell
+            Button(action: {
+                // Notification action
+            }) {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "bell")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                    
+                    // Notification badge
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .frame(width: 32, height: 32)
+            
+            // User avatar with menu
+            Menu {
+                // User info header
+                Section {
+                    VStack(alignment: .leading) {
+                        Text(authService.userName ?? "User")
+                            .font(.headline)
+                        Text(authService.userEmail ?? "user@example.com")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Divider()
+                
                 Button(action: {
-                    isMenuOpen.toggle()
+                    showingManageAccount = true
                 }) {
-                    // User avatar
-                    ZStack {
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 32, height: 32)
-                        
-                        Text(getInitials())
-                            .foregroundColor(.white)
-                            .font(.system(size: 14, weight: .medium))
-                    }
+                    Label("Manage Account", systemImage: "person.circle")
                 }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.trailing, 16)
-                .padding(.top, 8)
-            }
-            
-            // Dropdown menu
-            if isMenuOpen {
-                VStack(alignment: .leading, spacing: 12) {
-                    // User info section
-                    HStack(spacing: 12) {
-                        // Avatar
-                        ZStack {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .frame(width: 48, height: 48)
-                            
-                            Text(getInitials())
-                                .foregroundColor(.white)
-                                .font(.system(size: 18, weight: .medium))
-                        }
-                        
-                        // User details
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(authService.userName ?? "User")
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            
-                            Text(authService.userEmail ?? "user@example.com")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
+                
+                Divider()
+                
+                Button(action: {
+                    Task {
+                        await authService.signOut()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    
-                    Divider()
-                    
-                    // Menu items
-                    VStack(spacing: 0) {
-                        Button(action: {
-                            showingManageAccount = true
-                            isMenuOpen = false
-                        }) {
-                            HStack {
-                                Image(systemName: "person.circle")
-                                Text("Manage Account")
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .foregroundColor(.primary)
-                        
-                        Divider()
-                        
-                        Button(action: {
-                            Task {
-                                await authService.signOut()
-                                isMenuOpen = false
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "arrow.right.square")
-                                Text("Sign Out")
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .foregroundColor(.primary)
-                    }
+                }) {
+                    Label("Sign Out", systemImage: "arrow.right.square")
                 }
-                .background(Color(NSColor.windowBackgroundColor))
-                .cornerRadius(8)
-                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
-                )
-                .padding(.trailing, 16)
-                .padding(.top, 4)
-                .zIndex(1000)
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                }
             }
-            
-            Spacer()
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
         }
         .sheet(isPresented: $showingManageAccount) {
             ManageAccountView()

@@ -21,76 +21,145 @@ struct SnippetListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Top spacing for titlebar area
+            Color.clear
+                .frame(height: 52)
+            
             // Header
-            HStack {
-                Text("Snippets")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                Spacer()
-                Button(action: { showingAddSnippet = true }) {
-                    Label("Add Snippet", systemImage: "plus.circle.fill")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
+            Text("Create shortcuts for frequently used phrases")
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             
-            // Search bar
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField("Search snippets...", text: $searchText)
+            // Search input field
+            HStack(spacing: 16) {
+                TextField("", text: $searchText, prompt: Text("Search snippets...").foregroundColor(.secondary))
                     .textFieldStyle(.plain)
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.plain)
+                    .font(.body)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity)
+                
+                // Search button
+                Button(action: {}) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                        )
                 }
+                .buttonStyle(.plain)
+                
+                // Add button
+                Button(action: { showingAddSnippet = true }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
-            .padding(.horizontal)
-            .padding(.bottom)
+            .frame(height: 64)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
+            )
+            .padding(.horizontal, 48)
+            .padding(.bottom, 48)
             
-            // Snippets list
-            if filteredSnippets.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "scissors")
-                        .font(.system(size: 48))
+            // Snippets section
+            VStack(alignment: .leading, spacing: 16) {
+                // Snippets header with icons
+                HStack {
+                    Text("SNIPPETS")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
-                    Text(searchText.isEmpty ? "No snippets yet" : "No matching snippets")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                    if searchText.isEmpty {
-                        Text("Create shortcuts for frequently used phrases")
-                            .font(.subheadline)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 16) {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(searchText.isEmpty)
+                        
+                        Button(action: {}) {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: { loadSampleData() }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 48)
+                
+                Divider()
+                    .padding(.horizontal, 48)
+                
+                // Snippets list or empty state
+                if filteredSnippets.isEmpty {
+                    VStack(spacing: 16) {
+                        Text(searchText.isEmpty ? "No snippets yet" : "No matching snippets")
+                            .font(.body)
                             .foregroundColor(.secondary)
+                            .padding(.top, 48)
+                        if searchText.isEmpty {
+                            Text("Create shortcuts for frequently used phrases")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(filteredSnippets) { snippet in
+                                SnippetRecentRow(snippet: snippet)
+                                    .contextMenu {
+                                        Button("Edit") {
+                                            editingSnippet = snippet
+                                        }
+                                        Button("Delete", role: .destructive) {
+                                            deleteSnippet(snippet)
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        editingSnippet = snippet
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, 48)
+                        .padding(.top, 8)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(filteredSnippets) { snippet in
-                        SnippetRow(snippet: snippet)
-                            .contextMenu {
-                                Button("Edit") {
-                                    editingSnippet = snippet
-                                }
-                                Button("Delete", role: .destructive) {
-                                    deleteSnippet(snippet)
-                                }
-                            }
-                            .onTapGesture {
-                                editingSnippet = snippet
-                            }
-                    }
-                    .onDelete(perform: deleteSnippets)
-                }
-                .listStyle(.inset)
             }
+            
+            Spacer()
         }
+        .frame(minWidth: 600, maxWidth: 900)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
         .sheet(isPresented: $showingAddSnippet) {
             AddSnippetView { title, content in
                 addSnippet(title: title, content: content)
@@ -186,19 +255,31 @@ struct SnippetListView: View {
     }
 }
 
-struct SnippetRow: View {
+struct SnippetRecentRow: View {
     let snippet: Snippet
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(snippet.title)
-                .font(.headline)
-            Text(snippet.content)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(snippet.title)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                
+                Text(snippet.content)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+            }
+            
+            Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        )
     }
 }
 

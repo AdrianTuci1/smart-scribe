@@ -9,11 +9,14 @@ struct WisprFlowApp: App {
     var body: some Scene {
         WindowGroup {
             if hasCompletedOnboarding {
-                MainPopoverView()
+                MainPopoverViewWithoutUserMenu()
             } else {
                 OnboardingView()
             }
         }
-        .windowStyle(HiddenTitleBarWindowStyle()) // Optional: cleaner look for onboarding
+        .windowResizability(.contentSize)
+        .commands {
+            // Remove default commands if needed
+        }
     }
 }

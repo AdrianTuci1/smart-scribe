@@ -7,111 +7,60 @@ class TranscriptionViewModel: ObservableObject {
     @Published var provisionalText: String = ""
     @Published var isRecording: Bool = false
     
-    private var transcriptionService = TranscriptionService.shared
-    private var audioService = AudioCaptureService.shared
+    private var recordingManager = RecordingManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        setupTranscriptionService()
-        setupAudioService()
+        setupBindings()
     }
     
-    private func setupTranscriptionService() {
+    private func setupBindings() {
+        // Subscribe to recording state changes
+        recordingManager.$isRecording
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isRecording, on: self)
+            .store(in: &cancellables)
+        
         // Subscribe to transcription state changes
-        transcriptionService.$sessionState
+        recordingManager.$sessionState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.handleTranscriptionState(state)
             }
             .store(in: &cancellables)
-    }
-    
-    private func setupAudioService() {
-        // Subscribe to audio chunks
-        audioService.onAudioChunk = { [weak self] chunk in
-            Task {
-                do {
-                    try await self?.transcriptionService.addAudioChunk(chunk)
-                } catch {
-                    print("Failed to add audio chunk: \(error)")
+        
+        // Subscribe to last transcription
+        recordingManager.$lastTranscription
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                if !text.isEmpty {
+                    self?.appendTranscription(text)
                 }
             }
-        }
+            .store(in: &cancellables)
     }
     
     func toggleRecording() {
-        if isRecording {
-            stopRecording()
-        } else {
-            startRecording()
-        }
+        recordingManager.toggleRecording()
     }
     
-    private func startRecording() {
-        do {
-            // Start audio capture
-            try audioService.startRecording()
-            
-            // Start transcription session
-            let userId = AuthService.shared.currentUser?.userId ?? "default_user"
-            Task {
-                do {
-                    try await transcriptionService.startTranscription(userId: userId)
-                    
-                    DispatchQueue.main.async {
-                        self.isRecording = true
-                        self.provisionalText = ""
-                        
-                        // Show Overlay
-                        if let appDelegate = NSApp.delegate as? AppDelegate {
-                            appDelegate.overlayManager.showOverlay(isRecording: true)
-                        }
-                    }
-                } catch {
-                    print("Failed to start transcription: \(error)")
-                    DispatchQueue.main.async {
-                        self.isRecording = false
-                    }
-                }
-            }
-        } catch {
-            print("Failed to start recording: \(error)")
-        }
-    }
-    
-    private func stopRecording() {
-        // Stop audio capture
-        audioService.stopRecording()
-        
-        // Finish transcription session
-        Task {
-            do {
-                try await transcriptionService.finishTranscription()
-            } catch {
-                print("Failed to finish transcription: \(error)")
-            }
-        }
-        
-        DispatchQueue.main.async {
-            self.isRecording = false
-            self.provisionalText = ""
-            
-            // Hide Overlay
-            if let appDelegate = NSApp.delegate as? AppDelegate {
-                appDelegate.overlayManager.showOverlay(isRecording: false)
-            }
-        }
+    private func appendTranscription(_ text: String) {
+        // Append new text to existing attributed string
+        let mutableText = NSMutableAttributedString(attributedString: finalText)
+        let newText = NSAttributedString(string: text + " ", attributes: [.font: NSFont.systemFont(ofSize: 14)])
+        mutableText.append(newText)
+        finalText = mutableText
     }
     
     private func handleTranscriptionState(_ state: TranscriptionSessionState) {
         switch state {
         case .idle:
             // No active session
-            break
+            provisionalText = ""
             
         case .recording:
             // Session is recording
-            break
+            provisionalText = ""
             
         case .processing:
             // Transcription is being processed
@@ -122,12 +71,10 @@ class TranscriptionViewModel: ObservableObject {
         case .completed(let text):
             // Transcription completed
             DispatchQueue.main.async {
-                // Append new text to existing attributed string
-                let mutableText = NSMutableAttributedString(attributedString: self.finalText)
-                let newText = NSAttributedString(string: text + " ", attributes: [.font: NSFont.systemFont(ofSize: 14)])
-                mutableText.append(newText)
-                self.finalText = mutableText
                 self.provisionalText = ""
+                if !text.isEmpty {
+                    self.appendTranscription(text)
+                }
             }
             
         case .error(let message):

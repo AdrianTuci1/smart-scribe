@@ -15,7 +15,7 @@ struct CognitoConfig {
     static let scope = "email openid phone"
     
     // API endpoints
-    static let apiBaseUrl = "http://localhost:4000/api/v1" // Replace with your API endpoint
+    static let apiBaseUrl = "http://127.0.0.1:4000/api/v1" // Replace with your API endpoint
     
     // Authentication endpoints
     static let loginEndpoint = "\(apiBaseUrl)/auth/login"

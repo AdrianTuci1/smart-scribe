@@ -15,6 +15,10 @@ struct StyleView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Top spacing for titlebar area
+            Color.clear
+                .frame(height: 52)
+            
             // Header
             Text("Style")
                 .font(.largeTitle)
@@ -94,6 +98,8 @@ struct StyleView: View {
             
             Spacer()
         }
+        .frame(minWidth: 600, maxWidth: 900)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

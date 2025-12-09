@@ -9,12 +9,16 @@ struct NotesView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Top spacing for titlebar area
+            Color.clear
+                .frame(height: 52)
+            
             // Header
             Text("For quick thoughts you want to come back to")
                 .font(.title2)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
-                .padding(.top, 48)
+                .padding(.top, 16)
                 .padding(.bottom, 32)
             
             // Voice input field
@@ -119,6 +123,7 @@ struct NotesView: View {
             
             Spacer()
         }
+        .frame(minWidth: 600, maxWidth: 900)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {

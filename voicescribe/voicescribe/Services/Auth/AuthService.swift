@@ -13,6 +13,7 @@ class AuthService: ObservableObject {
     @Published var userEmail: String?
     
     private var cancellables = Set<AnyCancellable>()
+    private let apiService = APIService.shared
     
     private init() {
         // Check current authentication status
@@ -21,35 +22,44 @@ class AuthService: ObservableObject {
         }
     }
     
-    // MARK: - Simple Authentication Methods for macOS
+    // MARK: - Authentication Methods
     
     func signIn(username: String, password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
         
-        // Simple authentication simulation for development
-        // In production, this would connect to your backend
-        if username == "test" && password == "test" {
-            // Simulate successful authentication
-            let user = AuthUser(userId: "test-user", username: username)
-            currentUser = user
-            userName = username
-            userEmail = "test@example.com"
-            token = "mock-jwt-token"
-            isAuthenticated = true
-            isLoading = false
+        do {
+            let response = try await apiService.login(username: username, password: password)
             
-            // Save to UserDefaults
-            UserDefaults.standard.set(true, forKey: "isAuthenticated")
-            UserDefaults.standard.set(username, forKey: "userName")
-            UserDefaults.standard.set("test@example.com", forKey: "userEmail")
-            UserDefaults.standard.set("mock-jwt-token", forKey: "authToken")
-            
-            return true
-        } else {
-            // Simulate failed authentication
+            if response.success, let authData = response.data {
+                // Successful authentication
+                let user = AuthUser(userId: authData.id_token, username: username)
+                currentUser = user
+                userName = username
+                userEmail = "\(username)@example.com" // Extract from response if available
+                token = authData.access_token
+                isAuthenticated = true
+                isLoading = false
+                
+                // Set token in API service
+                apiService.setAuthToken(authData.access_token)
+                
+                // Save to UserDefaults
+                UserDefaults.standard.set(true, forKey: "isAuthenticated")
+                UserDefaults.standard.set(username, forKey: "userName")
+                UserDefaults.standard.set("\(username)@example.com", forKey: "userEmail")
+                UserDefaults.standard.set(authData.access_token, forKey: "authToken")
+                
+                return true
+            } else {
+                // Failed authentication
+                isLoading = false
+                errorMessage = response.error ?? "Authentication failed"
+                return false
+            }
+        } catch {
             isLoading = false
-            errorMessage = "Invalid username or password"
+            errorMessage = "Network error: \(error.localizedDescription)"
             return false
         }
     }
@@ -58,49 +68,60 @@ class AuthService: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Simple registration simulation for development
-        // In production, this would connect to your backend
-        let user = AuthUser(userId: UUID().uuidString, username: username)
-        currentUser = user
-        userName = username
-        userEmail = email
-        token = "mock-jwt-token"
-        isAuthenticated = true
-        isLoading = false
-        
-        // Save to UserDefaults
-        UserDefaults.standard.set(true, forKey: "isAuthenticated")
-        UserDefaults.standard.set(username, forKey: "userName")
-        UserDefaults.standard.set(email, forKey: "userEmail")
-        UserDefaults.standard.set("mock-jwt-token", forKey: "authToken")
-        
-        return true
+        do {
+            let response = try await apiService.signUp(username: username, email: email, password: password)
+            
+            if response.success {
+                // Registration successful
+                isLoading = false
+                return true
+            } else {
+                // Registration failed
+                isLoading = false
+                errorMessage = response.error ?? "Registration failed"
+                return false
+            }
+        } catch {
+            isLoading = false
+            errorMessage = "Network error: \(error.localizedDescription)"
+            return false
+        }
     }
     
     func confirmSignUp(for username: String, with confirmationCode: String) async -> Bool {
         isLoading = true
         errorMessage = nil
         
-        // Simple confirmation simulation for development
-        // In production, this would connect to your backend
-        let user = AuthUser(userId: UUID().uuidString, username: username)
-        currentUser = user
-        userName = username
-        userEmail = "confirmed@example.com"
-        token = "mock-jwt-token"
-        isAuthenticated = true
-        isLoading = false
-        
-        // Save to UserDefaults
-        UserDefaults.standard.set(true, forKey: "isAuthenticated")
-        UserDefaults.standard.set(username, forKey: "userName")
-        UserDefaults.standard.set("confirmed@example.com", forKey: "userEmail")
-        UserDefaults.standard.set("mock-jwt-token", forKey: "authToken")
-        
-        return true
+        do {
+            let response = try await apiService.confirmSignUp(username: username, confirmationCode: confirmationCode)
+            
+            if response.success {
+                // Confirmation successful
+                isLoading = false
+                return true
+            } else {
+                // Confirmation failed
+                isLoading = false
+                errorMessage = response.error ?? "Confirmation failed"
+                return false
+            }
+        } catch {
+            isLoading = false
+            errorMessage = "Network error: \(error.localizedDescription)"
+            return false
+        }
     }
     
     func signOut() async {
+        // Call logout API if authenticated
+        if isAuthenticated {
+            do {
+                try await apiService.logout()
+            } catch {
+                print("Error during logout: \(error)")
+            }
+        }
+        
         // Clear authentication state
         currentUser = nil
         userName = nil
@@ -108,6 +129,9 @@ class AuthService: ObservableObject {
         token = nil
         isAuthenticated = false
         errorMessage = nil
+        
+        // Clear token in API service
+        apiService.setAuthToken(nil)
         
         // Clear UserDefaults
         UserDefaults.standard.removeObject(forKey: "isAuthenticated")
@@ -117,14 +141,28 @@ class AuthService: ObservableObject {
     }
     
     func refreshSession() async -> Bool {
-        // Simple refresh simulation for development
-        // In production, this would refresh the token with your backend
-        if isAuthenticated {
-            token = "refreshed-mock-jwt-token"
-            UserDefaults.standard.set("refreshed-mock-jwt-token", forKey: "authToken")
-            return true
+        guard let refreshToken = UserDefaults.standard.string(forKey: "refreshToken") else {
+            return false
         }
-        return false
+        
+        do {
+            let response = try await apiService.refreshToken(refreshToken: refreshToken)
+            
+            if response.success, let authData = response.data {
+                // Token refreshed successfully
+                token = authData.access_token
+                apiService.setAuthToken(authData.access_token)
+                UserDefaults.standard.set(authData.access_token, forKey: "authToken")
+                return true
+            } else {
+                // Refresh failed
+                errorMessage = response.error ?? "Token refresh failed"
+                return false
+            }
+        } catch {
+            errorMessage = "Network error: \(error.localizedDescription)"
+            return false
+        }
     }
     
     func handleAuthCallback(url: URL) async -> Bool {
@@ -143,6 +181,9 @@ class AuthService: ObservableObject {
             token = "callback-jwt-token"
             isAuthenticated = true
             isLoading = false
+            
+            // Set token in API service
+            apiService.setAuthToken("callback-jwt-token")
             
             // Save to UserDefaults
             UserDefaults.standard.set(true, forKey: "isAuthenticated")
@@ -169,6 +210,9 @@ class AuthService: ObservableObject {
                 self.userName = savedUserName
                 self.userEmail = savedUserEmail
                 self.token = savedToken
+                
+                // Set token in API service
+                self.apiService.setAuthToken(savedToken)
                 
                 // Create user object
                 self.currentUser = AuthUser(userId: "saved-user", username: savedUserName!)

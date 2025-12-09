@@ -7,12 +7,19 @@ class APIService {
     
     private init() {
         self.baseURL = URL(string: CognitoConfig.apiBaseUrl)!
+        
+        // Check for saved token on initialization
+        if let savedToken = UserDefaults.standard.string(forKey: "authToken") {
+            self.authToken = savedToken
+        }
     }
     
     // MARK: - Authentication
     
     func setAuthToken(_ token: String?) {
         self.authToken = token
+        // Also save to UserDefaults for persistence
+        UserDefaults.standard.set(token, forKey: "authToken")
     }
     
     func login(username: String, password: String) async throws -> AuthResponse {
@@ -28,7 +35,13 @@ class APIService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: loginData)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(AuthResponse.self, from: data)
     }
     
@@ -46,7 +59,13 @@ class APIService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: signUpData)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(SignUpResponse.self, from: data)
     }
     
@@ -63,7 +82,13 @@ class APIService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: confirmData)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(ConfirmResponse.self, from: data)
     }
     
@@ -79,7 +104,13 @@ class APIService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: refreshData)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(RefreshResponse.self, from: data)
     }
     
@@ -93,7 +124,12 @@ class APIService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     // MARK: - API Methods
@@ -114,7 +150,13 @@ class APIService {
         let url = baseURL.appendingPathComponent("config/snippets")
         let request = createRequest(url: url)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode([Snippet].self, from: data)
     }
     
@@ -126,14 +168,25 @@ class APIService {
         let snippetsData = try JSONEncoder().encode(snippets)
         request.httpBody = snippetsData
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     func fetchDictionary() async throws -> [DictionaryEntry] {
         let url = baseURL.appendingPathComponent("config/dictionary")
         let request = createRequest(url: url)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode([DictionaryEntry].self, from: data)
     }
     
@@ -145,14 +198,25 @@ class APIService {
         let dictionaryData = try JSONEncoder().encode(dictionary)
         request.httpBody = dictionaryData
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     func fetchStylePreferences() async throws -> StylePreference {
         let url = baseURL.appendingPathComponent("config/style_preferences")
         let request = createRequest(url: url)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(StylePreference.self, from: data)
     }
     
@@ -164,14 +228,25 @@ class APIService {
         let preferencesData = try JSONEncoder().encode(preferences)
         request.httpBody = preferencesData
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     func fetchNotes() async throws -> [Note] {
         let url = baseURL.appendingPathComponent("notes")
         let request = createRequest(url: url)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode([Note].self, from: data)
     }
     
@@ -183,7 +258,13 @@ class APIService {
         let noteData = try JSONEncoder().encode(note)
         request.httpBody = noteData
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(Note.self, from: data)
     }
     
@@ -191,7 +272,12 @@ class APIService {
         let url = baseURL.appendingPathComponent("notes/\(id)")
         let request = createRequest(url: url, method: "DELETE")
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     // MARK: - Transcription Methods
@@ -204,7 +290,13 @@ class APIService {
         let requestData = ["user_id": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(StartTranscriptionResponse.self, from: data)
     }
     
@@ -219,7 +311,12 @@ class APIService {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     func finishTranscriptionSession(userId: String) async throws {
@@ -230,7 +327,12 @@ class APIService {
         let requestData = ["user_id": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
-        _ = try await URLSession.shared.data(for: request)
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
     }
     
     func getTranscriptionStatus(userId: String) async throws -> TranscriptionStatusResponse {
@@ -243,7 +345,13 @@ class APIService {
         
         let requestWithQuery = createRequest(url: finalUrl, method: "GET")
         
-        let (data, _) = try await URLSession.shared.data(for: requestWithQuery)
+        let (data, response) = try await URLSession.shared.data(for: requestWithQuery)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
         return try JSONDecoder().decode(TranscriptionStatusResponse.self, from: data)
     }
 }

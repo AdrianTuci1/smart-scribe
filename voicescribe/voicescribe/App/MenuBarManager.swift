@@ -1,9 +1,11 @@
 import Cocoa
 import Combine
+import UserNotifications
 
 class MenuBarManager: ObservableObject {
     
     var statusItem: NSStatusItem
+    private var cancellables = Set<AnyCancellable>()
     
     @Published var isRecording: Bool = false {
         didSet {
@@ -17,6 +19,26 @@ class MenuBarManager: ObservableObject {
     init(statusItem: NSStatusItem) {
         self.statusItem = statusItem
         setupMenu()
+        setupBindings()
+        requestNotificationPermission()
+    }
+    
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if granted {
+                print("Notification permission granted")
+            } else if let error = error {
+                print("Notification permission error: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func setupBindings() {
+        // Bind to RecordingManager for real-time recording state
+        RecordingManager.shared.$isRecording
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isRecording, on: self)
+            .store(in: &cancellables)
     }
 
     func setupMenu() {
@@ -135,10 +157,30 @@ class MenuBarManager: ObservableObject {
     }
     
     @objc func pasteLastTranscript() {
-        // TODO: Implement actual last transcript retrieval
+        // Get the last transcript from RecordingManager
+        let lastTranscript = RecordingManager.shared.lastTranscription
+        
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString("Last transcript placeholder", forType: .string)
+        pasteboard.setString(lastTranscript.isEmpty ? "No transcript available" : lastTranscript, forType: .string)
+        
+        // Show a brief notification using modern UserNotifications framework
+        let content = UNMutableNotificationContent()
+        content.title = "VoiceScribe"
+        content.body = lastTranscript.isEmpty ? "No transcript available" : "Last transcript copied to clipboard"
+        content.sound = UNNotificationSound.default
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Error showing notification: \(error.localizedDescription)")
+            }
+        }
     }
     
     @objc func openHelpCenter() {

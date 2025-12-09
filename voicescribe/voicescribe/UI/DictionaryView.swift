@@ -21,76 +21,145 @@ struct DictionaryView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Top spacing for titlebar area
+            Color.clear
+                .frame(height: 52)
+            
             // Header
-            HStack {
-                Text("Dictionary")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                Spacer()
-                Button(action: { showingAddEntry = true }) {
-                    Label("Add Entry", systemImage: "plus.circle.fill")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
+            Text("Add corrections to help improve transcription accuracy")
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             
-            // Search bar
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField("Search corrections...", text: $searchText)
+            // Search input field
+            HStack(spacing: 16) {
+                TextField("", text: $searchText, prompt: Text("Search corrections...").foregroundColor(.secondary))
                     .textFieldStyle(.plain)
-                if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
-                    }
-                    .buttonStyle(.plain)
+                    .font(.body)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity)
+                
+                // Search button
+                Button(action: {}) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                        )
                 }
+                .buttonStyle(.plain)
+                
+                // Add button
+                Button(action: { showingAddEntry = true }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(red: 0.2, green: 0.2, blue: 0.25))
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 8)
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
-            .padding(.horizontal)
-            .padding(.bottom)
+            .frame(height: 64)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
+            )
+            .padding(.horizontal, 48)
+            .padding(.bottom, 48)
             
-            // Entries list
-            if filteredEntries.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "book.closed")
-                        .font(.system(size: 48))
+            // Dictionary entries section
+            VStack(alignment: .leading, spacing: 16) {
+                // Dictionary header with icons
+                HStack {
+                    Text("DICTIONARY")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
-                    Text(searchText.isEmpty ? "No dictionary entries yet" : "No matching entries")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                    if searchText.isEmpty {
-                        Text("Add corrections to help improve transcription accuracy")
-                            .font(.subheadline)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 16) {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(searchText.isEmpty)
+                        
+                        Button(action: {}) {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: { loadSampleData() }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 48)
+                
+                Divider()
+                    .padding(.horizontal, 48)
+                
+                // Entries list or empty state
+                if filteredEntries.isEmpty {
+                    VStack(spacing: 16) {
+                        Text(searchText.isEmpty ? "No dictionary entries yet" : "No matching entries")
+                            .font(.body)
                             .foregroundColor(.secondary)
+                            .padding(.top, 48)
+                        if searchText.isEmpty {
+                            Text("Add corrections to help improve transcription accuracy")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(filteredEntries) { entry in
+                                DictionaryRecentRow(entry: entry)
+                                    .contextMenu {
+                                        Button("Edit") {
+                                            editingEntry = entry
+                                        }
+                                        Button("Delete", role: .destructive) {
+                                            deleteEntry(entry)
+                                        }
+                                    }
+                                    .onTapGesture {
+                                        editingEntry = entry
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, 48)
+                        .padding(.top, 8)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(filteredEntries) { entry in
-                        DictionaryEntryRow(entry: entry)
-                            .contextMenu {
-                                Button("Edit") {
-                                    editingEntry = entry
-                                }
-                                Button("Delete", role: .destructive) {
-                                    deleteEntry(entry)
-                                }
-                            }
-                            .onTapGesture {
-                                editingEntry = entry
-                            }
-                    }
-                    .onDelete(perform: deleteEntries)
-                }
-                .listStyle(.inset)
             }
+            
+            Spacer()
         }
+        .frame(minWidth: 600, maxWidth: 900)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(NSColor.windowBackgroundColor))
         .sheet(isPresented: $showingAddEntry) {
             AddDictionaryEntryView { incorrectWord, correctWord in
                 addEntry(incorrectWord: incorrectWord, correctWord: correctWord)
@@ -186,7 +255,7 @@ struct DictionaryView: View {
     }
 }
 
-struct DictionaryEntryRow: View {
+struct DictionaryRecentRow: View {
     let entry: DictionaryEntry
     
     var body: some View {
@@ -194,6 +263,7 @@ struct DictionaryEntryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.incorrectWord)
                     .font(.body)
+                    .fontWeight(.medium)
                     .foregroundColor(.primary)
                 Text("Replaces as spoken")
                     .font(.caption)
@@ -207,6 +277,7 @@ struct DictionaryEntryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.correctWord)
                     .font(.body)
+                    .fontWeight(.medium)
                     .foregroundColor(.primary)
                 Text("Corrected text")
                     .font(.caption)
@@ -215,7 +286,12 @@ struct DictionaryEntryRow: View {
             
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+        )
     }
 }
 
