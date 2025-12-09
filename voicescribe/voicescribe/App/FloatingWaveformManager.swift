@@ -21,6 +21,7 @@ class FloatingWaveformManager: ObservableObject {
     init() {
         setupBindings()
         createFloatingChip()
+        setupDockMonitoring()
     }
     
     private func setupBindings() {
@@ -103,15 +104,37 @@ class FloatingWaveformManager: ObservableObject {
     private func positionChip(_ panel: NSPanel) {
         guard let screen = NSScreen.main else { return }
         
-        let screenFrame = screen.visibleFrame
+        let screenFrame = screen.frame
+        let visibleFrame = screen.visibleFrame
         let panelWidth: CGFloat = 420
         let panelHeight: CGFloat = 250
         
-        // Position at bottom center, above the Dock
-        let x = screenFrame.midX - (panelWidth / 2)
-        let y = screenFrame.minY + 7 // Very close to bottom, just above Dock
+        // Position at bottom center, 8px above Dock if present or 8px from the bottom when hidden
+        let dockVisible = (visibleFrame.minY - screenFrame.minY) > 1
+        let baselineY = dockVisible ? visibleFrame.minY : screenFrame.minY
+        let y = baselineY + 8
+        let x = visibleFrame.midX - (panelWidth / 2)
         
         panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: panelHeight), display: true)
+    }
+    
+    private func repositionChip() {
+        guard let panel = chipWindow else { return }
+        positionChip(panel)
+    }
+    
+    private func setupDockMonitoring() {
+        NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .sink { [weak self] _ in
+                self?.repositionChip()
+            }
+            .store(in: &cancellables)
+        
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+            .sink { [weak self] _ in
+                self?.repositionChip()
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Public Methods

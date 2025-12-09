@@ -5,11 +5,12 @@ import ApplicationServices
 struct OnboardingView: View {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @State private var currentStep = 0
+    @StateObject private var authService = AuthService.shared
     
     var body: some View {
         VStack {
             if currentStep == 0 {
-                WelcomeStep(nextAction: { currentStep += 1 })
+                WelcomeStep(authService: authService, nextAction: { currentStep += 1 })
             } else if currentStep == 1 {
                 PermissionsStep(nextAction: { currentStep += 1 })
             } else {
@@ -22,6 +23,7 @@ struct OnboardingView: View {
 }
 
 struct WelcomeStep: View {
+    @ObservedObject var authService: AuthService
     var nextAction: () -> Void
     
     var body: some View {
@@ -44,11 +46,59 @@ struct WelcomeStep: View {
             
             Spacer()
             
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Log in to continue")
+                    .font(.headline)
+                
+                if authService.isAuthenticated {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .foregroundColor(.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(authService.userName ?? "Account")
+                                .font(.subheadline)
+                            Text(authService.userEmail ?? "")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button("Sign Out") {
+                            Task {
+                                await authService.signOut()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding()
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(10)
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("You need to sign in with your account to finish setup.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Button("Sign In with Browser") {
+                            authService.signInWithWebBrowser()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(10)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            
+            Spacer()
+            
             Button("Get Started") {
                 nextAction()
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .disabled(!authService.isAuthenticated)
         }
         .padding(50)
     }

@@ -132,6 +132,54 @@ class APIService {
         }
     }
     
+    // MARK: - Cognito OAuth
+    
+    func exchangeAuthCodeForTokens(code: String) async throws -> CognitoTokenResponse {
+        guard let tokenURL = URL(string: "\(CognitoConfig.cognitoDomain)/oauth2/token") else {
+            throw NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid token URL"])
+        }
+        
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        var bodyParams: [String: String] = [
+            "grant_type": "authorization_code",
+            "client_id": CognitoConfig.clientId,
+            "code": code,
+            "redirect_uri": CognitoConfig.redirectUri
+        ]
+        
+        // Include client secret when configured
+        if !CognitoConfig.clientSecret.isEmpty && CognitoConfig.clientSecret != "your_client_secret" {
+            let credentials = "\(CognitoConfig.clientId):\(CognitoConfig.clientSecret)"
+            if let credentialData = credentials.data(using: .utf8) {
+                let encoded = credentialData.base64EncodedString()
+                request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
+            } else {
+                bodyParams["client_secret"] = CognitoConfig.clientSecret
+            }
+        }
+        
+        let allowed = CharacterSet.urlQueryAllowed
+        let bodyString = bodyParams
+            .map { key, value in
+                let encodedValue = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+                return "\(key)=\(encodedValue)"
+            }
+            .joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            let message = String(data: data, encoding: .utf8) ?? "HTTP Error \(httpResponse.statusCode)"
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        
+        return try JSONDecoder().decode(CognitoTokenResponse.self, from: data)
+    }
+    
     // MARK: - API Methods
     
     private func createRequest(url: URL, method: String = "GET") -> URLRequest {
@@ -486,4 +534,12 @@ struct TranscriptsResponse: Codable {
 
 struct AudioURLResponse: Codable {
     let url: String
+}
+
+struct CognitoTokenResponse: Codable {
+    let access_token: String
+    let refresh_token: String?
+    let id_token: String
+    let token_type: String
+    let expires_in: Int
 }

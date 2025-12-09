@@ -22,10 +22,10 @@ enum ChipState: Equatable {
 // MARK: - Main Chip View
 struct FloatingWaveformChip: View {
     @Binding var isRecording: Bool
-    @State private var isHovering: Bool = false
+    @State private var isHoveringChip: Bool = false
     @State private var showTooltip: Bool = false
     @State private var chipState: ChipState = .normal
-    @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 7)
+    @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 5)
     
     // Callbacks for error panel actions
     var onSelectMicrophone: (() -> Void)?
@@ -36,8 +36,18 @@ struct FloatingWaveformChip: View {
     @State private var animationTimer: Timer?
     
     // Unified chip dimensions
-    private let chipWidth: CGFloat = 70
-    private let chipHeight: CGFloat = 24
+    // Not hovered (idle) size baseline
+    private let chipWidth: CGFloat = 36
+    private let compactHeight: CGFloat = 13
+    
+    // Hovered width tweak
+    private let hoveredWidth: CGFloat = 52
+    
+    // Hovered/recording height baseline
+    private let expandedHeight: CGFloat = 22
+    
+    // Recording width (slightly wider only on recording)
+    private let recordingWidth: CGFloat = 84
     
     var body: some View {
         VStack(spacing: 0) {
@@ -51,7 +61,7 @@ struct FloatingWaveformChip: View {
             }
             
             // Tooltip (appears on hover when not recording)
-            if isHovering && !isRecording && showTooltip && chipState != .recording {
+            if isHoveringChip && !isRecording && showTooltip && chipState != .recording {
                 tooltipView
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .padding(.bottom, 8)
@@ -61,7 +71,7 @@ struct FloatingWaveformChip: View {
             unifiedChip
         }
         .frame(maxWidth: .infinity) // Center horizontally
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHovering)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHoveringChip)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isRecording)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: chipState)
         .onChange(of: isRecording) { _, newValue in
@@ -69,27 +79,8 @@ struct FloatingWaveformChip: View {
                 chipState = .recording
                 startWaveformAnimation()
             } else {
-                chipState = isHovering ? .hover : .normal
+                chipState = isHoveringChip ? .hover : .normal
                 stopWaveformAnimation()
-            }
-        }
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-                if !isRecording {
-                    chipState = hovering ? .hover : .normal
-                }
-            }
-            
-            // Show tooltip after a brief delay
-            if hovering && !isRecording {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation {
-                        showTooltip = hovering && isHovering && !isRecording
-                    }
-                }
-            } else {
-                showTooltip = false
             }
         }
     }
@@ -124,56 +115,62 @@ struct FloatingWaveformChip: View {
     private var unifiedChip: some View {
         HStack(spacing: 0) {
             // X (Cancel) Button - visible only when recording
-            Button(action: cancelRecording) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+            if isRecording {
+                Button(action: cancelRecording) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 20, height: 20)
+                        .background(
+                            Circle()
+                                .fill(Color(white: 0.2))
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .frame(width: 44, height: 44)
-            .background(
-                Circle()
-                    .fill(Color(white: 0.25))
-            )
-            .opacity(isRecording ? 1 : 0)
-            .scaleEffect(isRecording ? 1 : 0.5)
             
             // Waveform Area (center) - always visible, changes appearance
-            HStack(spacing: 5) {
-                ForEach(0..<7, id: \.self) { index in
-                    if isRecording {
-                        // Recording: animated red bars
-                        RoundedRectangle(cornerRadius: 2)
+            HStack(spacing: isRecording ? 4 : 3) {
+                if isRecording {
+                    ForEach(0..<5, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 1.5)
                             .fill(Color.red)
                             .frame(width: 3, height: waveformAmplitudes[index])
-                    } else {
-                        // Normal: subtle dots
+                    }
+                } else if isHoveringChip {
+                    ForEach(0..<5, id: \.self) { _ in
                         Circle()
-                            .fill(Color(white: isHovering ? 0.5 : 0.35))
+                            .fill(Color(white: 0.55))
                             .frame(width: 3, height: 3)
                     }
+                } else {
+                    Capsule()
+                        .fill(Color(white: 0.3))
+                        .frame(width: 16, height: 2)
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .frame(height: 18)
             
             // Stop Button - visible only when recording
-            Button(action: stopRecording) {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.red)
-                    .frame(width: 16, height: 16)
+            if isRecording {
+                Button(action: stopRecording) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.red)
+                        .frame(width: 14, height: 14)
+                        .padding(4)
+                        .background(
+                            Circle()
+                                .fill(Color(white: 0.25))
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .frame(width: 44, height: 44)
-            .background(
-                Circle()
-                    .fill(Color(white: 0.35))
-            )
-            .opacity(isRecording ? 1 : 0)
-            .scaleEffect(isRecording ? 1 : 0.5)
         }
-        .padding(4)
-        .frame(width: chipWidth, height: chipHeight)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .frame(width: isRecording ? recordingWidth : (isHoveringChip ? hoveredWidth : chipWidth),
+               height: (!isHoveringChip && !isRecording) ? compactHeight : expandedHeight)
         .background(
             Capsule()
                 .fill(Color(white: 0.12))
@@ -186,6 +183,10 @@ struct FloatingWaveformChip: View {
             if !isRecording {
                 toggleRecording()
             }
+        }
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            handleHoverChange(hovering: hovering)
         }
     }
     
@@ -307,8 +308,8 @@ struct FloatingWaveformChip: View {
     private func startWaveformAnimation() {
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
             withAnimation(.easeInOut(duration: 0.1)) {
-                waveformAmplitudes = (0..<7).map { _ in
-                    CGFloat.random(in: 3...20)
+                waveformAmplitudes = (0..<5).map { _ in
+                    CGFloat.random(in: 4...18)
                 }
             }
         }
@@ -318,7 +319,31 @@ struct FloatingWaveformChip: View {
         animationTimer?.invalidate()
         animationTimer = nil
         withAnimation {
-            waveformAmplitudes = Array(repeating: 3, count: 7)
+            waveformAmplitudes = Array(repeating: 3, count: 5)
+        }
+    }
+}
+
+// MARK: - Hover Handling
+private extension FloatingWaveformChip {
+    func handleHoverChange(hovering: Bool) {
+        withAnimation(.easeInOut(duration: 0.15)) {
+            isHoveringChip = hovering
+            if !isRecording {
+                chipState = hovering ? .hover : .normal
+            }
+        }
+        
+        if hovering && !isRecording {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                if isHoveringChip && !isRecording {
+                    withAnimation {
+                        showTooltip = true
+                    }
+                }
+            }
+        } else {
+            showTooltip = false
         }
     }
 }

@@ -117,12 +117,15 @@ extension NSWindow {
         let buttons = [closeButton, minimizeButton, zoomButton]
         let buttonSpacing: CGFloat = 20 // Standard spacing between traffic lights
         
+        // Move the controls slightly lower for better alignment
+        let adjustedYOffset = yOffset + 10
+        
         for (index, button) in buttons.enumerated() {
             guard let superview = button.superview else { continue }
             
             // Calculate new position
             let newX = xOffset + CGFloat(index) * buttonSpacing
-            let newY = superview.bounds.height - button.bounds.height - yOffset
+            let newY = superview.bounds.height - button.bounds.height - adjustedYOffset
             
             button.setFrameOrigin(CGPoint(x: newX, y: newY))
         }

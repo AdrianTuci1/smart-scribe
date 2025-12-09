@@ -2,7 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var isPresented: Bool
-    @State private var selectedCategory: SettingsCategory = .general
+    @State private var selectedCategory: SettingsCategory
+    
+    init(isPresented: Binding<Bool>, initialCategory: SettingsCategory = .general) {
+        _isPresented = isPresented
+        _selectedCategory = State(initialValue: initialCategory)
+    }
     
     var body: some View {
         ZStack {
@@ -201,9 +206,16 @@ struct GeneralSettingsView: View {
     @State private var pasteLastTranscriptEnabled = true
     @State private var selectedMicrophone = "Auto Detect"
     @State private var selectedLanguage = "English (US)"
+    @State private var capturingShortcut = false
+    @State private var shortcutTarget: ShortcutTarget?
     
     let microphones = ["Auto Detect", "Built-in", "External Microphone 1", "External Microphone 2"]
     let languages = ["English (US)", "English (UK)", "Spanish", "French", "German", "Italian", "Portuguese", "Chinese", "Japanese"]
+    
+    enum ShortcutTarget {
+        case pushToTalk
+        case handsFree
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -215,7 +227,8 @@ struct GeneralSettingsView: View {
                             Text("Push to Talk")
                             Spacer()
                             Button(pushToTalkKey) {
-                                // Open dialog to change shortcut
+                                shortcutTarget = .pushToTalk
+                                capturingShortcut = true
                             }
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 8)
@@ -232,7 +245,8 @@ struct GeneralSettingsView: View {
                             Text("Hands-Free Mode")
                             Spacer()
                             Button(handsFreeModeKey) {
-                                // Open dialog to change shortcut
+                                shortcutTarget = .handsFree
+                                capturingShortcut = true
                             }
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 8)
@@ -245,13 +259,13 @@ struct GeneralSettingsView: View {
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Command Mode", isOn: $commandModeEnabled)
+                        TrailingToggleRow("Command Mode", isOn: $commandModeEnabled)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Paste Last Transcript", isOn: $pasteLastTranscriptEnabled)
+                        TrailingToggleRow("Paste Last Transcript", isOn: $pasteLastTranscriptEnabled)
                     }
                 }
             }
@@ -282,6 +296,18 @@ struct GeneralSettingsView: View {
             
             Spacer()
         }
+        .sheet(isPresented: $capturingShortcut) {
+            ShortcutCaptureView(isPresented: $capturingShortcut) { newShortcut in
+                switch shortcutTarget {
+                case .pushToTalk:
+                    pushToTalkKey = newShortcut
+                case .handsFree:
+                    handsFreeModeKey = newShortcut
+                case .none:
+                    break
+                }
+            }
+        }
     }
 }
 
@@ -303,12 +329,24 @@ struct SettingsSectionView<Content: View>: View {
                 .foregroundColor(.primary)
             
             content
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+                .padding(6)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(NSColor.controlBackgroundColor),
+                            Color(NSColor.controlBackgroundColor).opacity(0.9)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(NSColor.separatorColor).opacity(0.6), lineWidth: 0.8)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
         }
     }
 }
@@ -327,6 +365,37 @@ struct SettingsRowView<Content: View>: View {
     }
 }
 
+// Toggle row with trailing switch and optional subtitle
+struct TrailingToggleRow: View {
+    let title: String
+    let subtitle: String?
+    @Binding var isOn: Bool
+    
+    init(_ title: String, subtitle: String? = nil, isOn: Binding<Bool>) {
+        self.title = title
+        self.subtitle = subtitle
+        self._isOn = isOn
+    }
+    
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .foregroundColor(.primary)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(SwitchToggleStyle(tint: .accentColor))
+        }
+    }
+}
+
 struct VibeCodingSettingsView: View {
     @State private var variableRecognition = true
     @State private var fileTaggingInChat = true
@@ -336,23 +405,21 @@ struct VibeCodingSettingsView: View {
             SettingsSectionView(title: "Vibe Coding Features") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Toggle("Variable Recognition", isOn: $variableRecognition)
-                            Text("Automatically recognize and highlight variables in your code")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        TrailingToggleRow(
+                            "Variable Recognition",
+                            subtitle: "Automatically recognize and highlight variables in your code",
+                            isOn: $variableRecognition
+                        )
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Toggle("File Tagging in Chat", isOn: $fileTaggingInChat)
-                            Text("Automatically tag files when mentioned in chat for better organization")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        TrailingToggleRow(
+                            "File Tagging in Chat",
+                            subtitle: "Automatically tag files when mentioned in chat for better organization",
+                            isOn: $fileTaggingInChat
+                        )
                     }
                 }
             }
@@ -384,12 +451,11 @@ struct ExperimentalSettingsView: View {
             
             SettingsSectionView(title: "Experimental Features") {
                 SettingsRowView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Toggle("Command Mode - Enable Advanced Voice Commands", isOn: $advancedVoiceCommands)
-                        Text("Enable advanced voice commands for more complex operations and automation")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    TrailingToggleRow(
+                        "Command Mode - Enable Advanced Voice Commands",
+                        subtitle: "Enable advanced voice commands for more complex operations and automation",
+                        isOn: $advancedVoiceCommands
+                    )
                 }
             }
             
@@ -781,13 +847,13 @@ struct DataPrivacySettingsView: View {
             SettingsSectionView(title: "Privacy Settings") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        Toggle("Privacy Mode", isOn: $privacyMode)
+                        TrailingToggleRow("Privacy Mode", isOn: $privacyMode)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Context Awareness", isOn: $contextAwareness)
+                        TrailingToggleRow("Context Awareness", isOn: $contextAwareness)
                     }
                 }
             }
@@ -831,7 +897,7 @@ struct DataPrivacySettingsView: View {
             SettingsSectionView(title: "HIPAA Compliance") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        Toggle("Enable HIPAA", isOn: $hipaaEnabled)
+                        TrailingToggleRow("Enable HIPAA", isOn: $hipaaEnabled)
                     }
                     
                     if hipaaEnabled {
@@ -895,19 +961,19 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "App Settings") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        Toggle("Launch App at Login", isOn: $launchAtLogin)
+                        TrailingToggleRow("Launch App at Login", isOn: $launchAtLogin)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Show Flow Bar at All Times", isOn: $showFlowBarAlways)
+                        TrailingToggleRow("Show Flow Bar at All Times", isOn: $showFlowBarAlways)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Show in Dock", isOn: $showInDock)
+                        TrailingToggleRow("Show in Dock", isOn: $showInDock)
                     }
                 }
             }
@@ -916,13 +982,13 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "Sounds") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        Toggle("Dictation Sound Effect", isOn: $dictationSoundEffect)
+                        TrailingToggleRow("Dictation Sound Effect", isOn: $dictationSoundEffect)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Mute Music While Dictating", isOn: $muteMusicWhileDictating)
+                        TrailingToggleRow("Mute Music While Dictating", isOn: $muteMusicWhileDictating)
                     }
                 }
             }
@@ -931,25 +997,25 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "Extras") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        Toggle("Auto Add to Directory", isOn: $autoAddToDirectory)
+                        TrailingToggleRow("Auto Add to Directory", isOn: $autoAddToDirectory)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Smart Formatting", isOn: $smartFormatting)
+                        TrailingToggleRow("Smart Formatting", isOn: $smartFormatting)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Email Auto Signature", isOn: $emailAutoSignature)
+                        TrailingToggleRow("Email Auto Signature", isOn: $emailAutoSignature)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        Toggle("Creator Mode", isOn: $creatorMode)
+                        TrailingToggleRow("Creator Mode", isOn: $creatorMode)
                     }
                 }
             }
@@ -973,6 +1039,54 @@ struct SystemSettingsView: View {
             }
             
             Spacer()
+        }
+    }
+}
+
+// MARK: - Shortcut Capture Helper
+
+struct ShortcutCaptureView: NSViewRepresentable {
+    @Binding var isPresented: Bool
+    var onCapture: (String) -> Void
+    
+    func makeNSView(context: Context) -> NSView {
+        let view = CaptureView()
+        view.onCapture = { shortcut in
+            onCapture(shortcut)
+            isPresented = false
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+    
+    class CaptureView: NSView {
+        var onCapture: ((String) -> Void)?
+        
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.makeFirstResponder(self)
+        }
+        
+        override var acceptsFirstResponder: Bool { true }
+        
+        override func keyDown(with event: NSEvent) {
+            let shortcut = Self.describe(event: event)
+            onCapture?(shortcut)
+        }
+        
+        static func describe(event: NSEvent) -> String {
+            var parts: [String] = []
+            
+            if event.modifierFlags.contains(.control) { parts.append("⌃") }
+            if event.modifierFlags.contains(.option) { parts.append("⌥") }
+            if event.modifierFlags.contains(.command) { parts.append("⌘") }
+            if event.modifierFlags.contains(.shift) { parts.append("⇧") }
+            
+            let key = event.charactersIgnoringModifiers?.uppercased() ?? ""
+            parts.append(key)
+            
+            return parts.joined()
         }
     }
 }

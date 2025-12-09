@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct WisprFlowApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var authService = AuthService.shared
     
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     
@@ -17,7 +18,19 @@ struct WisprFlowApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .commands {
-            // Remove default commands if needed
+            CommandMenu("Account") {
+                if authService.isAuthenticated {
+                    Button("Sign Out") {
+                        Task {
+                            await authService.signOut()
+                        }
+                    }
+                } else {
+                    Button("Sign In") {
+                        authService.signInWithWebBrowser()
+                    }
+                }
+            }
         }
     }
 }

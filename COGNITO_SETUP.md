@@ -208,7 +208,7 @@ struct CognitoConfig {
     static let region = "eu-central-1" // AWS region
     
     // Cognito Domain Configuration
-    static let cognitoDomain = "https://auth.simplu.io.auth.eu-central-1.amazoncognito.com"
+    static let cognitoDomain = "https://auth.simplu.io"
     static let redirectUri = "voicescribe://auth" // Custom URL scheme for deep linking
     static let logoutUri = "http://localhost:3000/"
     static let responseType = "code"

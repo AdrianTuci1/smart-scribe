@@ -1,12 +1,15 @@
 import Foundation
 import Combine
+import AppKit
 
+@MainActor
 class AuthService: ObservableObject {
     static let shared = AuthService()
     
     @Published var isAuthenticated: Bool = false
     @Published var currentUser: AuthUser?
     @Published var token: String?
+    @Published var refreshToken: String?
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var userName: String?
@@ -33,11 +36,14 @@ class AuthService: ObservableObject {
             
             if response.success, let authData = response.data {
                 // Successful authentication
-                let user = AuthUser(userId: authData.id_token, username: username)
+                let userInfo = decodeUserInfo(fromIDToken: authData.id_token, fallbackUsername: username)
+                
+                let user = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
                 currentUser = user
-                userName = username
-                userEmail = "\(username)@example.com" // Extract from response if available
+                userName = userInfo.displayName
+                userEmail = userInfo.email ?? username
                 token = authData.access_token
+                refreshToken = authData.refresh_token
                 isAuthenticated = true
                 isLoading = false
                 
@@ -47,8 +53,10 @@ class AuthService: ObservableObject {
                 // Save to UserDefaults
                 UserDefaults.standard.set(true, forKey: "isAuthenticated")
                 UserDefaults.standard.set(username, forKey: "userName")
-                UserDefaults.standard.set("\(username)@example.com", forKey: "userEmail")
+                UserDefaults.standard.set(userEmail, forKey: "userEmail")
                 UserDefaults.standard.set(authData.access_token, forKey: "authToken")
+                UserDefaults.standard.set(authData.refresh_token, forKey: "refreshToken")
+                UserDefaults.standard.set(authData.id_token, forKey: "idToken")
                 
                 return true
             } else {
@@ -127,8 +135,10 @@ class AuthService: ObservableObject {
         userName = nil
         userEmail = nil
         token = nil
+        refreshToken = nil
         isAuthenticated = false
         errorMessage = nil
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         
         // Clear token in API service
         apiService.setAuthToken(nil)
@@ -138,6 +148,8 @@ class AuthService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "userName")
         UserDefaults.standard.removeObject(forKey: "userEmail")
         UserDefaults.standard.removeObject(forKey: "authToken")
+        UserDefaults.standard.removeObject(forKey: "refreshToken")
+        UserDefaults.standard.removeObject(forKey: "idToken")
     }
     
     func refreshSession() async -> Bool {
@@ -153,6 +165,7 @@ class AuthService: ObservableObject {
                 token = authData.access_token
                 apiService.setAuthToken(authData.access_token)
                 UserDefaults.standard.set(authData.access_token, forKey: "authToken")
+                UserDefaults.standard.set(authData.id_token, forKey: "idToken")
                 return true
             } else {
                 // Refresh failed
@@ -165,6 +178,20 @@ class AuthService: ObservableObject {
         }
     }
     
+    func signInWithWebBrowser() {
+        var components = URLComponents(string: "\(CognitoConfig.cognitoDomain)/login")
+        components?.queryItems = [
+            URLQueryItem(name: "client_id", value: CognitoConfig.clientId),
+            URLQueryItem(name: "response_type", value: CognitoConfig.responseType),
+            URLQueryItem(name: "scope", value: CognitoConfig.scope),
+            URLQueryItem(name: "redirect_uri", value: CognitoConfig.redirectUri)
+        ]
+        
+        if let url = components?.url {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
     func handleAuthCallback(url: URL) async -> Bool {
         // Extract authorization code from URL
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -172,29 +199,36 @@ class AuthService: ObservableObject {
             return false
         }
         
-        // For development, simulate successful authentication
-        if code == "success" {
-            let user = AuthUser(userId: "callback-user", username: "Callback User")
-            currentUser = user
-            userName = "Callback User"
-            userEmail = "callback@example.com"
-            token = "callback-jwt-token"
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            let tokenResponse = try await apiService.exchangeAuthCodeForTokens(code: code)
+            let userInfo = decodeUserInfo(fromIDToken: tokenResponse.id_token, fallbackUsername: userName ?? "User")
+            
+            currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
+            userName = userInfo.displayName
+            userEmail = userInfo.email ?? userName
+            token = tokenResponse.access_token
+            refreshToken = tokenResponse.refresh_token
             isAuthenticated = true
             isLoading = false
             
-            // Set token in API service
-            apiService.setAuthToken("callback-jwt-token")
+            apiService.setAuthToken(tokenResponse.access_token)
             
-            // Save to UserDefaults
             UserDefaults.standard.set(true, forKey: "isAuthenticated")
-            UserDefaults.standard.set("Callback User", forKey: "userName")
-            UserDefaults.standard.set("callback@example.com", forKey: "userEmail")
-            UserDefaults.standard.set("callback-jwt-token", forKey: "authToken")
+            UserDefaults.standard.set(userName, forKey: "userName")
+            UserDefaults.standard.set(userEmail, forKey: "userEmail")
+            UserDefaults.standard.set(tokenResponse.access_token, forKey: "authToken")
+            UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refreshToken")
+            UserDefaults.standard.set(tokenResponse.id_token, forKey: "idToken")
             
             return true
+        } catch {
+            isLoading = false
+            errorMessage = "Authentication failed: \(error.localizedDescription)"
+            return false
         }
-        
-        return false
     }
     
     private func checkAuthStatus() async {
@@ -203,20 +237,23 @@ class AuthService: ObservableObject {
         let savedUserName = UserDefaults.standard.string(forKey: "userName")
         let savedUserEmail = UserDefaults.standard.string(forKey: "userEmail")
         let savedToken = UserDefaults.standard.string(forKey: "authToken")
+        let savedIdToken = UserDefaults.standard.string(forKey: "idToken")
+        let savedRefreshToken = UserDefaults.standard.string(forKey: "refreshToken")
         
         if isAuth && savedUserName != nil && savedUserEmail != nil && savedToken != nil {
-            DispatchQueue.main.async {
-                self.isAuthenticated = true
-                self.userName = savedUserName
-                self.userEmail = savedUserEmail
-                self.token = savedToken
-                
-                // Set token in API service
-                self.apiService.setAuthToken(savedToken)
-                
-                // Create user object
-                self.currentUser = AuthUser(userId: "saved-user", username: savedUserName!)
-            }
+            let userInfo = decodeUserInfo(fromIDToken: savedIdToken, fallbackUsername: savedUserName ?? "User")
+            
+            isAuthenticated = true
+            userName = userInfo.displayName
+            userEmail = userInfo.email ?? savedUserEmail ?? savedUserName
+            token = savedToken
+            refreshToken = savedRefreshToken
+            
+            // Set token in API service
+            apiService.setAuthToken(savedToken)
+            
+            // Create user object
+            currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
         }
     }
     
@@ -231,5 +268,45 @@ class AuthService: ObservableObject {
 struct AuthUser {
     let userId: String
     let username: String
+    let email: String?
+}
+
+// MARK: - Helpers
+
+private extension AuthService {
+    struct AuthUserInfo {
+        let userId: String
+        let displayName: String
+        let email: String?
+    }
+    
+    func decodeUserInfo(fromIDToken idToken: String?, fallbackUsername: String) -> AuthUserInfo {
+        guard
+            let idToken,
+            let payload = decodeJWTPayload(idToken)
+        else {
+            return AuthUserInfo(userId: fallbackUsername, displayName: fallbackUsername, email: nil)
+        }
+        
+        let email = payload["email"] as? String
+        let preferredUsername = payload["name"] as? String ?? payload["cognito:username"] as? String ?? email ?? fallbackUsername
+        let userId = payload["sub"] as? String ?? preferredUsername
+        
+        return AuthUserInfo(userId: userId, displayName: preferredUsername, email: email)
+    }
+    
+    func decodeJWTPayload(_ token: String) -> [String: Any]? {
+        let segments = token.split(separator: ".")
+        guard segments.count >= 2 else { return nil }
+        
+        var base64 = String(segments[1])
+        let remainder = base64.count % 4
+        if remainder > 0 {
+            base64.append(String(repeating: "=", count: 4 - remainder))
+        }
+        
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
 }
 

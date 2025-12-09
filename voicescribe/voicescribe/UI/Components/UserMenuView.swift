@@ -3,7 +3,8 @@ import SwiftUI
 struct UserMenuView: View {
     @StateObject private var authService = AuthService.shared
     @State private var isMenuOpen = false
-    @State private var showingManageAccount = false
+    @State private var showingSettings = false
+    @State private var settingsCategory: SettingsCategory = .account
     
     var body: some View {
         HStack(spacing: 14) {
@@ -30,19 +31,31 @@ struct UserMenuView: View {
             Menu {
                 // User info header
                 Section {
-                    VStack(alignment: .leading) {
-                        Text(authService.userName ?? "User")
-                            .font(.headline)
-                        Text(authService.userEmail ?? "user@example.com")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.2))
+                            .frame(width: 32, height: 32)
+                            .overlay(
+                                Text(getInitials())
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.primary)
+                            )
+                        
+                        VStack(alignment: .leading) {
+                            Text(authService.userName ?? "User")
+                                .font(.headline)
+                            Text(authService.userEmail ?? "user@example.com")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 
                 Divider()
                 
                 Button(action: {
-                    showingManageAccount = true
+                    settingsCategory = .account
+                    showingSettings = true
                 }) {
                     Label("Manage Account", systemImage: "person.circle")
                 }
@@ -59,20 +72,21 @@ struct UserMenuView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(Color.gray.opacity(0.25))
                         .frame(width: 36, height: 36)
                     
                     Image(systemName: "person.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.secondary)
                 }
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
+            .offset(x: -10) // open slightly more toward the window interior
         }
-        .sheet(isPresented: $showingManageAccount) {
-            ManageAccountView()
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(isPresented: $showingSettings, initialCategory: settingsCategory)
         }
     }
     
