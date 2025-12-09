@@ -354,6 +354,86 @@ class APIService {
         
         return try JSONDecoder().decode(TranscriptionStatusResponse.self, from: data)
     }
+    
+    // MARK: - Transcript History Methods
+    
+    func fetchTranscripts() async throws -> [Transcript] {
+        let url = baseURL.appendingPathComponent("transcripts")
+        let request = createRequest(url: url)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
+        let decoded = try JSONDecoder().decode(TranscriptsResponse.self, from: data)
+        return decoded.data
+    }
+    
+    func deleteTranscript(id: String) async throws {
+        let url = baseURL.appendingPathComponent("transcripts/\(id)")
+        let request = createRequest(url: url, method: "DELETE")
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+    }
+    
+    func updateTranscript(_ transcript: Transcript) async throws -> Transcript {
+        let url = baseURL.appendingPathComponent("transcripts/\(transcript.id)")
+        var request = createRequest(url: url, method: "PUT")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let transcriptData = try JSONEncoder().encode(transcript)
+        request.httpBody = transcriptData
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
+        return try JSONDecoder().decode(Transcript.self, from: data)
+    }
+    
+    func retryTranscription(transcriptId: String) async throws -> Transcript {
+        let url = baseURL.appendingPathComponent("transcripts/\(transcriptId)/retry")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
+        return try JSONDecoder().decode(Transcript.self, from: data)
+    }
+    
+    func getTranscriptAudioURL(transcriptId: String) async throws -> URL {
+        let url = baseURL.appendingPathComponent("transcripts/\(transcriptId)/audio")
+        let request = createRequest(url: url)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
+        let decoded = try JSONDecoder().decode(AudioURLResponse.self, from: data)
+        guard let audioURL = URL(string: decoded.url) else {
+            throw NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid audio URL"])
+        }
+        return audioURL
+    }
 }
 
 // MARK: - Response Models
@@ -398,4 +478,12 @@ struct RefreshResponse: Codable {
         let id_token: String
         let expires_in: Int
     }
+}
+
+struct TranscriptsResponse: Codable {
+    let data: [Transcript]
+}
+
+struct AudioURLResponse: Codable {
+    let url: String
 }

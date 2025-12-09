@@ -47,5 +47,14 @@ defmodule VoiceScribeAPIServer.Router do
     post "/transcribe/chunk", TranscribeController, :upload_chunk
     post "/transcribe/finish", TranscribeController, :finish_session
     get "/transcribe/status", TranscribeController, :get_status
+
+    # Transcript history endpoints
+    get "/transcripts", TranscriptsController, :list
+    get "/transcripts/:id", TranscriptsController, :show
+    post "/transcripts", TranscriptsController, :create
+    put "/transcripts/:id", TranscriptsController, :update
+    delete "/transcripts/:id", TranscriptsController, :delete
+    post "/transcripts/:id/retry", TranscriptsController, :retry
+    get "/transcripts/:id/audio", TranscriptsController, :audio_url
   end
 end

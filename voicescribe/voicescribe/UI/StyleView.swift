@@ -15,15 +15,12 @@ struct StyleView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Top spacing for titlebar area
-            Color.clear
-                .frame(height: 52)
-            
             // Header
             Text("Style")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .padding()
+                .padding(.top, 8)
             
             // Context tabs
             HStack(spacing: 0) {
@@ -141,7 +138,7 @@ struct StyleOptionCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(NSColor.controlBackgroundColor))
+        .background(Color(NSColor.windowBackgroundColor))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)

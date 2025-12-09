@@ -6,25 +6,25 @@ struct UserMenuView: View {
     @State private var showingManageAccount = false
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             // Notification bell
             Button(action: {
                 // Notification action
             }) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
-                        .font(.system(size: 16))
+                        .font(.system(size: 17, weight: .medium))
                         .foregroundColor(.secondary)
                     
                     // Notification badge
                     Circle()
                         .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
+                        .frame(width: 9, height: 9)
+                        .offset(x: 3, y: -2)
                 }
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 32, height: 32)
+            .frame(width: 36, height: 36)
             
             // User avatar with menu
             Menu {
@@ -60,10 +60,10 @@ struct UserMenuView: View {
                 ZStack {
                     Circle()
                         .fill(Color.gray.opacity(0.3))
-                        .frame(width: 32, height: 32)
+                        .frame(width: 36, height: 36)
                     
                     Image(systemName: "person.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundColor(.secondary)
                 }
             }

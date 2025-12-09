@@ -9,6 +9,7 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
 
   alias VoiceScribeAPI.AI.BedrockClient
   alias VoiceScribeAPI.AI.TranscribeClient
+  alias VoiceScribeAPI.DynamoDBRepo
 
   # Client API
 
@@ -131,15 +132,18 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
       transcription_result = TranscribeClient.transcribe_file(temp_file)
 
       # Process with Bedrock if transcription succeeded
-      final_result =
+      {final_result, original_text} =
         case transcription_result do
           {:ok, transcribed_text} ->
             Logger.info("Transcription completed for session #{session_data.session_id}")
-            BedrockClient.process_text(transcribed_text)
+            case BedrockClient.process_text(transcribed_text) do
+              {:ok, processed_text} -> {{:ok, processed_text}, transcribed_text}
+              other -> {other, transcribed_text}
+            end
 
           {:error, reason} ->
             Logger.error("Transcription failed for session #{session_data.session_id}: #{inspect(reason)}")
-            {:error, reason}
+            {{:error, reason}, nil}
         end
 
       # Update session with final result
@@ -150,6 +154,29 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
       }
 
       :ets.insert(:transcribe_sessions, {user_id, updated_session})
+
+      # Save transcript to history if successful
+      case final_result do
+        {:ok, text} ->
+          transcript_id = session_data.session_id
+          transcript_data = %{
+            "text" => text,
+            "originalText" => original_text,
+            "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+            "sessionId" => session_data.session_id,
+            "isFlagged" => false
+            # audioUrl can be added here if audio is stored in S3
+          }
+
+          case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
+            {:ok, _} ->
+              Logger.info("Transcript #{transcript_id} saved to history for user #{user_id}")
+            {:error, reason} ->
+              Logger.error("Failed to save transcript to history: #{inspect(reason)}")
+          end
+        _ ->
+          :ok
+      end
 
       # Clean up temp file
       File.rm(temp_file)

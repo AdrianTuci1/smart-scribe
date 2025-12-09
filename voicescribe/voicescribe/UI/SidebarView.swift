@@ -1,6 +1,113 @@
 import SwiftUI
 import Combine
 
+// MARK: - Sidebar Content View (unified with window chrome)
+struct SidebarContentView: View {
+    @Binding var selection: SidebarItem
+    @Binding var isSidebarCollapsed: Bool
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Space for titlebar (traffic lights + controls are in MainPopoverView)
+            Color.clear.frame(height: 50)
+            
+            // Logo section - positioned below the titlebar
+            HStack(spacing: 6) {
+                // App icon/logo
+                Image(systemName: "waveform.circle.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.purple)
+                
+                Text("Flow")
+                    .font(.system(size: 18, weight: .bold))
+                
+                // Pro Trial badge
+                Text("Pro Trial")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.green)
+                    .cornerRadius(10)
+                
+                Spacer()
+            }
+            .padding(.top, 12)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+            
+            // Navigation items
+            VStack(spacing: 4) {
+                SidebarButton(title: "Home", icon: "square.grid.2x2", item: .home, selection: $selection)
+                SidebarButton(title: "Dictionary", icon: "book", item: .dictionary, selection: $selection)
+                SidebarButton(title: "Snippets", icon: "scissors", item: .snippets, selection: $selection)
+                SidebarButton(title: "Style", icon: "textformat", item: .style, selection: $selection)
+                SidebarButton(title: "Notes", icon: "note.text", item: .notes, selection: $selection)
+            }
+            .padding(.horizontal, 8)
+            
+            Spacer()
+            
+            // Bottom section
+            VStack(spacing: 4) {
+                SidebarButton(title: "Invite your team", icon: "person.2", item: .invite, selection: $selection)
+                SidebarButton(title: "Get a free month", icon: "gift", item: .freeMonth, selection: $selection)
+                SidebarButton(title: "Settings", icon: "gearshape", item: .settings, selection: $selection)
+                SidebarButton(title: "Help", icon: "questionmark.circle", item: .help, selection: $selection)
+            }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 16)
+        }
+        .background(Color(NSColor.windowBackgroundColor))
+        .ignoresSafeArea(.all)
+    }
+}
+
+// MARK: - Collapsed Sidebar Content View
+struct CollapsedSidebarContentView: View {
+    @Binding var selection: SidebarItem
+    @Binding var isSidebarCollapsed: Bool
+    
+    var body: some View {
+        VStack(alignment: .center, spacing: 0) {
+            // Space for titlebar (traffic lights + controls are in MainPopoverView)
+            Color.clear.frame(height: 50)
+            
+            // Compact logo
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.purple)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            
+            // Navigation items (icons only)
+            VStack(spacing: 4) {
+                CollapsedSidebarButton(icon: "square.grid.2x2", item: .home, selection: $selection)
+                CollapsedSidebarButton(icon: "book", item: .dictionary, selection: $selection)
+                CollapsedSidebarButton(icon: "scissors", item: .snippets, selection: $selection)
+                CollapsedSidebarButton(icon: "textformat", item: .style, selection: $selection)
+                CollapsedSidebarButton(icon: "note.text", item: .notes, selection: $selection)
+            }
+            .padding(.horizontal, 8)
+            
+            Spacer()
+            
+            // Bottom section (icons only)
+            VStack(spacing: 4) {
+                CollapsedSidebarButton(icon: "person.2", item: .invite, selection: $selection)
+                CollapsedSidebarButton(icon: "gift", item: .freeMonth, selection: $selection)
+                CollapsedSidebarButton(icon: "gearshape", item: .settings, selection: $selection)
+                CollapsedSidebarButton(icon: "questionmark.circle", item: .help, selection: $selection)
+            }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 16)
+        }
+        .background(Color(NSColor.windowBackgroundColor))
+        .ignoresSafeArea(.all)
+    }
+}
+
+// MARK: - Legacy Sidebar View (for backwards compatibility)
 struct SidebarView: View {
     @Binding var selection: SidebarItem
     @State private var isCollapsed = false
@@ -48,7 +155,6 @@ struct SidebarView: View {
                     SidebarButton(title: "Style", icon: "textformat", item: .style, selection: $selection)
                     SidebarButton(title: "Notes", icon: "note.text", item: .notes, selection: $selection)
                 } else {
-                    // Collapsed state - show only icons
                     CollapsedSidebarButton(icon: "square.grid.2x2", item: .home, selection: $selection)
                     CollapsedSidebarButton(icon: "book", item: .dictionary, selection: $selection)
                     CollapsedSidebarButton(icon: "scissors", item: .snippets, selection: $selection)

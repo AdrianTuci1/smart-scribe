@@ -4,10 +4,8 @@ import Combine
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
-
     var menuBarManager: MenuBarManager!
     var floatingWaveformManager: FloatingWaveformManager!
-    var windowController: WindowController?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Initialize Managers
@@ -27,26 +25,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup bindings for menu bar icon updates
         setupMenuBarBindings()
-        
-        // Setup window controller after app launches
-        DispatchQueue.main.async {
-            self.setupWindowController()
-        }
-    }
-    
-    func setupWindowController() {
-        // Get the main window
-        if let window = NSApplication.shared.windows.first {
-            // Create and set the window controller
-            windowController = WindowController(window: window)
-            window.windowController = windowController
-            
-            // Make sure the window is visible
-            window.makeKeyAndOrderFront(nil)
-            
-            // Call windowDidLoad manually since we're setting the controller after window creation
-            windowController?.windowDidLoad()
-        }
     }
     
     func setupGlobalHotkey() {

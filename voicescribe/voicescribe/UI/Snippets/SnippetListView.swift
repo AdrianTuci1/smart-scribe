@@ -21,16 +21,12 @@ struct SnippetListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Top spacing for titlebar area
-            Color.clear
-                .frame(height: 52)
-            
             // Header
             Text("Create shortcuts for frequently used phrases")
                 .font(.title2)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
-                .padding(.top, 16)
+                .padding(.top, 24)
                 .padding(.bottom, 32)
             
             // Search input field
@@ -71,7 +67,7 @@ struct SnippetListView: View {
             .frame(height: 64)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                    .fill(Color(NSColor.windowBackgroundColor))
                     .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
             )
             .padding(.horizontal, 48)
@@ -159,7 +155,6 @@ struct SnippetListView: View {
         }
         .frame(minWidth: 600, maxWidth: 900)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
         .sheet(isPresented: $showingAddSnippet) {
             AddSnippetView { title, content in
                 addSnippet(title: title, content: content)
@@ -278,7 +273,7 @@ struct SnippetRecentRow: View {
         .padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                .fill(Color(NSColor.windowBackgroundColor))
         )
     }
 }

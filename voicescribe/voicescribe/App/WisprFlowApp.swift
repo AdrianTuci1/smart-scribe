@@ -14,6 +14,7 @@ struct WisprFlowApp: App {
                 OnboardingView()
             }
         }
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .commands {
             // Remove default commands if needed
