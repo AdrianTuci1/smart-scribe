@@ -11,20 +11,17 @@ defmodule VoiceScribeAPIServer.Router do
   end
 
   # Authentication routes (no auth required)
-  scope "/api/v1/auth", VoiceScribeAPIServer do
-    pipe_through :api
+  scope "/api/v1", VoiceScribeAPIServer do
+    pipe_through [:api]
 
-    post "/login", AuthController, :login
-    post "/signup", AuthController, :sign_up
-    post "/confirm", AuthController, :confirm_sign_up
-    post "/refresh", AuthController, :refresh_token
+    post "/auth/validate", AuthController, :validate_token
+    post "/auth/refresh", AuthController, :refresh_token
+    post "/auth/logout", AuthController, :logout
   end
 
   # Protected routes (auth required)
   scope "/api/v1", VoiceScribeAPIServer do
     pipe_through [:api, :auth]
-
-    post "/auth/logout", AuthController, :sign_out
 
     get "/notes", NotesController, :list
     post "/notes", NotesController, :create

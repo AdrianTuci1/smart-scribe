@@ -8,11 +8,16 @@ defmodule VoiceScribeAPIServer.ConfigController do
     type = Map.get(params, "type", get_default_type_from_path(conn.request_path))
 
     user_id = conn.assigns.current_user
-    case DynamoDBRepo.get_config(user_id, type) do
-      {:ok, result} ->
-        data = if result["Item"], do: ExAws.Dynamo.decode_item(result["Item"]), else: nil
+    result = DynamoDBRepo.get_config(user_id, type)
+
+    # Handle the result from DynamoDBRepo
+    case result do
+      %{} ->
+        # Empty map means no config found
+        json(conn, %{data: nil})
+      data ->
+        # Config found
         json(conn, %{data: data})
-      {:error, reason} -> json(conn, %{error: inspect(reason)})
     end
   end
 

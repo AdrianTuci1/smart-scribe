@@ -55,7 +55,8 @@ defmodule VoiceScribeAPI.MixProject do
       {:cors_plug, "~> 3.0"},
       {:uuid, "~> 1.1"},
       {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 1.0"}
+      {:telemetry_poller, "~> 1.0"},
+      {:httpoison, "~> 2.2"}
     ]
   end
 

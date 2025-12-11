@@ -34,42 +34,41 @@ class AuthService: ObservableObject {
         errorMessage = nil
         
         do {
-            let response = try await apiService.login(username: username, password: password)
+            // Authenticate directly with Cognito
+            let tokens = try await authenticateWithCognito(username: username, password: password)
             
-            if response.success, let authData = response.data {
-                // Successful authentication
-                let userInfo = decodeUserInfo(fromIDToken: authData.id_token, fallbackUsername: username)
-                
-                let user = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
-                currentUser = user
-                userName = userInfo.displayName
-                userEmail = userInfo.email ?? username
-                token = authData.access_token
-                refreshToken = authData.refresh_token
-                isAuthenticated = true
-                isLoading = false
-                
-                // Set token in API service
-                apiService.setAuthToken(authData.access_token)
-                
-                // Save to UserDefaults
-                UserDefaults.standard.set(true, forKey: "isAuthenticated")
-                UserDefaults.standard.set(username, forKey: "userName")
-                UserDefaults.standard.set(userEmail, forKey: "userEmail")
-                UserDefaults.standard.set(authData.access_token, forKey: "authToken")
-                UserDefaults.standard.set(authData.refresh_token, forKey: "refreshToken")
-                UserDefaults.standard.set(authData.id_token, forKey: "idToken")
-                
-                return true
-            } else {
-                // Failed authentication
-                isLoading = false
-                errorMessage = response.error ?? "Authentication failed"
-                return false
-            }
+            // Successful authentication
+            let userInfo = decodeUserInfo(fromIDToken: tokens.id_token, fallbackUsername: username)
+            print("✅ User authenticated successfully: \(userInfo.email)")
+            
+            // Set token in API service (use access_token for backend authentication)
+            token = tokens.access_token
+            apiService.setAuthToken(tokens.access_token)
+            
+            // Save tokens to UserDefaults
+            UserDefaults.standard.set(tokens.access_token, forKey: "accessToken")
+            UserDefaults.standard.set(tokens.id_token, forKey: "authToken")
+            
+            let user = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
+            currentUser = user
+            userName = userInfo.displayName
+            userEmail = userInfo.email ?? username
+            refreshToken = tokens.refresh_token
+            isAuthenticated = true
+            isLoading = false
+            
+            // Save to UserDefaults
+            UserDefaults.standard.set(true, forKey: "isAuthenticated")
+            UserDefaults.standard.set(username, forKey: "userName")
+            UserDefaults.standard.set(userEmail, forKey: "userEmail")
+            UserDefaults.standard.set(tokens.access_token, forKey: "accessToken")
+            UserDefaults.standard.set(tokens.refresh_token, forKey: "refreshToken")
+            UserDefaults.standard.set(tokens.id_token, forKey: "authToken")
+            
+            return true
         } catch {
             isLoading = false
-            errorMessage = "Network error: \(error.localizedDescription)"
+            errorMessage = "Authentication error: \(error.localizedDescription)"
             return false
         }
     }
@@ -122,36 +121,36 @@ class AuthService: ObservableObject {
         }
     }
     
-    func signOut() async {
-        // Call logout API if authenticated
-        if isAuthenticated {
-            do {
-                try await apiService.logout()
-            } catch {
-                print("Error during logout: \(error)")
+    func signOut() {
+        Task {
+            // Revoke tokens with Cognito if available
+            if let accessToken = UserDefaults.standard.string(forKey: "accessToken") {
+                await revokeTokenWithCognito(accessToken: accessToken)
             }
+            
+            // Clear local state
+            currentUser = nil
+            isAuthenticated = false
+            token = nil
+            refreshToken = nil
+            userName = nil
+            userEmail = nil
+            errorMessage = nil
+            
+            // Clear API service token
+            apiService.setAuthToken(nil)
+            
+            // Clear UserDefaults
+            UserDefaults.standard.removeObject(forKey: "isAuthenticated")
+            UserDefaults.standard.removeObject(forKey: "userName")
+            UserDefaults.standard.removeObject(forKey: "userEmail")
+            UserDefaults.standard.removeObject(forKey: "accessToken")
+            UserDefaults.standard.removeObject(forKey: "refreshToken")
+            UserDefaults.standard.removeObject(forKey: "authToken")
+            
+            // Reset onboarding state to show onboarding view after logout
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         }
-        
-        // Clear authentication state
-        currentUser = nil
-        userName = nil
-        userEmail = nil
-        token = nil
-        refreshToken = nil
-        isAuthenticated = false
-        errorMessage = nil
-        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-        
-        // Clear token in API service
-        apiService.setAuthToken(nil)
-        
-        // Clear UserDefaults
-        UserDefaults.standard.removeObject(forKey: "isAuthenticated")
-        UserDefaults.standard.removeObject(forKey: "userName")
-        UserDefaults.standard.removeObject(forKey: "userEmail")
-        UserDefaults.standard.removeObject(forKey: "authToken")
-        UserDefaults.standard.removeObject(forKey: "refreshToken")
-        UserDefaults.standard.removeObject(forKey: "idToken")
     }
     
     func refreshSession() async -> Bool {
@@ -160,22 +159,18 @@ class AuthService: ObservableObject {
         }
         
         do {
-            let response = try await apiService.refreshToken(refreshToken: refreshToken)
+            // Refresh directly with Cognito
+            let tokens = try await refreshWithCognito(refreshToken: refreshToken)
             
-            if response.success, let authData = response.data {
-                // Token refreshed successfully
-                token = authData.access_token
-                apiService.setAuthToken(authData.access_token)
-                UserDefaults.standard.set(authData.access_token, forKey: "authToken")
-                UserDefaults.standard.set(authData.id_token, forKey: "idToken")
-                return true
-            } else {
-                // Refresh failed
-                errorMessage = response.error ?? "Token refresh failed"
-                return false
-            }
+            // Token refreshed successfully
+            token = tokens.id_token
+            apiService.setAuthToken(tokens.id_token)
+            UserDefaults.standard.set(tokens.access_token, forKey: "accessToken")
+            UserDefaults.standard.set(tokens.id_token, forKey: "authToken")
+            UserDefaults.standard.set(tokens.refresh_token, forKey: "refreshToken")
+            return true
         } catch {
-            errorMessage = "Network error: \(error.localizedDescription)"
+            errorMessage = "Token refresh error: \(error.localizedDescription)"
             return false
         }
     }
@@ -231,19 +226,16 @@ class AuthService: ObservableObject {
             currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
             userName = userInfo.displayName
             userEmail = userInfo.email ?? userName
-            token = tokenResponse.access_token
+            token = tokenResponse.id_token
             refreshToken = tokenResponse.refresh_token
             isAuthenticated = true
             isLoading = false
             
+            // Set token in API service (use access_token for backend authentication)
             apiService.setAuthToken(tokenResponse.access_token)
             
-            UserDefaults.standard.set(true, forKey: "isAuthenticated")
-            UserDefaults.standard.set(userName, forKey: "userName")
-            UserDefaults.standard.set(userEmail, forKey: "userEmail")
-            UserDefaults.standard.set(tokenResponse.access_token, forKey: "authToken")
-            UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refreshToken")
-            UserDefaults.standard.set(tokenResponse.id_token, forKey: "idToken")
+            UserDefaults.standard.set(tokenResponse.access_token, forKey: "accessToken")
+            UserDefaults.standard.set(tokenResponse.id_token, forKey: "authToken")
             UserDefaults.standard.removeObject(forKey: "pkceCodeVerifier")
             currentCodeVerifier = nil
             
@@ -261,9 +253,11 @@ class AuthService: ObservableObject {
         let isAuth = UserDefaults.standard.bool(forKey: "isAuthenticated")
         let savedUserName = UserDefaults.standard.string(forKey: "userName")
         let savedUserEmail = UserDefaults.standard.string(forKey: "userEmail")
-        let savedToken = UserDefaults.standard.string(forKey: "authToken")
-        let savedIdToken = UserDefaults.standard.string(forKey: "idToken")
+        let savedToken = UserDefaults.standard.string(forKey: "accessToken")
+        let savedIdToken = UserDefaults.standard.string(forKey: "authToken")
         let savedRefreshToken = UserDefaults.standard.string(forKey: "refreshToken")
+        
+        print("AuthService: Auth status - \(isAuth), Token available - \(savedIdToken != nil)")
         
         if isAuth && savedUserName != nil && savedUserEmail != nil && savedToken != nil {
             let userInfo = decodeUserInfo(fromIDToken: savedIdToken, fallbackUsername: savedUserName ?? "User")
@@ -271,10 +265,10 @@ class AuthService: ObservableObject {
             isAuthenticated = true
             userName = userInfo.displayName
             userEmail = userInfo.email ?? savedUserEmail ?? savedUserName
-            token = savedToken
+            token = savedIdToken
             refreshToken = savedRefreshToken
             
-            // Set token in API service
+            // Set token in API service (use access_token for backend authentication)
             apiService.setAuthToken(savedToken)
             
             // Create user object
@@ -285,6 +279,152 @@ class AuthService: ObservableObject {
     private func handleAuthEvent(_ event: String) {
         // Handle auth events if needed
         print("Auth event: \(event)")
+    }
+    
+    // Authenticate directly with Cognito
+    private func authenticateWithCognito(username: String, password: String) async throws -> (access_token: String, id_token: String, refresh_token: String) {
+        let url = URL(string: "https://cognito-idp.\(CognitoConfig.region).amazonaws.com/")!
+            .appendingPathComponent(CognitoConfig.userPoolId)
+            .appendingPathComponent(".well-known/jwks.json")
+        
+        // For now, we'll use a simpler approach - directly call Cognito's token endpoint
+        // This is a temporary implementation - in production you should use AWS SDK
+        let tokenURL = URL(string: "https://\(CognitoConfig.userPoolId.split(separator: "_").first!).auth.\(CognitoConfig.region).amazoncognito.com/oauth2/token")!
+        
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let bodyParams = [
+            "grant_type": "password",
+            "client_id": CognitoConfig.clientId,
+            "username": username,
+            "password": password
+        ]
+        
+        // Add client secret if available
+        if !CognitoConfig.clientSecret.isEmpty && CognitoConfig.clientSecret != "your_client_secret" {
+            let credentials = "\(CognitoConfig.clientId):\(CognitoConfig.clientSecret)"
+            if let credentialData = credentials.data(using: .utf8) {
+                let encoded = credentialData.base64EncodedString()
+                request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        
+        let allowed = CharacterSet.urlQueryAllowed
+        let bodyString = bodyParams
+            .map { key, value in
+                let encodedValue = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+                return "\(key)=\(encodedValue)"
+            }
+            .joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            let message = String(data: data, encoding: .utf8) ?? "HTTP Error \(httpResponse.statusCode)"
+            throw NSError(domain: "CognitoAuth", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        
+        let tokenResponse = try JSONDecoder().decode(CognitoTokenResponse.self, from: data)
+        return (
+            access_token: tokenResponse.access_token,
+            id_token: tokenResponse.id_token,
+            refresh_token: tokenResponse.refresh_token ?? ""
+        )
+    }
+    
+    // Revoke token with Cognito
+    private func revokeTokenWithCognito(accessToken: String) async {
+        let tokenURL = URL(string: "https://\(CognitoConfig.userPoolId.split(separator: "_").first!).auth.\(CognitoConfig.region).amazoncognito.com/oauth2/revoke")!
+        
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let bodyParams = [
+            "token": accessToken,
+            "client_id": CognitoConfig.clientId
+        ]
+        
+        // Add client secret if available
+        if !CognitoConfig.clientSecret.isEmpty && CognitoConfig.clientSecret != "your_client_secret" {
+            let credentials = "\(CognitoConfig.clientId):\(CognitoConfig.clientSecret)"
+            if let credentialData = credentials.data(using: .utf8) {
+                let encoded = credentialData.base64EncodedString()
+                request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        
+        let allowed = CharacterSet.urlQueryAllowed
+        let bodyString = bodyParams
+            .map { key, value in
+                let encodedValue = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+                return "\(key)=\(encodedValue)"
+            }
+            .joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+        
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode >= 400 {
+                    print("Failed to revoke token: HTTP \(httpResponse.statusCode)")
+                } else {
+                    print("Token revoked successfully")
+                }
+            }
+        } catch {
+            print("Error revoking token: \(error.localizedDescription)")
+        }
+    }
+    
+    // Refresh tokens directly with Cognito
+    private func refreshWithCognito(refreshToken: String) async throws -> (access_token: String, id_token: String, refresh_token: String) {
+        let tokenURL = URL(string: "https://\(CognitoConfig.userPoolId.split(separator: "_").first!).auth.\(CognitoConfig.region).amazoncognito.com/oauth2/token")!
+        
+        var request = URLRequest(url: tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let bodyParams = [
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken,
+            "client_id": CognitoConfig.clientId
+        ]
+        
+        // Add client secret if available
+        if !CognitoConfig.clientSecret.isEmpty && CognitoConfig.clientSecret != "your_client_secret" {
+            let credentials = "\(CognitoConfig.clientId):\(CognitoConfig.clientSecret)"
+            if let credentialData = credentials.data(using: .utf8) {
+                let encoded = credentialData.base64EncodedString()
+                request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        
+        let allowed = CharacterSet.urlQueryAllowed
+        let bodyString = bodyParams
+            .map { key, value in
+                let encodedValue = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+                return "\(key)=\(encodedValue)"
+            }
+            .joined(separator: "&")
+        request.httpBody = bodyString.data(using: .utf8)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            let message = String(data: data, encoding: .utf8) ?? "HTTP Error \(httpResponse.statusCode)"
+            throw NSError(domain: "CognitoAuth", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+        }
+        
+        let tokenResponse = try JSONDecoder().decode(CognitoTokenResponse.self, from: data)
+        return (
+            access_token: tokenResponse.access_token,
+            id_token: tokenResponse.id_token,
+            refresh_token: tokenResponse.refresh_token ?? refreshToken
+        )
     }
 }
 

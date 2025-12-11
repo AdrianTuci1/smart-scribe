@@ -7,6 +7,9 @@ defmodule VoiceScribeAPI.Application do
 
   @impl true
   def start(_type, _args) do
+    # Create ETS table for JWKS cache
+    :ets.new(:jwks_cache, [:set, :public, :named_table])
+
     children = [
       VoiceScribeAPIServer.Telemetry,
       {DNSCluster, query: Application.get_env(:voicescribe_api, :dns_cluster_query) || :ignore},

@@ -20,6 +20,7 @@ class APIService {
         self.authToken = token
         // Also save to UserDefaults for persistence
         UserDefaults.standard.set(token, forKey: "authToken")
+        print("APIService: Token set - \(token != nil ? "YES" : "NO")")
     }
     
     func login(username: String, password: String) async throws -> AuthResponse {
@@ -206,6 +207,9 @@ class APIService {
         // Add authentication token if available
         if let token = authToken {
             request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            print("APIService: Adding auth header for URL: \(url.absoluteString)")
+        } else {
+            print("APIService: No auth token available for URL: \(url.absoluteString)")
         }
         
         return request
