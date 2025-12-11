@@ -11,6 +11,26 @@ if config_env() == :dev do
   Dotenvy.source!([".env", System.get_env()])
 end
 
+# Ensure AWS environment variables are available for ExAws
+if config_env() in [:dev, :prod] do
+  aws_region = System.get_env("AWS_REGION") || "eu-central-1"
+  aws_access_key_id = System.get_env("AWS_ACCESS_KEY_ID")
+  aws_secret_access_key = System.get_env("AWS_SECRET_ACCESS_KEY")
+
+  if aws_access_key_id && aws_secret_access_key do
+    config :ex_aws,
+      region: aws_region,
+      access_key_id: aws_access_key_id,
+      secret_access_key: aws_secret_access_key
+
+    config :ex_aws, :dynamodb,
+      region: aws_region,
+      scheme: "https://",
+      host: "dynamodb.#{aws_region}.amazonaws.com",
+      port: 443
+  end
+end
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server

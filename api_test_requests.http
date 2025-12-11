@@ -1,0 +1,150 @@
+# API Test Requests for VoiceScribe
+# Copiați aceste cereri în Postman sau folosiți-le cu httpie
+# Înlocuiți YOUR_JWT_TOKEN cu un token JWT valid obținut prin autentificare
+
+# Variabile de mediu recomandate pentru Postman:
+# baseUrl: http://localhost:4000
+# jwtToken: YOUR_JWT_TOKEN
+
+### Verificare prealabilă: Variabile de mediu
+# Înainte de a rula cererile, verificați dacă variabilele de mediu sunt setate corect:
+# docker-compose exec backend printenv | grep AWS
+
+### 1. Validare Token (Public)
+GET {{baseUrl}}/api/v1/auth/validate
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+### 2. Obținere Notițe (Autentificat)
+GET {{baseUrl}}/api/v1/notes
+Authorization: Bearer {{jwtToken}}
+
+### 3. Creare Notiță (Autentificat)
+POST {{baseUrl}}/api/v1/notes
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "title": "Notiță Test",
+  "content": "Aceasta este o notiță de test pentru API",
+  "tags": ["test", "api"]
+}
+
+### 4. Obținere Transcrieri (Autentificat)
+GET {{baseUrl}}/api/v1/transcripts
+Authorization: Bearer {{jwtToken}}
+
+### 5. Obținere Configurare Snippets (Autentificat)
+GET {{baseUrl}}/api/v1/config/snippets
+Authorization: Bearer {{jwtToken}}
+
+### 6. Salvare Configurare Snippets (Autentificat)
+POST {{baseUrl}}/api/v1/config/snippets/save
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "snippets": [
+    {
+      "id": "1",
+      "title": "Snippet Test",
+      "content": "Acesta este un conținut de snippet",
+      "shortcut": "cmd+shift+s"
+    }
+  ]
+}
+
+### 7. Obținere Dicționar (Autentificat)
+GET {{baseUrl}}/api/v1/config/dictionary
+Authorization: Bearer {{jwtToken}}
+
+### 8. Salvare Dicționar (Autentificat)
+POST {{baseUrl}}/api/v1/config/dictionary/save
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "entries": [
+    {
+      "incorrectWord": "exmplu",
+      "correctWord": "exemplu",
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+
+### 9. Obținere Preferințe de Stil (Autentificat)
+GET {{baseUrl}}/api/v1/config/style_preferences
+Authorization: Bearer {{jwtToken}}
+
+### 10. Salvare Preferințe de Stil (Autentificat)
+POST {{baseUrl}}/api/v1/config/style_preferences/save
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "fontFamily": "Arial",
+  "fontSize": 14,
+  "lineHeight": 1.5,
+  "theme": "light"
+}
+
+### 11. Pornire Sesiune Transcriere (Autentificat)
+POST {{baseUrl}}/api/v1/transcribe/start
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "language": "ro-RO",
+  "format": "mp3",
+  "sampleRate": 16000
+}
+
+### 12. Verificare Stare Transcriere (Autentificat)
+GET {{baseUrl}}/api/v1/transcribe/status
+Authorization: Bearer {{jwtToken}}
+
+### 13. Creare Transcriere (Autentificat)
+POST {{baseUrl}}/api/v1/transcripts
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "transcriptId": "test-transcript-123",
+  "title": "Transcriere Test",
+  "content": "Acesta este conținutul transcrierii de test",
+  "duration": 120,
+  "createdAt": "2024-01-01T12:00:00Z"
+}
+
+### 14. Obținere Transcriere Specifică (Autentificat)
+GET {{baseUrl}}/api/v1/transcripts/test-transcript-123
+Authorization: Bearer {{jwtToken}}
+
+### 15. Actualizare Transcriere (Autentificat)
+PUT {{baseUrl}}/api/v1/transcripts/test-transcript-123
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "title": "Transcriere Test Actualizată",
+  "content": "Acesta este conținutul actualizat al transcrierii de test",
+  "isFlagged": true
+}
+
+### 16. Reîncercare Transcriere (Autentificat)
+POST {{baseUrl}}/api/v1/transcripts/test-transcript-123/retry
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+### 17. Obținere URL Audio (Autentificat)
+GET {{baseUrl}}/api/v1/transcripts/test-transcript-123/audio
+Authorization: Bearer {{jwtToken}}
+
+### 18. Ștergere Transcriere (Autentificat)
+DELETE {{baseUrl}}/api/v1/transcripts/test-transcript-123
+Authorization: Bearer {{jwtToken}}
+
+# Comenzi HTTPie echivalente:
+# http GET localhost:4000/api/v1/transcripts "Authorization: Bearer YOUR_JWT_TOKEN"
+# http POST localhost:4000/api/v1/notes "Authorization: Bearer YOUR_JWT_TOKEN" title="Notiță Test" content="Conținut test" tags:='["test", "api"]'

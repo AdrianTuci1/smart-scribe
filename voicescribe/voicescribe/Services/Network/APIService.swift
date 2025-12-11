@@ -434,6 +434,10 @@ class APIService {
         
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            // Print response details for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Error response body: \(responseString)")
+            }
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
         }
         
