@@ -1,14 +1,14 @@
 defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   @moduledoc """
-  Manager for transcription sessions that handles audio chunks and processes them
-  through AWS Transcribe in batch mode.
+  Manager for transcription sessions.
+  Uses TranscribeStreamer for real-time streaming to AWS Transcribe.
   """
 
   use GenServer
   require Logger
 
   alias VoiceScribeAPI.AI.BedrockClient
-  alias VoiceScribeAPI.AI.TranscribeClient
+  alias VoiceScribeAPI.AI.TranscribeStreamer
 
   # Client API
 
@@ -45,18 +45,23 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   def handle_call({:start_session, user_id}, _from, state) do
     session_id = generate_session_id()
 
+    # Start the WebSocket streamer
+    # We pass the user_id and this PID to notify when done
+    {:ok, streamer_pid} = TranscribeStreamer.start_link(user_id: user_id, caller_pid: self())
+
     session_data = %{
       user_id: user_id,
       session_id: session_id,
-      chunks: [],
+      streamer_pid: streamer_pid,
       status: :recording,
+      final_result: nil,
       created_at: DateTime.utc_now()
     }
 
     # Store in ETS table
     :ets.insert(:transcribe_sessions, {user_id, session_data})
 
-    Logger.info("Started transcription session #{session_id} for user #{user_id}")
+    Logger.info("Started streaming session #{session_id} for user #{user_id}")
     {:reply, {:ok, session_id}, state}
   end
 
@@ -64,14 +69,11 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   def handle_call({:add_chunk, user_id, chunk_data}, _from, state) do
     case :ets.lookup(:transcribe_sessions, user_id) do
       [{^user_id, session_data}] when session_data.status == :recording ->
-        # Check if chunk is gzip compressed and decompress if needed
-        processed_chunk_data = process_chunk_data(chunk_data)
+        # Decode base64 to binary
+        binary_chunk = process_chunk_data(chunk_data)
 
-        updated_chunks = [processed_chunk_data | session_data.chunks]
-        updated_session = %{session_data | chunks: updated_chunks}
-
-        # Update in ETS table
-        :ets.insert(:transcribe_sessions, {user_id, updated_session})
+        # Forward to streamer
+        TranscribeStreamer.send_audio_chunk(session_data.streamer_pid, binary_chunk)
 
         {:reply, :ok, state}
 
@@ -87,13 +89,14 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   def handle_call({:finish_session, user_id}, _from, state) do
     case :ets.lookup(:transcribe_sessions, user_id) do
       [{^user_id, session_data}] when session_data.status == :recording ->
-        # Mark session as processing
+        # Updated status
         updated_session = %{session_data | status: :processing}
         :ets.insert(:transcribe_sessions, {user_id, updated_session})
 
-        # Start async transcription process
-        Task.start(fn -> process_transcription(user_id, session_data) end)
+        # Stop the stream (this will cause the streamer to close and send back the result)
+        TranscribeStreamer.stop_stream(session_data.streamer_pid)
 
+        # We reply with "processing" because we are waiting for the streamer to finish
         {:reply, {:ok, :processing}, state}
 
       [{^user_id, _session_data}] ->
@@ -108,52 +111,70 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   def handle_call({:get_session, user_id}, _from, state) do
     case :ets.lookup(:transcribe_sessions, user_id) do
       [{^user_id, session_data}] ->
-        {:reply, {:ok, session_data}, state}
+        # Return a view model
+        result_data = %{
+          session_id: session_data.session_id,
+          status: session_data.status,
+          result: session_data.final_result,
+          created_at: session_data.created_at,
+          # Could add this
+          completed_at: nil,
+          error: nil
+        }
+
+        {:reply, {:ok, result_data}, state}
 
       [] ->
         {:reply, {:error, :session_not_found}, state}
     end
   end
 
-  # Private Functions
+  # Handle message from Streamer when disconnected/finished
+  @impl true
+  def handle_info({:transcription_complete, user_id, transcript_text}, state) do
+    Logger.info("Received transcription complete via Streamer for user #{user_id}")
+
+    with [{^user_id, session_data}] <- :ets.lookup(:transcribe_sessions, user_id) do
+      # 1. Process with Bedrock
+      final_result = process_bedrock(user_id, transcript_text, session_data.session_id)
+
+      # 2. Save to DynamoDB
+      transcript_record = %{
+        user_id: user_id,
+        session_id: session_data.session_id,
+        original_text: transcript_text,
+        enhanced_text: final_result,
+        created_at: session_data.created_at,
+        updated_at: DateTime.utc_now()
+      }
+
+      VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
+
+      # 3. Update Session Status in ETS
+      updated_session = %{session_data | status: :completed, final_result: final_result}
+      :ets.insert(:transcribe_sessions, {user_id, updated_session})
+
+      Logger.info("Session #{session_data.session_id} fully processed.")
+    else
+      _ -> Logger.warning("Session not found for user #{user_id} during completion callback.")
+    end
+
+    {:noreply, state}
+  end
+
+  # Wait! I can't leave it broken.
+  # I will update `TranscribeStreamer` FIRST in the next tool call, then this one.
+
+  # Or better: I will write `TranscribeStreamer` again with the fix, THEN this file.
+  # But I already wrote TranscribeStreamer in step 78.
+
+  # OK, I will rewrite `TranscribeStreamer` to include `user_id` in the message.
 
   defp process_chunk_data(chunk_data) do
-    # Check if the chunk data appears to be base64 encoded gzip
-    # In a real implementation, you would check for gzip magic bytes (0x1F 0x8B)
-    # after base64 decoding
-
-    try do
-      # Try to decode as base64 first
-      case Base.decode64(chunk_data) do
-        {:ok, binary} ->
-          # Check if it's gzip compressed (starts with 0x1F, 0x8B)
-          case binary do
-            <<0x1F, 0x8B, _rest::binary>> ->
-              # It's gzip compressed, decompress it
-              Logger.debug("Decompressing gzip chunk for user")
-              case :zlib.gunzip(binary) do
-                {:ok, decompressed} ->
-                  # Convert back to base64 for storage
-                  Base.encode64(decompressed)
-                {:error, _reason} ->
-                  # If decompression fails, use original
-                  Logger.warning("Failed to decompress gzip chunk, using original")
-                  chunk_data
-              end
-            _ ->
-              # Not gzip, use as-is
-              Logger.debug("Received uncompressed chunk")
-              chunk_data
-          end
-        _ ->
-          # If decoding fails, use as-is
-          Logger.debug("Chunk is not base64 encoded, using as-is")
-          chunk_data
-      end
-    rescue
-      e ->
-        Logger.error("Error processing chunk data: #{inspect(e)}")
-        chunk_data
+    # Same as before, decode base64
+    case Base.decode64(chunk_data) do
+      {:ok, binary} -> binary
+      _ -> <<>>
     end
   end
 
@@ -161,70 +182,15 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end
 
-  defp process_transcription(user_id, session_data) do
-    try do
-      # Combine chunks into a single binary
-      audio_data = session_data.chunks |> Enum.reverse() |> IO.iodata_to_binary()
+  defp process_bedrock(user_id, text, session_id) do
+    Logger.info("Processing Bedrock for session #{session_id}")
 
-      # Create temporary file
-      temp_file = "/tmp/#{session_data.session_id}.wav"
-      File.write!(temp_file, audio_data)
+    case BedrockClient.correct_text(user_id, text) do
+      {:ok, enhanced_text} ->
+        enhanced_text
 
-      # Send to AWS Transcribe
-      transcription_result = TranscribeClient.transcribe_file(temp_file)
-
-      # Process with Bedrock if transcription succeeded
-      {final_result, original_text} =
-        case transcription_result do
-          {:ok, transcribed_text} ->
-            Logger.info("Transcription successful for session #{session_data.session_id}")
-
-            # Process with Bedrock for enhancement
-            case BedrockClient.correct_text(user_id, transcribed_text) do
-              {:ok, enhanced_text} ->
-                Logger.info("Enhanced transcription for session #{session_data.session_id}")
-                {enhanced_text, transcribed_text}
-              {:error, reason} ->
-                Logger.warning("Failed to enhance transcription: #{inspect(reason)}")
-                {transcribed_text, transcribed_text}
-            end
-          _ ->
-            Logger.error("Unexpected transcription result for session #{session_data.session_id}: #{inspect(transcription_result)}")
-            {"", ""}
-        end
-
-      # Save to DynamoDB
-      transcript = %{
-        user_id: user_id,
-        session_id: session_data.session_id,
-        original_text: original_text,
-        enhanced_text: final_result,
-        created_at: DateTime.utc_now(),
-        updated_at: DateTime.utc_now()
-      }
-
-      VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript)
-
-      # Update session status
-      updated_session = %{session_data | status: :completed}
-      :ets.insert(:transcribe_sessions, {user_id, updated_session})
-
-      # Clean up temp file
-      File.rm(temp_file)
-
-      Logger.info("Completed transcription for session #{session_data.session_id}")
-    rescue
-      error ->
-        Logger.error("Error in process_transcription: #{inspect(error)}")
-
-        # Update session status to failed
-        case :ets.lookup(:transcribe_sessions, user_id) do
-          [{^user_id, session_data}] ->
-            updated_session = %{session_data | status: :failed}
-            :ets.insert(:transcribe_sessions, {user_id, updated_session})
-          [] ->
-            :ok
-        end
+      {:error, _} ->
+        text
     end
   end
 end

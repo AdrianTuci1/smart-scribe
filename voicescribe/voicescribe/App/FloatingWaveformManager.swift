@@ -4,6 +4,7 @@ import Combine
 
 class FloatingWaveformManager: ObservableObject {
     @Published var isRecording: Bool = false
+    @Published var isPaused: Bool = false
     @Published var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 7)
     @Published var sessionState: TranscriptionSessionState = .idle
     
@@ -41,6 +42,14 @@ class FloatingWaveformManager: ObservableObject {
                 self?.isRecording = isRecording
             }
             .store(in: &cancellables)
+            
+        // Bind paused state
+        recordingManager.$isPaused
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isPaused in
+                self?.isPaused = isPaused
+            }
+            .store(in: &cancellables)
         
         // Bind waveform amplitudes from RecordingManager
         recordingManager.$amplitudes
@@ -65,7 +74,7 @@ class FloatingWaveformManager: ObservableObject {
             return
         }
         
-        // Create SwiftUI view with binding to isRecording
+        // Create SwiftUI view with binding to isRecording and isPaused
         let view = FloatingWaveformChip(
             isRecording: Binding(
                 get: { self.isRecording },
@@ -77,6 +86,10 @@ class FloatingWaveformManager: ObservableObject {
                     }
                 }
             ),
+            isPaused: Binding(
+                get: { self.isPaused },
+                set: { _ in self.togglePause() }
+            ),
             onSelectMicrophone: { [weak self] in
                 self?.onSelectMicrophone?()
             },
@@ -85,6 +98,9 @@ class FloatingWaveformManager: ObservableObject {
             },
             onDismissError: {
                 // Error dismissed, return to normal state
+            },
+            onCancelRecording: { [weak self] in
+                self?.cancelRecording()
             }
         )
         
@@ -299,6 +315,11 @@ class FloatingWaveformManager: ObservableObject {
         } else {
             startRecording()
         }
+    }
+    
+    func togglePause() {
+        print("FloatingWaveformManager: togglePause() called, current isPaused: \(isPaused)")
+        recordingManager.togglePause()
     }
     
     func startRecording() {

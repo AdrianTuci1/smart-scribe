@@ -29,6 +29,8 @@ enum ChipState: Equatable {
 // MARK: - Main Chip View
 struct FloatingWaveformChip: View {
     @Binding var isRecording: Bool
+    @Binding var isPaused: Bool
+    
     @State private var isHoveringChip: Bool = false
     @State private var showTooltip: Bool = false
     @State private var chipState: ChipState = .normal
@@ -41,6 +43,7 @@ struct FloatingWaveformChip: View {
     var onSelectMicrophone: (() -> Void)?
     var onTroubleshoot: (() -> Void)?
     var onDismissError: (() -> Void)?
+    var onCancelRecording: (() -> Void)?
     
     // Timer for waveform animation
     @State private var animationTimer: Timer?
@@ -56,8 +59,8 @@ struct FloatingWaveformChip: View {
     // Hovered/recording height baseline
     private let expandedHeight: CGFloat = 22
     
-    // Recording width (slightly wider only on recording)
-    private let recordingWidth: CGFloat = 84
+    // Recording width (wider to accommodate pause button)
+    private let recordingWidth: CGFloat = 110
     
     var body: some View {
         VStack(spacing: 0) {
@@ -109,6 +112,14 @@ struct FloatingWaveformChip: View {
                 stopWaveformAnimation()
             }
         }
+        .onChange(of: isPaused) { _, newValue in
+            // Handle pause state visual updates if needed
+            if newValue {
+                stopWaveformAnimation()
+            } else if isRecording {
+                startWaveformAnimation()
+            }
+        }
         .onAppear {
             dockManager.updateDockInfo() // Ensure dock info is current when view appears
         }
@@ -145,17 +156,18 @@ struct FloatingWaveformChip: View {
         HStack(spacing: 0) {
             // X (Cancel) Button - visible only when recording
             if isRecording {
-                Button(action: cancelRecording) {
+                Button(action: cancelRecordingAction) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 10, weight: .semibold)) // Slightly smaller
                         .foregroundColor(.white)
-                        .frame(width: 20, height: 20)
+                        .frame(width: 18, height: 18)
                         .background(
                             Circle()
                                 .fill(Color(white: 0.2))
                         )
                 }
                 .buttonStyle(.plain)
+                .padding(.trailing, 4)
             }
             
             // Waveform Area (center) - always visible, changes appearance
@@ -163,8 +175,8 @@ struct FloatingWaveformChip: View {
                 if isRecording {
                     ForEach(0..<5, id: \.self) { index in
                         RoundedRectangle(cornerRadius: 1.5)
-                            .fill(Color.red)
-                            .frame(width: 3, height: waveformAmplitudes[index])
+                            .fill(isPaused ? Color.gray : Color.red) // Grey when paused
+                            .frame(width: 3, height: isPaused ? 3 : waveformAmplitudes[index])
                     }
                 } else if isHoveringChip {
                     ForEach(0..<5, id: \.self) { _ in
@@ -180,13 +192,34 @@ struct FloatingWaveformChip: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 18)
+            .contentShape(Rectangle()) // Make the area tappable locally if needed
             
-            // Stop Button - visible only when recording
             if isRecording {
+                // Pause/Resume Button
+                Button(action: togglePause) {
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                        .frame(width: 18, height: 18)
+                        .background(
+                            Circle()
+                                .fill(Color(white: 0.2))
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 4)
+                
+                // Stop Button (Done)
                 Button(action: stopRecording) {
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white) // Start with white checkmark concept? Or keep red square for stop?
+                        // User likely wants "Done". The stop symbol usually implies "Finish".
+                        // Standard practice: Red square = Stop/Finish.
+                        // Let's use red square but maybe a checkmark for "Done" is friendlier?
+                        // Stick to red square logic from existing code, but maybe consider user intent.
+                        // Code had red square.
                         .fill(Color.red)
-                        .frame(width: 14, height: 14)
+                        .frame(width: 10, height: 10)
                         .padding(4)
                         .background(
                             Circle()
@@ -194,6 +227,7 @@ struct FloatingWaveformChip: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .padding(.leading, 4)
             }
         }
         .padding(.horizontal, 10)
@@ -209,19 +243,13 @@ struct FloatingWaveformChip: View {
                 )
         )
         .onTapGesture(count: 1) {
+            // Main tap action behavior
             if !isRecording {
                 toggleRecording()
             }
+            // If recording, tapping the background (not buttons) does nothing or stops?
+            // Usually buttons handle actions. This capture only affects non-button area.
         }
-        .contentShape(Rectangle())
-        .simultaneousGesture(
-            TapGesture()
-                .onEnded { _ in
-                    if !isRecording {
-                        toggleRecording()
-                    }
-                }
-        )
         .onHover { hovering in
             handleHoverChange(hovering: hovering)
         }
@@ -319,9 +347,14 @@ struct FloatingWaveformChip: View {
         }
     }
     
-    private func cancelRecording() {
+    private func cancelRecordingAction() {
+        // Use the callback provided by Manager
+        onCancelRecording?()
+    }
+    
+    private func togglePause() {
         withAnimation {
-            isRecording = false
+            isPaused.toggle()
         }
     }
     
@@ -330,6 +363,31 @@ struct FloatingWaveformChip: View {
             chipState = .normal
         }
         onDismissError?()
+    }
+    
+    private func dismissProcessing() {
+        withAnimation {
+            chipState = .normal
+        }
+    }
+    
+    private func continueProcessing() {
+        // Continue waiting, maintain processing state
+        // The timer or caller should manage this state
+    }
+    
+    private func dismissRequestError() {
+        withAnimation {
+            chipState = .normal
+        }
+    }
+    
+    private func retryRequest() {
+        // Trigger retry by notifying parent
+        // This would typically be handled through a callback
+        withAnimation {
+            chipState = .normal
+        }
     }
     
     // MARK: - Show Error
@@ -343,7 +401,11 @@ struct FloatingWaveformChip: View {
     
     // MARK: - Waveform Animation
     private func startWaveformAnimation() {
+        // Don't restart if already running
+        guard animationTimer == nil else { return }
+        
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            guard !isPaused else { return }
             withAnimation(.easeInOut(duration: 0.1)) {
                 waveformAmplitudes = (0..<5).map { _ in
                     CGFloat.random(in: 4...18)
@@ -513,32 +575,6 @@ struct FloatingWaveformChip: View {
         )
         .frame(maxWidth: 400)
     }
-    
-    // MARK: - Action Methods
-    private func dismissProcessing() {
-        withAnimation {
-            chipState = .normal
-        }
-    }
-    
-    private func continueProcessing() {
-        // Continue waiting, maintain processing state
-        // The timer or caller should manage this state
-    }
-    
-    private func dismissRequestError() {
-        withAnimation {
-            chipState = .normal
-        }
-    }
-    
-    private func retryRequest() {
-        // Trigger retry by notifying parent
-        // This would typically be handled through a callback
-        withAnimation {
-            chipState = .normal
-        }
-    }
 }
 
 // MARK: - Hover Handling
@@ -584,6 +620,9 @@ private extension FloatingWaveformChip {
         Color.blue.opacity(0.3)
             .ignoresSafeArea()
         
-        FloatingWaveformChip(isRecording: .constant(false))
+        FloatingWaveformChip(
+            isRecording: .constant(false),
+            isPaused: .constant(false)
+        )
     }
 }

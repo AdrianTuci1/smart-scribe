@@ -17,7 +17,7 @@ defmodule VoiceScribeAPIServer.AuthenticationPlug do
       |> assign(:cognito_claims, %{"sub" => "test-user"})
     else
       auth_header = get_req_header(conn, "authorization")
-      Logger.info("Auth header received: #{inspect(auth_header)}")
+      Logger.info("Auth header received")
 
       with ["Bearer " <> token] <- auth_header do
         Logger.debug("Token extracted: #{String.slice(token, 0, 20)}...")

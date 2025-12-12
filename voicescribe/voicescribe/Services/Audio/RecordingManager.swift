@@ -8,6 +8,7 @@ class RecordingManager: ObservableObject {
     
     // MARK: - Published Properties
     @Published var isRecording: Bool = false
+    @Published var isPaused: Bool = false
     @Published var amplitudes: [CGFloat] = Array(repeating: 0, count: 7)
     @Published var sessionState: TranscriptionSessionState = .idle
     @Published var lastTranscription: String = ""
@@ -33,6 +34,16 @@ class RecordingManager: ObservableObject {
         transcriptionService.$sessionState
             .receive(on: DispatchQueue.main)
             .assign(to: &$sessionState)
+        
+        // Bind recording state
+        audioService.$isRecording
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isRecording)
+            
+        // Bind paused state
+        audioService.$isPaused
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isPaused)
         
         // Bind audio amplitude to waveform visualization
         audioService.$currentAmplitude
@@ -106,9 +117,6 @@ class RecordingManager: ObservableObject {
                     // Start audio recording
                     try audioService.startRecording()
                     
-                    DispatchQueue.main.async {
-                        self.isRecording = true
-                    }
                     print("RecordingManager: Recording started")
                 } catch {
                     print("RecordingManager: Failed to start recording: \(error)")
@@ -143,7 +151,6 @@ class RecordingManager: ObservableObject {
         }
         
         DispatchQueue.main.async {
-            self.isRecording = false
             // Reset amplitudes to baseline
             self.amplitudes = Array(repeating: 3, count: 7)
         }
@@ -153,11 +160,10 @@ class RecordingManager: ObservableObject {
     
     /// Cancel recording without saving
     func cancelRecording() {
-        
+        audioService.stopRecording() // Ensure audio is stopped
         transcriptionService.cancelTranscription()
         
         DispatchQueue.main.async {
-            self.isRecording = false
             self.amplitudes = Array(repeating: 3, count: 7)
             self.lastTranscription = ""
         }
@@ -165,12 +171,38 @@ class RecordingManager: ObservableObject {
         print("RecordingManager: Recording cancelled")
     }
     
-    /// Toggle recording state
+    /// Pause recording
+    func pauseRecording() {
+        audioService.pauseRecording()
+    }
+    
+    /// Resume recording
+    func resumeRecording() {
+        do {
+            try audioService.resumeRecording()
+        } catch {
+            print("RecordingManager: Failed to resume recording: \(error)")
+            DispatchQueue.main.async {
+                self.sessionState = .error(error.localizedDescription)
+            }
+        }
+    }
+    
+    /// Toggle recording state (Start/Stop)
     func toggleRecording() {
         if isRecording {
             stopRecording()
         } else {
             startRecording()
+        }
+    }
+    
+    /// Toggle pause state
+    func togglePause() {
+        if isPaused {
+            resumeRecording()
+        } else {
+            pauseRecording()
         }
     }
     

@@ -15,12 +15,18 @@ defmodule VoiceScribeAPIServer.RateLimitPlug do
 
   def init(opts) do
     # Initialize ETS table if not exists
+    # Initialize ETS table if not exists
     if :ets.whereis(@ets_table) == :undefined do
-      :ets.new(@ets_table, [:set, :public, :named_table])
+      try do
+        :ets.new(@ets_table, [:set, :public, :named_table])
+      rescue
+        _ -> :ok
+      end
     end
 
     # Configure rate limit from options or use default
-    Keyword.get(opts, :limit, 10) # requests per minute
+    # requests per minute
+    Keyword.get(opts, :limit, 10)
   end
 
   def call(conn, limit) do
@@ -37,11 +43,16 @@ defmodule VoiceScribeAPIServer.RateLimitPlug do
 
   defp check_rate_limit(conn, user_id, limit) do
     current_time = System.system_time(:second)
-    minute_window = 60 # 1 minute window
+    # 1 minute window
+    minute_window = 60
 
     # Ensure ETS table exists
     if :ets.whereis(@ets_table) == :undefined do
-      :ets.new(@ets_table, [:set, :public, :named_table])
+      try do
+        :ets.new(@ets_table, [:set, :public, :named_table])
+      rescue
+        _ -> :ok
+      end
     end
 
     # Get or create user rate limit entry
@@ -51,6 +62,7 @@ defmodule VoiceScribeAPIServer.RateLimitPlug do
       [] ->
         # First request in window
         :ets.insert(@ets_table, {user_key, %{count: 1, window_start: current_time}})
+
         conn
         |> put_resp_header("x-ratelimit-limit", integer_to_string(limit))
         |> put_resp_header("x-ratelimit-remaining", integer_to_string(limit - 1))
@@ -64,10 +76,14 @@ defmodule VoiceScribeAPIServer.RateLimitPlug do
           current_time - window_start >= minute_window ->
             # Window expired, reset counter
             :ets.insert(@ets_table, {user_key, %{count: 1, window_start: current_time}})
+
             conn
             |> put_resp_header("x-ratelimit-limit", integer_to_string(limit))
             |> put_resp_header("x-ratelimit-remaining", integer_to_string(limit - 1))
-            |> put_resp_header("x-ratelimit-reset", integer_to_string(current_time + minute_window))
+            |> put_resp_header(
+              "x-ratelimit-reset",
+              integer_to_string(current_time + minute_window)
+            )
 
           count >= limit ->
             # Rate limit exceeded
@@ -95,7 +111,10 @@ defmodule VoiceScribeAPIServer.RateLimitPlug do
             conn
             |> put_resp_header("x-ratelimit-limit", integer_to_string(limit))
             |> put_resp_header("x-ratelimit-remaining", integer_to_string(limit - new_count))
-            |> put_resp_header("x-ratelimit-reset", integer_to_string(window_start + minute_window))
+            |> put_resp_header(
+              "x-ratelimit-reset",
+              integer_to_string(window_start + minute_window)
+            )
         end
     end
   end

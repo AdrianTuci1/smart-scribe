@@ -4,6 +4,7 @@ defmodule VoiceScribeAPI.AI.TranscribeClient do
   """
 
   require Logger
+  alias ExAws.S3
 
   @doc """
   Transcribes an audio file using AWS Transcribe.
@@ -16,85 +17,160 @@ defmodule VoiceScribeAPI.AI.TranscribeClient do
   - {:error, reason} on failure
   """
   def transcribe_file(file_path) do
-    # This is a mock implementation
-    # In a real implementation, you would use AWS SDK or make HTTP requests to AWS Transcribe
+    bucket = Application.get_env(:voicescribe_api, :s3_bucket)
 
-    Logger.info("Transcribing audio file: #{file_path}")
+    if is_nil(bucket) do
+      Logger.error("AWS_S3_BUCKET not configured")
+      {:error, :missing_bucket_config}
+    else
+      filename = Path.basename(file_path)
+      # Use a unique prefix to avoid collisions
+      s3_key = "uploads/#{UUID.uuid4()}/#{filename}"
 
-    # Simulate processing time
-    Process.sleep(2000)
+      Logger.info("Uploading #{file_path} to s3://#{bucket}/#{s3_key}")
 
-    # Mock response
-    mock_transcription = "This is a mock transcription of the audio file at #{file_path}. " <>
-                     "In a real implementation, this would be the actual transcribed text from AWS Transcribe."
-
-    {:ok, mock_transcription}
+      with {:ok, file_content} <- File.read(file_path),
+           {:ok, _} <- S3.put_object(bucket, s3_key, file_content) |> ExAws.request(),
+           s3_uri = "s3://#{bucket}/#{s3_key}",
+           job_name = "voicescribe-#{UUID.uuid4()}",
+           {:ok, _} <- start_transcription_job(s3_uri, job_name),
+           {:ok, transcript_uri} <- poll_job_status(job_name) do
+        get_transcript_content(transcript_uri)
+      else
+        error ->
+          Logger.error("Transcription failed: #{inspect(error)}")
+          {:error, error}
+      end
+    end
   end
 
-  @doc """
-  Starts a transcription job for an audio file in S3.
-
-  ## Parameters
-  - s3_uri: S3 URI of the audio file (s3://bucket-name/path/to/file)
-  - job_name: Name for the transcription job
-
-  ## Returns
-  - {:ok, job_name} on success
-  - {:error, reason} on failure
-  """
   def start_transcription_job(s3_uri, job_name) do
-    # Mock implementation for starting a transcription job
     Logger.info("Starting transcription job: #{job_name} for #{s3_uri}")
 
-    # In a real implementation, you would:
-    # 1. Upload the file to S3 if not already there
-    # 2. Start a transcription job with AWS Transcribe
-    # 3. Return the job name for status checking
+    op = %ExAws.Operation.JSON{
+      http_method: :post,
+      headers: [
+        {"content-type", "application/x-amz-json-1.1"},
+        {"x-amz-target", "Transcribe.StartTranscriptionJob"}
+      ],
+      path: "/",
+      data: %{
+        TranscriptionJobName: job_name,
+        # Defaulting to Romanian as per context
+        LanguageCode: "ro-RO",
+        Media: %{MediaFileUri: s3_uri},
+        MediaFormat: "wav"
+      },
+      service: :transcribe
+    }
 
-    {:ok, job_name}
+    ExAws.request(op, config_overrides())
   end
 
-  @doc """
-  Checks the status of a transcription job.
+  def poll_job_status(job_name, attempts \\ 0) do
+    # Poll every 2 seconds, max 60 attempts (2 minutes)
+    if attempts >= 60 do
+      {:error, :timeout}
+    else
+      Process.sleep(2000)
 
-  ## Parameters
-  - job_name: Name of the transcription job
+      case get_transcription_job(job_name) do
+        {:ok,
+         %{
+           "TranscriptionJob" => %{
+             "TranscriptionJobStatus" => "COMPLETED",
+             "Transcript" => %{"TranscriptFileUri" => uri}
+           }
+         }} ->
+          Logger.info("Transcription job #{job_name} completed")
+          {:ok, uri}
 
-  ## Returns
-  - {:ok, status} where status is one of: :queued, :in_progress, :completed, :failed
-  - {:error, reason} on failure
-  """
-  def check_job_status(job_name) do
-    # Mock implementation for checking job status
-    Logger.info("Checking status of transcription job: #{job_name}")
+        {:ok,
+         %{
+           "TranscriptionJob" => %{
+             "TranscriptionJobStatus" => "FAILED",
+             "FailureReason" => reason
+           }
+         }} ->
+          Logger.error("Transcription job #{job_name} failed: #{reason}")
+          {:error, reason}
 
-    # In a real implementation, you would query AWS Transcribe for the job status
-    # For now, we'll simulate a completed job
-    {:ok, :completed}
+        {:ok, _} ->
+          # Still in progress
+          poll_job_status(job_name, attempts + 1)
+
+        error ->
+          Logger.error("Error checking job status: #{inspect(error)}")
+          poll_job_status(job_name, attempts + 1)
+      end
+    end
   end
 
-  @doc """
-  Gets the transcription result for a completed job.
+  def get_transcription_job(job_name) do
+    op = %ExAws.Operation.JSON{
+      http_method: :post,
+      headers: [
+        {"content-type", "application/x-amz-json-1.1"},
+        {"x-amz-target", "Transcribe.GetTranscriptionJob"}
+      ],
+      path: "/",
+      data: %{
+        TranscriptionJobName: job_name
+      },
+      service: :transcribe
+    }
 
-  ## Parameters
-  - job_name: Name of the transcription job
+    case ExAws.request(op, config_overrides()) do
+      {:ok, %{body: body}} -> {:ok, Jason.decode!(body)}
+      error -> error
+    end
+  end
 
-  ## Returns
-  - {:ok, transcribed_text} on success
-  - {:error, reason} on failure
-  """
-  def get_transcription_result(job_name) do
-    # Mock implementation for getting transcription result
-    Logger.info("Getting transcription result for job: #{job_name}")
+  def get_transcript_content(transcript_uri) do
+    Logger.info("Downloading transcript from #{transcript_uri}")
 
-    # In a real implementation, you would:
-    # 1. Download the transcription result from S3
-    # 2. Parse the JSON response
-    # 3. Extract the transcribed text
+    # The transcript URI is a presigned URL. We can use HTTPoison to fetch it.
+    case HTTPoison.get(transcript_uri) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        try do
+          json = Jason.decode!(body)
+          # Extract the full transcript text
+          # Structure: results -> transcripts -> [0] -> transcript
+          text =
+            json
+            |> Map.get("results", %{})
+            |> Map.get("transcripts", [])
+            |> List.first(%{})
+            |> Map.get("transcript", "")
 
-    mock_result = "This is a mock transcription result for job #{job_name}. " <>
-                 "In a real implementation, this would be the actual transcribed text from AWS Transcribe."
+          {:ok, text}
+        rescue
+          e ->
+            Logger.error("Failed to parse transcript JSON: #{inspect(e)}")
+            {:error, :parsing_error}
+        end
 
-    {:ok, mock_result}
+      {:ok, response} ->
+        Logger.error("Failed to download transcript. Status: #{response.status_code}")
+        {:error, :download_failed}
+
+      {:error, reason} ->
+        Logger.error("Failed to download transcript: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  defp config_overrides do
+    %{
+      host: "transcribe.#{region()}.amazonaws.com",
+      scheme: "https",
+      region: region(),
+      service: "transcribe",
+      port: 443
+    }
+  end
+
+  defp region do
+    System.get_env("AWS_REGION", "eu-central-1")
   end
 end

@@ -125,7 +125,9 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   defp extract_rules_from_entries(entries) do
     entries
     |> Enum.map(fn entry ->
-      "\"#{entry["incorrect_word"]}\" => \"#{entry["correct_word"]}\""
+      incorrect = Map.get(entry, "incorrectWord", Map.get(entry, "incorrect_word", ""))
+      correct = Map.get(entry, "correctWord", Map.get(entry, "correct_word", ""))
+      "\"#{incorrect}\" => \"#{correct}\""
     end)
     |> Enum.join(", ")
   end

@@ -8,18 +8,32 @@ defmodule VoiceScribeAPIServer.ConfigController do
     type = Map.get(params, "type", get_default_type_from_path(conn.request_path))
 
     user_id = conn.assigns.current_user
-    result = DynamoDBRepo.get_config(user_id, type)
 
-    # Handle the result from DynamoDBRepo
-    case result do
+    # Use the repository to get config which handles decoding properly
+    case DynamoDBRepo.get_config(user_id, type) do
       empty_map when empty_map == %{} ->
-        # Empty map means no config found
-        json(conn, %{data: nil})
-      data ->
-        # Config found
-        json(conn, %{data: data})
+        # No config found
+        case type do
+          "dictionary" -> json(conn, %{data: []})
+          "snippets" -> json(conn, %{data: []})
+          _ -> json(conn, %{data: nil})
+        end
+      config_data ->
+        # Extract the appropriate data based on type
+        case type do
+          "dictionary" ->
+            entries = Map.get(config_data, "entries", [])
+            json(conn, %{data: entries})
+          "snippets" ->
+            snippets = Map.get(config_data, "snippets", [])
+            json(conn, %{data: snippets})
+          _ ->
+            # For other config types, return the whole data
+            json(conn, %{data: config_data})
+        end
     end
   end
+
 
   def put_config(conn, params) do
     # Extract type from params or use default based on path

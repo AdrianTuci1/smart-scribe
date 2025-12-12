@@ -11,7 +11,7 @@ defmodule VoiceScribeAPIServer.Router do
   end
 
   pipeline :rate_limit do
-    plug VoiceScribeAPIServer.RateLimitPlug, limit: 10
+    plug VoiceScribeAPIServer.RateLimitPlug, limit: 100
   end
 
   # Authentication routes (no auth required)

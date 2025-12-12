@@ -32,6 +32,7 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
           end
 
         json(conn, response)
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -41,14 +42,17 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
 
   def show(conn, %{"id" => transcript_id}) do
     user_id = conn.assigns.current_user
+
     case DynamoDBRepo.get_transcript(user_id, transcript_id) do
       {:ok, result} when result != %{} ->
         item = decode_item(result["Item"])
         json(conn, item)
+
       {:ok, _} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Transcript not found"})
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -59,14 +63,18 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
   def create(conn, params) do
     transcript_id = Map.get(params, "id")
     user_id = conn.assigns.current_user
-    transcript_data = Map.merge(params, %{
-      "transcriptId" => transcript_id,
-      "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
-      "isFlagged" => false
-    })
+
+    transcript_data =
+      Map.merge(params, %{
+        "transcriptId" => transcript_id,
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+        "isFlagged" => false
+      })
 
     case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
-      {:ok, _} -> json(conn, %{status: "ok", transcriptId: transcript_id})
+      {:ok, _} ->
+        json(conn, %{status: "ok", transcriptId: transcript_id})
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -83,22 +91,26 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
         existing = decode_item(result["Item"])
 
         # Merge updates with existing data
-        updated_data = Map.merge(existing, params)
-        |> Map.drop(["id"])
+        updated_data =
+          Map.merge(existing, params)
+          |> Map.drop(["id"])
 
         case DynamoDBRepo.update_transcript(user_id, transcript_id, updated_data) do
           {:ok, _} ->
             # Return updated transcript
             json(conn, Map.put(updated_data, "transcriptId", transcript_id))
+
           {:error, reason} ->
             conn
             |> put_status(:bad_request)
             |> json(%{error: inspect(reason)})
         end
+
       {:ok, _} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Transcript not found"})
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -108,12 +120,15 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
 
   def delete(conn, %{"id" => transcript_id}) do
     user_id = conn.assigns.current_user
+
     case DynamoDBRepo.delete_transcript(user_id, transcript_id) do
-       {:ok, _} -> json(conn, %{status: "ok"})
-       {:error, reason} ->
-         conn
-         |> put_status(:bad_request)
-         |> json(%{error: inspect(reason)})
+      {:ok, _} ->
+        json(conn, %{status: "ok"})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: inspect(reason)})
     end
   end
 
@@ -138,10 +153,12 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
             # In production, this would queue a new transcription job
             json(conn, Map.put(existing, "transcriptId", transcript_id))
         end
+
       {:ok, _} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Transcript not found"})
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -166,10 +183,12 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
             # Return the audio URL (could be a pre-signed S3 URL)
             json(conn, %{url: audio_url})
         end
+
       {:ok, _} ->
         conn
         |> put_status(:not_found)
         |> json(%{error: "Transcript not found"})
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -178,13 +197,7 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
   end
 
   defp decode_item(nil), do: %{}
-  defp decode_item(item) do
-    try do
-      ExAws.Dynamo.decode_item(item)
-    rescue
-      _ -> %{}
-    end
-  end
+  defp decode_item(item), do: DynamoDBRepo.decode_item(item)
 
   def audio(conn, %{"id" => transcript_id}) do
     audio_url(conn, %{"id" => transcript_id})

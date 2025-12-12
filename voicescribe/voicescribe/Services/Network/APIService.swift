@@ -215,6 +215,26 @@ class APIService {
         return request
     }
     
+    private func handleAPIResponse(_ data: Data, _ response: URLResponse) throws {
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            // Try to extract error message from response body
+            var errorMessage = "HTTP Error \(httpResponse.statusCode)"
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Error response body: \(responseString)")
+                
+                // Try to parse error from JSON response
+                if let responseData = responseString.data(using: .utf8),
+                   let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: responseData) {
+                    errorMessage = errorResponse.error ?? errorMessage
+                }
+            }
+            
+            throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+    }
+    
     func fetchSnippets() async throws -> [Snippet] {
         let url = baseURL.appendingPathComponent("config/snippets")
         let request = createRequest(url: url)
@@ -223,10 +243,21 @@ class APIService {
         
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            // Print response for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Error fetching snippets: \(responseString)")
+            }
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
         }
         
-        return try JSONDecoder().decode([Snippet].self, from: data)
+        // Debug print the response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Snippets response: \(responseString)")
+        }
+        
+        // Backend returns {data: ...} wrapper
+        let responseWrapper = try JSONDecoder().decode(SnippetsResponse.self, from: data)
+        return responseWrapper.data ?? []
     }
     
     func saveSnippets(_ snippets: [Snippet]) async throws {
@@ -234,7 +265,9 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let snippetsData = try JSONEncoder().encode(snippets)
+        // Backend expects {"snippets": [...]}
+        let requestData = ["snippets": snippets]
+        let snippetsData = try JSONEncoder().encode(requestData)
         request.httpBody = snippetsData
         
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -253,10 +286,21 @@ class APIService {
         
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            // Print response for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Error fetching dictionary: \(responseString)")
+            }
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
         }
         
-        return try JSONDecoder().decode([DictionaryEntry].self, from: data)
+        // Debug print the response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Dictionary response: \(responseString)")
+        }
+        
+        // Backend returns {data: ...} wrapper
+        let responseWrapper = try JSONDecoder().decode(DictionaryResponse.self, from: data)
+        return responseWrapper.data ?? []
     }
     
     func saveDictionary(_ dictionary: [DictionaryEntry]) async throws {
@@ -264,7 +308,9 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let dictionaryData = try JSONEncoder().encode(dictionary)
+        // Backend expects {"dictionary": {"entries": [...]}}
+        let requestData = ["dictionary": ["entries": dictionary]]
+        let dictionaryData = try JSONEncoder().encode(requestData)
         request.httpBody = dictionaryData
         
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -286,7 +332,12 @@ class APIService {
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
         }
         
-        return try JSONDecoder().decode(StylePreference.self, from: data)
+        // Backend returns {data: ...} wrapper
+        let responseWrapper = try JSONDecoder().decode(StylePreferencesResponse.self, from: data)
+        guard let data = responseWrapper.data else {
+            throw NSError(domain: "APIService", code: -1, userInfo: [NSLocalizedDescriptionKey: "No style preferences data found"])
+        }
+        return data
     }
     
     func saveStylePreferences(_ preferences: StylePreference) async throws {
@@ -294,7 +345,13 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let preferencesData = try JSONEncoder().encode(preferences)
+        // Backend expects {"preferences": {"context": "...", "style": "..."}}
+        // Convert enums to their raw values
+        let requestData = ["preferences": [
+            "context": preferences.context.rawValue,
+            "style": preferences.style.rawValue
+        ]]
+        let preferencesData = try JSONEncoder().encode(requestData)
         request.httpBody = preferencesData
         
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -313,10 +370,21 @@ class APIService {
         
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
+            // Print response for debugging
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Error fetching notes: \(responseString)")
+            }
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
         }
         
-        return try JSONDecoder().decode([Note].self, from: data)
+        // Debug print the response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Notes response: \(responseString)")
+        }
+        
+        // Backend returns {data: [...]} wrapper
+        let responseWrapper = try JSONDecoder().decode(NotesResponse.self, from: data)
+        return responseWrapper.data ?? []
     }
     
     func createNote(_ note: Note) async throws -> Note {
@@ -324,7 +392,9 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let noteData = try JSONEncoder().encode(note)
+        // Use helper method to ensure proper date formatting
+        let noteDict = note.toBackendDictionary()
+        let noteData = try JSONSerialization.data(withJSONObject: noteDict)
         request.httpBody = noteData
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -356,6 +426,7 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Backend expects user_id in body
         let requestData = ["user_id": userId]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
@@ -374,9 +445,10 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Backend expects "data" instead of "chunk" and gets user_id from auth token
         let requestData = [
-            "user_id": userId,
-            "chunk": chunk
+            "data": chunk,
+            "session_id": userId // Using userId as session_id for now
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
@@ -393,7 +465,8 @@ class APIService {
         var request = createRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let requestData = ["user_id": userId]
+        // Backend gets user_id from auth token, but expects session_id in body
+        let requestData = ["session_id": userId] // Using userId as session_id for now
         request.httpBody = try JSONSerialization.data(withJSONObject: requestData)
         
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -407,14 +480,10 @@ class APIService {
     func getTranscriptionStatus(userId: String) async throws -> TranscriptionStatusResponse {
         let url = baseURL.appendingPathComponent("transcribe/status")
         
-        // Add user_id as query parameter
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        components?.queryItems = [URLQueryItem(name: "user_id", value: userId)]
-        let finalUrl = components?.url ?? url
+        // Backend gets user_id from auth token, no query params needed
+        let request = createRequest(url: url, method: "GET")
         
-        let requestWithQuery = createRequest(url: finalUrl, method: "GET")
-        
-        let (data, response) = try await URLSession.shared.data(for: requestWithQuery)
+        let (data, response) = try await URLSession.shared.data(for: request)
         
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
@@ -439,6 +508,11 @@ class APIService {
                 print("Error response body: \(responseString)")
             }
             throw NSError(domain: "APIService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+        }
+        
+        // Debug print the response
+        if let responseString = String(data: data, encoding: .utf8) {
+            print("Transcripts response: \(responseString)")
         }
         
         let decoded = try JSONDecoder().decode(TranscriptsResponse.self, from: data)
@@ -509,6 +583,14 @@ class APIService {
     }
 }
 
+// MARK: - Error Response Model
+
+struct APIErrorResponse: Codable {
+    let error: String?
+    let message: String?
+    let status: String?
+}
+
 // MARK: - Response Models
 
 struct AuthResponse: Codable {
@@ -551,6 +633,23 @@ struct RefreshResponse: Codable {
         let id_token: String
         let expires_in: Int
     }
+}
+
+// Response wrapper models for GET endpoints
+struct NotesResponse: Codable {
+    let data: [Note]?
+}
+
+struct SnippetsResponse: Codable {
+    let data: [Snippet]?
+}
+
+struct DictionaryResponse: Codable {
+    let data: [DictionaryEntry]?
+}
+
+struct StylePreferencesResponse: Codable {
+    let data: StylePreference?
 }
 
 struct TranscriptsResponse: Codable {

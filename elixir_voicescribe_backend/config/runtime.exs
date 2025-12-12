@@ -21,7 +21,15 @@ if config_env() in [:dev, :prod] do
     config :ex_aws,
       region: aws_region,
       access_key_id: aws_access_key_id,
-      secret_access_key: aws_secret_access_key
+      secret_access_key: aws_secret_access_key,
+      s3: [
+        scheme: "https://",
+        host: "s3.#{aws_region}.amazonaws.com",
+        region: aws_region
+      ]
+
+    config :voicescribe_api,
+      s3_bucket: System.get_env("AWS_S3_BUCKET")
 
     config :ex_aws, :dynamodb,
       region: aws_region,
