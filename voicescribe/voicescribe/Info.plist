@@ -23,6 +23,8 @@
 	<string>VoiceScribe needs access to speech recognition to convert your voice into text accurately.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>VoiceScribe needs to control other applications to paste transcribed text.</string>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>VoiceScribe requires accessibility access to use global hotkeys for dictation.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

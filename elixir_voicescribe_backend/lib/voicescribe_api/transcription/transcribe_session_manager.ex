@@ -9,7 +9,6 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
 
   alias VoiceScribeAPI.AI.BedrockClient
   alias VoiceScribeAPI.AI.TranscribeClient
-  alias VoiceScribeAPI.DynamoDBRepo
 
   # Client API
 
@@ -65,7 +64,10 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   def handle_call({:add_chunk, user_id, chunk_data}, _from, state) do
     case :ets.lookup(:transcribe_sessions, user_id) do
       [{^user_id, session_data}] when session_data.status == :recording ->
-        updated_chunks = [chunk_data | session_data.chunks]
+        # Check if chunk is gzip compressed and decompress if needed
+        processed_chunk_data = process_chunk_data(chunk_data)
+
+        updated_chunks = [processed_chunk_data | session_data.chunks]
         updated_session = %{session_data | chunks: updated_chunks}
 
         # Update in ETS table
@@ -115,6 +117,46 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
 
   # Private Functions
 
+  defp process_chunk_data(chunk_data) do
+    # Check if the chunk data appears to be base64 encoded gzip
+    # In a real implementation, you would check for gzip magic bytes (0x1F 0x8B)
+    # after base64 decoding
+
+    try do
+      # Try to decode as base64 first
+      case Base.decode64(chunk_data) do
+        {:ok, binary} ->
+          # Check if it's gzip compressed (starts with 0x1F, 0x8B)
+          case binary do
+            <<0x1F, 0x8B, _rest::binary>> ->
+              # It's gzip compressed, decompress it
+              Logger.debug("Decompressing gzip chunk for user")
+              case :zlib.gunzip(binary) do
+                {:ok, decompressed} ->
+                  # Convert back to base64 for storage
+                  Base.encode64(decompressed)
+                {:error, _reason} ->
+                  # If decompression fails, use original
+                  Logger.warning("Failed to decompress gzip chunk, using original")
+                  chunk_data
+              end
+            _ ->
+              # Not gzip, use as-is
+              Logger.debug("Received uncompressed chunk")
+              chunk_data
+          end
+        _ ->
+          # If decoding fails, use as-is
+          Logger.debug("Chunk is not base64 encoded, using as-is")
+          chunk_data
+      end
+    rescue
+      e ->
+        Logger.error("Error processing chunk data: #{inspect(e)}")
+        chunk_data
+    end
+  end
+
   defp generate_session_id do
     :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
   end
@@ -135,64 +177,54 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
       {final_result, original_text} =
         case transcription_result do
           {:ok, transcribed_text} ->
-            Logger.info("Transcription completed for session #{session_data.session_id}")
-            case BedrockClient.process_text(transcribed_text) do
-              {:ok, processed_text} -> {{:ok, processed_text}, transcribed_text}
-              other -> {other, transcribed_text}
-            end
+            Logger.info("Transcription successful for session #{session_data.session_id}")
 
-          {:error, reason} ->
-            Logger.error("Transcription failed for session #{session_data.session_id}: #{inspect(reason)}")
-            {{:error, reason}, nil}
+            # Process with Bedrock for enhancement
+            case BedrockClient.correct_text(user_id, transcribed_text) do
+              {:ok, enhanced_text} ->
+                Logger.info("Enhanced transcription for session #{session_data.session_id}")
+                {enhanced_text, transcribed_text}
+              {:error, reason} ->
+                Logger.warning("Failed to enhance transcription: #{inspect(reason)}")
+                {transcribed_text, transcribed_text}
+            end
+          _ ->
+            Logger.error("Unexpected transcription result for session #{session_data.session_id}: #{inspect(transcription_result)}")
+            {"", ""}
         end
 
-      # Update session with final result
-      updated_session = %{session_data |
-        status: :completed,
-        result: final_result,
-        completed_at: DateTime.utc_now()
+      # Save to DynamoDB
+      transcript = %{
+        user_id: user_id,
+        session_id: session_data.session_id,
+        original_text: original_text,
+        enhanced_text: final_result,
+        created_at: DateTime.utc_now(),
+        updated_at: DateTime.utc_now()
       }
 
+      VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript)
+
+      # Update session status
+      updated_session = %{session_data | status: :completed}
       :ets.insert(:transcribe_sessions, {user_id, updated_session})
-
-      # Save transcript to history if successful
-      case final_result do
-        {:ok, text} ->
-          transcript_id = session_data.session_id
-          transcript_data = %{
-            "text" => text,
-            "originalText" => original_text,
-            "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
-            "sessionId" => session_data.session_id,
-            "isFlagged" => false
-            # audioUrl can be added here if audio is stored in S3
-          }
-
-          case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
-            {:ok, _} ->
-              Logger.info("Transcript #{transcript_id} saved to history for user #{user_id}")
-            {:error, reason} ->
-              Logger.error("Failed to save transcript to history: #{inspect(reason)}")
-          end
-        _ ->
-          :ok
-      end
 
       # Clean up temp file
       File.rm(temp_file)
 
+      Logger.info("Completed transcription for session #{session_data.session_id}")
     rescue
       error ->
-        Logger.error("Error processing transcription for session #{session_data.session_id}: #{inspect(error)}")
+        Logger.error("Error in process_transcription: #{inspect(error)}")
 
-        # Update session with error
-        updated_session = %{session_data |
-          status: :failed,
-          error: inspect(error),
-          completed_at: DateTime.utc_now()
-        }
-
-        :ets.insert(:transcribe_sessions, {user_id, updated_session})
+        # Update session status to failed
+        case :ets.lookup(:transcribe_sessions, user_id) do
+          [{^user_id, session_data}] ->
+            updated_session = %{session_data | status: :failed}
+            :ets.insert(:transcribe_sessions, {user_id, updated_session})
+          [] ->
+            :ok
+        end
     end
   end
 end

@@ -191,7 +191,6 @@ struct MainPopoverViewWithoutUserMenu: View {
                     }) {
                         Image(systemName: "sidebar.left")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(.secondary)
                             .frame(width: 28, height: 28)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -201,7 +200,7 @@ struct MainPopoverViewWithoutUserMenu: View {
                     
                     // User menu (far right of window)
                     UserMenuView()
-                        .padding(.trailing, 16)
+                        .padding(.trailing, 20)
                 }
                 .frame(height: 36)
                 .padding(.top, 8) // Move 8px down

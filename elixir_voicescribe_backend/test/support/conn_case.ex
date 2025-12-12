@@ -1,4 +1,4 @@
-defmodule ElixirWhisperFlowBackendWeb.ConnCase do
+defmodule VoiceScribeAPIServer.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,7 +11,7 @@ defmodule ElixirWhisperFlowBackendWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use ElixirWhisperFlowBackendWeb.ConnCase, async: true`, although
+  by setting `use VoiceScribeAPIServer.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -20,14 +20,12 @@ defmodule ElixirWhisperFlowBackendWeb.ConnCase do
   using do
     quote do
       # The default endpoint for testing
-      @endpoint ElixirWhisperFlowBackendWeb.Endpoint
-
-      use ElixirWhisperFlowBackendWeb, :verified_routes
+      @endpoint VoiceScribeAPIServer.Endpoint
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import ElixirWhisperFlowBackendWeb.ConnCase
+      import VoiceScribeAPIServer.ConnCase
     end
   end
 

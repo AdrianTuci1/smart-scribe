@@ -96,30 +96,33 @@ class RecordingManager: ObservableObject {
     
     /// Start recording audio and prepare for batch transcription
     func startRecording() {
-        // Check microphone permission and start recording
-        audioService.checkMicrophonePermission { [weak self] granted in
-            if granted {
-                Task {
-                    do {
-                        // Start transcription session
-                        try await self?.transcriptionService.startTranscription(userId: self?.getUserId() ?? "default_user")
-                        
-                        // Start audio recording
-                        try self?.audioService.startRecording()
-                        
-                        DispatchQueue.main.async {
-                            self?.isRecording = true
-                        }
-                        print("RecordingManager: Recording started")
-                    } catch {
-                        print("RecordingManager: Failed to start recording: \(error)")
-                        DispatchQueue.main.async {
-                            self?.sessionState = .error(error.localizedDescription)
-                        }
+        // Check microphone permission using PermissionManager
+        if PermissionManager.shared.isMicrophonePermissionGranted() {
+            Task {
+                do {
+                    // Start transcription session
+                    try await transcriptionService.startTranscription(userId: getUserId())
+                    
+                    // Start audio recording
+                    try audioService.startRecording()
+                    
+                    DispatchQueue.main.async {
+                        self.isRecording = true
+                    }
+                    print("RecordingManager: Recording started")
+                } catch {
+                    print("RecordingManager: Failed to start recording: \(error)")
+                    DispatchQueue.main.async {
+                        self.sessionState = .error(error.localizedDescription)
                     }
                 }
-            } else {
-                print("RecordingManager: Microphone permission denied")
+            }
+        } else {
+            print("RecordingManager: Microphone permission not granted")
+            // Open settings for user to grant permission
+            DispatchQueue.main.async {
+                self.sessionState = .error("Microphone permission is required. Please grant it in System Settings.")
+                PermissionManager.shared.openMicrophoneSettings()
             }
         }
     }

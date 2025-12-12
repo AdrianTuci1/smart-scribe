@@ -79,7 +79,7 @@ struct NotesView: View {
                         }
                         .buttonStyle(.plain)
                         
-                        Button(action: { loadSampleData() }) {
+                        Button(action: { loadNotes() }) {
                             Image(systemName: "arrow.clockwise")
                                 .font(.system(size: 14))
                                 .foregroundColor(.secondary)
@@ -122,7 +122,7 @@ struct NotesView: View {
         .frame(minWidth: 600, maxWidth: 900)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
-            loadSampleData()
+            loadNotes()
         }
     }
     
@@ -141,33 +141,17 @@ struct NotesView: View {
         voiceInputText = ""
     }
     
-    private func loadSampleData() {
+    private func loadNotes() {
         Task {
             do {
                 let fetchedNotes = try await syncService.fetchNotes()
                 DispatchQueue.main.async {
-                    if !fetchedNotes.isEmpty {
-                        self.notes = fetchedNotes
-                    } else {
-                        // Use sample data if no notes found
-                        self.notes = [
-                            Note(id: UUID(), content: "Remember to buy groceries tomorrow", createdAt: Date().addingTimeInterval(-3600), updatedAt: Date().addingTimeInterval(-3600)),
-                            Note(id: UUID(), content: "Call mom this weekend", createdAt: Date().addingTimeInterval(-7200), updatedAt: Date().addingTimeInterval(-7200)),
-                            Note(id: UUID(), content: "Finish project presentation by Friday", createdAt: Date().addingTimeInterval(-10800), updatedAt: Date().addingTimeInterval(-10800))
-                        ]
-                    }
+                    self.notes = fetchedNotes
                 }
             } catch {
                 print("Failed to fetch notes: \(error)")
-                // Use sample data on error
                 DispatchQueue.main.async {
-                    if self.notes.isEmpty {
-                        self.notes = [
-                            Note(id: UUID(), content: "Remember to buy groceries tomorrow", createdAt: Date().addingTimeInterval(-3600), updatedAt: Date().addingTimeInterval(-3600)),
-                            Note(id: UUID(), content: "Call mom this weekend", createdAt: Date().addingTimeInterval(-7200), updatedAt: Date().addingTimeInterval(-7200)),
-                            Note(id: UUID(), content: "Finish project presentation by Friday", createdAt: Date().addingTimeInterval(-10800), updatedAt: Date().addingTimeInterval(-10800))
-                        ]
-                    }
+                    self.notes = []
                 }
             }
         }

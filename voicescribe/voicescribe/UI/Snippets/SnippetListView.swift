@@ -100,7 +100,7 @@ struct SnippetListView: View {
                         }
                         .buttonStyle(.plain)
                         
-                        Button(action: { loadSampleData() }) {
+                        Button(action: { loadSnippets() }) {
                             Image(systemName: "arrow.clockwise")
                                 .font(.system(size: 14))
                                 .foregroundColor(.secondary)
@@ -166,37 +166,21 @@ struct SnippetListView: View {
             }
         }
         .onAppear {
-            loadSampleData()
+            loadSnippets()
         }
     }
     
-    private func loadSampleData() {
+    private func loadSnippets() {
         Task {
             do {
                 let fetchedSnippets = try await syncService.fetchSnippets()
                 DispatchQueue.main.async {
-                    if !fetchedSnippets.isEmpty {
-                        self.snippets = fetchedSnippets
-                    } else {
-                        // Use sample data if no snippets found
-                        self.snippets = [
-                            Snippet(id: UUID(), title: "Email Signature", content: "Best regards,\nAdrian"),
-                            Snippet(id: UUID(), title: "Meeting Intro", content: "Hi everyone, thanks for joining today's meeting."),
-                            Snippet(id: UUID(), title: "Out of Office", content: "I'm currently out of office and will respond when I return.")
-                        ]
-                    }
+                    self.snippets = fetchedSnippets
                 }
             } catch {
                 print("Failed to fetch snippets: \(error)")
-                // Use sample data on error
                 DispatchQueue.main.async {
-                    if self.snippets.isEmpty {
-                        self.snippets = [
-                            Snippet(id: UUID(), title: "Email Signature", content: "Best regards,\nAdrian"),
-                            Snippet(id: UUID(), title: "Meeting Intro", content: "Hi everyone, thanks for joining today's meeting."),
-                            Snippet(id: UUID(), title: "Out of Office", content: "I'm currently out of office and will respond when I return.")
-                        ]
-                    }
+                    self.snippets = []
                 }
             }
         }

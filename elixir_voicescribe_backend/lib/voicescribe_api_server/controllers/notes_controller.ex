@@ -2,13 +2,14 @@ defmodule VoiceScribeAPIServer.NotesController do
   use VoiceScribeAPIServer, :controller
   alias VoiceScribeAPI.DynamoDBRepo
 
-  def create(conn, %{"noteId" => note_id} = params) do
+  def create(conn, params) do
+    note_id = Map.get(params, "id")
     user_id = conn.assigns.current_user
     case DynamoDBRepo.create_note(user_id, note_id, params) do
       {:ok, _} -> json(conn, %{status: "ok"})
-      {:error, reason} -> 
-        conn 
-        |> put_status(:bad_request) 
+      {:error, reason} ->
+        conn
+        |> put_status(:bad_request)
         |> json(%{error: inspect(reason)})
     end
   end
@@ -16,12 +17,12 @@ defmodule VoiceScribeAPIServer.NotesController do
   def list(conn, _params) do
     user_id = conn.assigns.current_user
     case DynamoDBRepo.list_notes(user_id) do
-      {:ok, result} -> 
+      {:ok, result} ->
         items = (result["Items"] || []) |> Enum.map(&decode_item/1)
         json(conn, %{data: items})
       {:error, reason} ->
         conn
-        |> put_status(:bad_request) 
+        |> put_status(:bad_request)
         |> json(%{error: inspect(reason)})
     end
   end

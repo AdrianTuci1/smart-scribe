@@ -7,23 +7,26 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   def correct_text(user_id, text) do
     # Fetch dictionary
     dictionary = case DynamoDBRepo.get_config(user_id, "dictionary") do
+      empty_map when empty_map == %{} -> %{"rules" => "No custom rules."}
       {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-      _ -> %{}
+      _ -> %{"rules" => "No custom rules."}
     end
 
     # Fetch style preferences
     style_prefs = case DynamoDBRepo.get_config(user_id, "style_preferences") do
+      empty_map when empty_map == %{} -> %{"context" => "No specific context", "style" => "No specific style"}
       {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-      _ -> %{}
+      _ -> %{"context" => "No specific context", "style" => "No specific style"}
     end
 
     # Fetch snippets
     snippets = case DynamoDBRepo.get_config(user_id, "snippets") do
+      empty_map when empty_map == %{} -> %{"snippets" => []}
       {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-      _ -> %{}
+      _ -> %{"snippets" => []}
     end
 
-    rules = dictionary["rules"] || "No custom rules."
+    rules = Map.get(dictionary, "rules", "No custom rules.")
     style_guidelines = case style_prefs do
       %{"context" => context, "style" => style} ->
         "Context: #{context}, Style: #{style}"
@@ -33,7 +36,7 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
 
     # Format snippets for use in the prompt
     snippets_context = case snippets do
-      %{"snippets" => snippet_list} when is_list(snippet_list) ->
+      %{"snippets" => snippet_list} when is_list(snippet_list) and length(snippet_list) > 0 ->
         snippet_list
         |> Enum.map(fn snippet ->
           title = Map.get(snippet, "title", "Untitled")
@@ -56,11 +59,10 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
 
     Instructions:
     1. Correct any grammatical errors.
-    2. Translate to English if input is in another language.
-    3. Apply dictionary corrections above.
-    4. Apply style guidelines above.
-    5. Reference the snippets for context and formatting when relevant.
-    6. Return ONLY the result.
+    2. Apply dictionary corrections above.
+    3. Apply style guidelines above.
+    4. Reference the snippets for context and formatting when relevant.
+    5. Return ONLY the result.
     """
 
     Logger.info("Sending text to Bedrock for correction: #{String.slice(text, 0, 20)}...")

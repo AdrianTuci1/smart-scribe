@@ -25,9 +25,55 @@ class AuthService: ObservableObject {
         Task {
             await checkAuthStatus()
         }
+        
+        // Start token refresh scheduler
+        scheduleTokenRefresh()
     }
     
     // MARK: - Authentication Methods
+    
+    // Force reload authentication state from UserDefaults
+    func reloadAuthState() async {
+        print("=== RELOADING AUTH STATE ===")
+        
+        let isAuth = UserDefaults.standard.bool(forKey: "isAuthenticated")
+        let savedUserName = UserDefaults.standard.string(forKey: "userName")
+        let savedUserEmail = UserDefaults.standard.string(forKey: "userEmail")
+        let savedToken = UserDefaults.standard.string(forKey: "accessToken")
+        let savedIdToken = UserDefaults.standard.string(forKey: "authToken")
+        let savedRefreshToken = UserDefaults.standard.string(forKey: "refreshToken")
+        
+        print("Reload: isAuth=\(isAuth), userName=\(savedUserName ?? "nil"), userEmail=\(savedUserEmail ?? "nil")")
+        print("Reload: accessToken=\(String(describing: savedToken)), idToken=\(String(describing: savedIdToken)), refreshToken=\(String(describing: savedRefreshToken))")
+        
+        if isAuth && savedUserName != nil && savedUserEmail != nil && savedToken != nil {
+            let userInfo = decodeUserInfo(fromIDToken: savedIdToken, fallbackUsername: savedUserName ?? "User")
+            
+            // Force update all auth state properties
+            await MainActor.run {
+                self.isAuthenticated = true
+                self.userName = userInfo.displayName
+                self.userEmail = userInfo.email ?? savedUserEmail ?? savedUserName
+                self.token = savedIdToken
+                self.refreshToken = savedRefreshToken
+                
+                // Set token in API service
+                self.apiService.setAuthToken(savedToken)
+                
+                // Create user object
+                self.currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
+                
+                print("Reload: Updated all auth properties successfully")
+            }
+        } else {
+            await MainActor.run {
+                self.isAuthenticated = false
+                print("Reload: Set isAuthenticated to false")
+            }
+        }
+        
+        print("=== AUTH STATE RELOAD COMPLETED ===")
+    }
     
     func signIn(username: String, password: String) async -> Bool {
         isLoading = true
@@ -175,6 +221,47 @@ class AuthService: ObservableObject {
         }
     }
     
+    func scheduleTokenRefresh() {
+        Task {
+            // Check if token needs refresh every 4 minutes
+            while true {
+                await MainActor.run {
+                    if isAuthenticated {
+                        // Check if token is close to expiry (within 5 minutes)
+                        if let idToken = self.token, isTokenExpiringSoon(idToken) {
+                            print("Token is expiring soon, refreshing...")
+                            Task {
+                                let success = await self.refreshSession()
+                                if !success {
+                                    print("Failed to refresh token, user may need to re-authenticate")
+                                    await MainActor.run {
+                                        self.signOut()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Wait 4 minutes before checking again
+                try? await Task.sleep(nanoseconds: 4 * 60 * 1_000_000_000)
+            }
+        }
+    }
+    
+    private func isTokenExpiringSoon(_ token: String) -> Bool {
+        guard let payload = decodeJWTPayload(token),
+              let exp = payload["exp"] as? Double else {
+            return true // If we can't parse expiry, assume it's expiring
+        }
+        
+        let expirationDate = Date(timeIntervalSince1970: exp)
+        let now = Date()
+        let fiveMinutesFromNow = now.addingTimeInterval(5 * 60) // 5 minutes from now
+        
+        return expirationDate <= fiveMinutesFromNow
+    }
+    
     func signInWithWebBrowser() {
         let verifier = PKCE.generateVerifier()
         currentCodeVerifier = verifier
@@ -194,14 +281,51 @@ class AuthService: ObservableObject {
         ]
         
         if let url = components?.url {
+            print("AuthService: Opening auth URL in browser: \(url.absoluteString)")
+            print("AuthService: Cognito Domain: \(CognitoConfig.cognitoDomain)")
+            print("AuthService: Client ID: \(CognitoConfig.clientId)")
+            print("AuthService: Redirect URI: \(CognitoConfig.redirectUri)")
+            
+            // Also print the URL components for debugging
+            print("AuthService: URL scheme: \(url.scheme ?? "nil")")
+            print("AuthService: URL host: \(url.host ?? "nil")")
+            print("AuthService: URL path: \(url.path)")
+            
             NSWorkspace.shared.open(url)
+            
+            // Set a timer to check if the redirect is handled
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                if !self.isAuthenticated {
+                    print("AuthService: Authentication callback not received after 5 seconds")
+                    if let error = self.errorMessage {
+                        print("AuthService: Error: \(error)")
+                    } else {
+                        print("AuthService: No error message available")
+                    }
+                }
+            }
+        } else {
+            print("AuthService: Failed to create auth URL")
+            errorMessage = "Failed to create authentication URL"
         }
     }
     
     func handleAuthCallback(url: URL) async -> Bool {
+        print("AuthService: handleAuthCallback called with URL: \(url.absoluteString)")
+        print("AuthService: URL scheme: \(url.scheme ?? "nil")")
+        print("AuthService: URL host: \(url.host ?? "nil")")
+        print("AuthService: URL path: \(url.path)")
+        
         // Extract authorization code from URL
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let code = components.queryItems?.first(where: { $0.name == "code" })?.value else {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            errorMessage = "Invalid URL format in callback."
+            print("Auth callback invalid URL format: \(url.absoluteString)")
+            return false
+        }
+        
+        print("AuthService: URL query items: \(components.queryItems?.description ?? "none")")
+        
+        guard let code = components.queryItems?.first(where: { $0.name == "code" })?.value else {
             errorMessage = "Missing authorization code in callback."
             print("Auth callback missing code: \(url.absoluteString)")
             return false
@@ -211,7 +335,7 @@ class AuthService: ObservableObject {
         
         guard let codeVerifier = verifier else {
             errorMessage = "Missing PKCE verifier. Please try signing in again."
-            print("Auth callback missing verifier for URL: \(url.absoluteString)")
+            print("Auth callback missing verifier")
             return false
         }
         
@@ -249,6 +373,8 @@ class AuthService: ObservableObject {
     }
     
     private func checkAuthStatus() async {
+        print("=== CHECKING AUTH STATUS AT STARTUP ===")
+        
         // Check UserDefaults for existing authentication
         let isAuth = UserDefaults.standard.bool(forKey: "isAuthenticated")
         let savedUserName = UserDefaults.standard.string(forKey: "userName")
@@ -257,10 +383,17 @@ class AuthService: ObservableObject {
         let savedIdToken = UserDefaults.standard.string(forKey: "authToken")
         let savedRefreshToken = UserDefaults.standard.string(forKey: "refreshToken")
         
-        print("AuthService: Auth status - \(isAuth), Token available - \(savedIdToken != nil)")
+        print("AuthService: Auth status - \(isAuth)")
+        print("AuthService: Token available - \(savedIdToken != nil)")
+        print("AuthService: Access token available - \(savedToken != nil)")
+        print("AuthService: User name - \(savedUserName ?? "nil")")
+        print("AuthService: User email - \(savedUserEmail ?? "nil")")
+        print("AuthService: Refresh token available - \(savedRefreshToken != nil)")
         
         if isAuth && savedUserName != nil && savedUserEmail != nil && savedToken != nil {
             let userInfo = decodeUserInfo(fromIDToken: savedIdToken, fallbackUsername: savedUserName ?? "User")
+            
+            print("AuthService: User info from token - userId=\(userInfo.userId), displayName=\(userInfo.displayName), email=\(userInfo.email ?? "nil")")
             
             isAuthenticated = true
             userName = userInfo.displayName
@@ -268,12 +401,21 @@ class AuthService: ObservableObject {
             token = savedIdToken
             refreshToken = savedRefreshToken
             
+            print("AuthService: Updated state - isAuthenticated=\(isAuthenticated), userName=\(userName ?? "nil"), token length=\(token?.count ?? 0)")
+            
             // Set token in API service (use access_token for backend authentication)
             apiService.setAuthToken(savedToken)
             
             // Create user object
             currentUser = AuthUser(userId: userInfo.userId, username: userInfo.displayName, email: userInfo.email)
+            
+            print("AuthService: Current user set - userId=\(currentUser?.userId ?? "nil"), username=\(currentUser?.username ?? "nil"), email=\(currentUser?.email ?? "nil")")
+        } else {
+            print("AuthService: Not authenticated or missing required data")
+            print("AuthService: isAuth=\(isAuth), userName=\(savedUserName ?? "nil"), userEmail=\(savedUserEmail ?? "nil"), token=\(savedToken ?? "nil")")
         }
+        
+        print("=== AUTH STATUS CHECK COMPLETED ===")
     }
     
     private func handleAuthEvent(_ event: String) {

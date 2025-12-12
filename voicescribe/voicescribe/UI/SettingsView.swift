@@ -555,9 +555,7 @@ struct AccountSettingsView: View {
             SettingsSectionView(title: "Account Actions") {
                 VStack(spacing: 0) {
                     Button(action: {
-                        Task {
-                            await authService.signOut()
-                        }
+                        authService.signOut()
                     }) {
                         HStack {
                             Image(systemName: "arrow.right.square")

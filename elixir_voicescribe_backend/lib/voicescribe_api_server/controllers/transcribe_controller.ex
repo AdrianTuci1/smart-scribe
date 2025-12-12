@@ -16,29 +16,38 @@ defmodule VoiceScribeAPIServer.TranscribeController do
     end
   end
 
-  def upload_chunk(conn, %{"user_id" => user_id, "chunk" => chunk_data}) do
-    case TranscribeSessionManager.add_chunk(user_id, chunk_data) do
+  def upload_chunk(conn, %{"data" => data, "session_id" => _session_id}) do
+    # Add rate limiting context for chunk uploads
+    user_id = conn.assigns[:current_user]
+
+    case TranscribeSessionManager.add_chunk(user_id, data) do
       :ok ->
-        json(conn, %{status: "ok", message: "Chunk received"})
+        conn
+        |> put_resp_header("x-chunk-status", "received")
+        |> json(%{status: "ok", message: "Chunk received"})
 
       {:error, :session_not_found} ->
+        Logger.error("Session not found for user #{user_id}")
         conn
         |> put_status(:not_found)
         |> json(%{status: "error", message: "Session not found"})
 
       {:error, :session_not_recording} ->
+        Logger.error("Session not in recording state for user #{user_id}")
         conn
         |> put_status(:bad_request)
         |> json(%{status: "error", message: "Session is not in recording state"})
 
       {:error, reason} ->
+        Logger.error("Failed to add chunk for user #{user_id}: #{inspect(reason)}")
         conn
         |> put_status(:internal_server_error)
         |> json(%{status: "error", message: "Failed to add chunk: #{inspect(reason)}"})
     end
   end
 
-  def finish_session(conn, %{"user_id" => user_id}) do
+  def finish_session(conn, %{"session_id" => _session_id}) do
+    user_id = conn.assigns[:current_user]
     case TranscribeSessionManager.finish_session(user_id) do
       {:ok, :processing} ->
         json(conn, %{status: "ok", message: "Processing transcription"})
@@ -60,7 +69,8 @@ defmodule VoiceScribeAPIServer.TranscribeController do
     end
   end
 
-  def get_status(conn, %{"user_id" => user_id}) do
+  def get_status(conn, _params) do
+    user_id = conn.assigns[:current_user]
     case TranscribeSessionManager.get_session_status(user_id) do
       {:ok, session_data} ->
         response = %{
@@ -74,7 +84,9 @@ defmodule VoiceScribeAPIServer.TranscribeController do
             error: session_data.error
           }
         }
-        json(conn, response)
+        conn
+        |> put_status(:ok)
+        |> json(response)
 
       {:error, :session_not_found} ->
         conn

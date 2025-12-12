@@ -18,17 +18,8 @@ struct SidebarContentView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.purple)
                 
-                Text("Flow")
+                Text("SmartScribe")
                     .font(.system(size: 18, weight: .bold))
-                
-                // Pro Trial badge
-                Text("Pro Trial")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.green)
-                    .cornerRadius(10)
                 
                 Spacer()
             }
@@ -130,14 +121,6 @@ struct SidebarView: View {
                         Text("Flow")
                             .font(.system(size: 18, weight: .bold))
                         
-                        // Pro Trial badge
-                        Text("Pro Trial")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.green)
-                            .cornerRadius(10)
                     }
                 }
                 

@@ -4,7 +4,7 @@ defmodule VoiceScribeAPIServer.AuthController do
   Swift frontend handles direct Cognito login, backend only validates tokens
   """
 
-  use Phoenix.Controller
+  use Phoenix.Controller, formats: [html: "View", json: "View"]
   require Logger
   alias VoiceScribeAPI.CognitoAuth
 
@@ -39,9 +39,9 @@ defmodule VoiceScribeAPIServer.AuthController do
     # In a real implementation, you would validate the refresh token with Cognito
     # For now, we'll just return a mock response
     if refresh_token do
-      json(conn, %{
-        message: "Token refresh not implemented yet"
-      })
+      conn
+        |> put_status(:bad_request)
+        |> json(%{message: "Token refresh not implemented yet"})
     else
       conn
         |> put_status(:bad_request)
@@ -53,17 +53,17 @@ defmodule VoiceScribeAPIServer.AuthController do
   Logs out a user by invalidating their token
   Swift frontend can use this to properly log out a user
   """
-  def logout(conn, %{"token" => token}) do
+  def logout(conn, _params) do
     # In a real implementation, you might want to add the token to a blacklist
     # For now, we'll just return a success response
-    if token do
-      json(conn, %{
-        message: "Logged out successfully"
-      })
-    else
+    if true do
+      conn
+        |> put_status(:ok)
+        |> json(%{message: "Logged out successfully"})
+      else
       conn
         |> put_status(:bad_request)
-        |> json(%{error: "Token is required"})
+        |> json(%{error: "Invalid request"})
+      end
     end
-  end
 end

@@ -7,6 +7,12 @@ config :voicescribe_api, VoiceScribeAPIServer.Endpoint,
   secret_key_base: "ATPUu0nOC9+I07qYCYkagS9dNni4C1evouCgS1tE9+ySIEtciBA014sUQWjCAP+I",
   server: false
 
+# Configure AWS for tests (using mock values if environment variables aren't set)
+config :ex_aws,
+  region: "us-east-1",
+  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE"),
+  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

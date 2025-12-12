@@ -12,5 +12,7 @@
     <true/>
     <key>com.apple.security.network.default</key>
     <true/>
+    <key>com.apple.security.accessibility</key>
+    <true/>
 </dict>
 </plist>

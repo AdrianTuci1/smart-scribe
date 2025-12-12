@@ -10,6 +10,10 @@ defmodule VoiceScribeAPIServer.Router do
     plug VoiceScribeAPIServer.AuthenticationPlug
   end
 
+  pipeline :rate_limit do
+    plug VoiceScribeAPIServer.RateLimitPlug, limit: 10
+  end
+
   # Authentication routes (no auth required)
   scope "/api/v1", VoiceScribeAPIServer do
     pipe_through [:api]
@@ -21,7 +25,7 @@ defmodule VoiceScribeAPIServer.Router do
 
   # Protected routes (auth required)
   scope "/api/v1", VoiceScribeAPIServer do
-    pipe_through [:api, :auth]
+    pipe_through [:api, :auth, :rate_limit]
 
     get "/notes", NotesController, :list
     post "/notes", NotesController, :create

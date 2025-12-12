@@ -264,7 +264,17 @@ class HomeViewModel: ObservableObject {
                 self.groupedTranscripts = fetchedTranscripts.groupedByDate()
                 self.calculateStats()
             } catch {
-                self.showError(message: "Failed to load transcripts: \(error.localizedDescription)")
+                print("Error loading transcripts: \(error)")
+                // Check if the error is related to data parsing
+                if error.localizedDescription.contains("The data couldn't be read") {
+                    self.showError(message: "Failed to load transcripts: Invalid server response format")
+                } else {
+                    self.showError(message: "Failed to load transcripts: \(error.localizedDescription)")
+                }
+                
+                // Ensure we have empty arrays instead of nil
+                self.transcripts = []
+                self.groupedTranscripts = []
             }
             self.isLoading = false
         }

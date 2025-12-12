@@ -2,7 +2,7 @@ defmodule VoiceScribeAPI.Transcription.TranscribeGenServer do
   use GenServer
   require Logger
   alias VoiceScribeAPI.AI.BedrockClient
-  alias VoiceScribeAPIWeb.Endpoint
+  alias VoiceScribeAPIServer.Endpoint
   alias UUID
   require URI
   require Jason
@@ -137,7 +137,8 @@ defmodule VoiceScribeAPI.Transcription.TranscribeGenServer do
     ]
 
     # Connect to AWS Transcribe WebSocket
-    case WebSockex.start_link(websocket_url, extra_headers: headers) do
+    state = %{parent_pid: self()}
+    case WebSockex.start_link(websocket_url, __MODULE__.TranscribeClient, state, extra_headers: headers) do
       {:ok, pid} ->
         Logger.info("Connected to AWS Transcribe for user #{user_id}")
         # Start with empty audio buffer
@@ -231,7 +232,7 @@ defmodule VoiceScribeAPI.Transcription.TranscribeGenServer do
 
   # Get vocabulary terms from user dictionary
   defp get_vocabulary_terms(user_id) do
-    case DynamoDBRepo.get_config(user_id, "dictionary") do
+    case VoiceScribeAPI.DynamoDBRepo.get_config(user_id, "dictionary") do
       {:ok, %{"Item" => item}} ->
         dictionary = ExAws.Dynamo.decode_item(item)
         case dictionary["entries"] do
@@ -243,6 +244,26 @@ defmodule VoiceScribeAPI.Transcription.TranscribeGenServer do
             |> Enum.join(",")
         end
       _ -> ""
+    end
+  end
+
+  # WebSockex client module for AWS Transcribe
+  defmodule TranscribeClient do
+    use WebSockex
+
+    def handle_frame({:text, msg}, state) do
+      # Forward message to parent process
+      send(state[:parent_pid], {:text, msg})
+      {:ok, state}
+    end
+
+    def handle_cast({:send, frame}, state) do
+      {:reply, frame, state}
+    end
+
+    def handle_disconnect(%{reason: reason}, state) do
+      Logger.info("WebSocket disconnected: #{inspect(reason)}")
+      {:ok, state}
     end
   end
 end

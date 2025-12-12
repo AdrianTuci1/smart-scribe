@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Chip State Enum
 enum ChipState: Equatable {
@@ -6,6 +7,8 @@ enum ChipState: Equatable {
     case hover
     case recording
     case error(title: String, message: String, micName: String)
+    case processing(message: String) // PLEASE_HOLD and SLOW_PROCESSING
+    case requestError(message: String, actionTitle: String) // REQUEST_ISSUE
     
     static func == (lhs: ChipState, rhs: ChipState) -> Bool {
         switch (lhs, rhs) {
@@ -13,6 +16,10 @@ enum ChipState: Equatable {
             return true
         case (.error(let t1, let m1, let n1), .error(let t2, let m2, let n2)):
             return t1 == t2 && m1 == m2 && n1 == n2
+        case (.processing(let m1), .processing(let m2)):
+            return m1 == m2
+        case (.requestError(let m1, let a1), .requestError(let m2, let a2)):
+            return m1 == m2 && a1 == a2
         default:
             return false
         }
@@ -26,6 +33,9 @@ struct FloatingWaveformChip: View {
     @State private var showTooltip: Bool = false
     @State private var chipState: ChipState = .normal
     @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 5)
+    
+    // Dock manager for positioning
+    @StateObject private var dockManager = DockManager.shared
     
     // Callbacks for error panel actions
     var onSelectMicrophone: (() -> Void)?
@@ -60,6 +70,20 @@ struct FloatingWaveformChip: View {
                     .padding(.bottom, 12)
             }
             
+            // Processing Panel (PLEASE_HOLD and SLOW_PROCESSING)
+            if case .processing(let message) = chipState {
+                processingPanel(message: message)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .padding(.bottom, 12)
+            }
+            
+            // Request Error Panel (REQUEST_ISSUE)
+            if case .requestError(let message, let actionTitle) = chipState {
+                requestErrorPanel(message: message, actionTitle: actionTitle)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .padding(.bottom, 12)
+            }
+            
             // Tooltip (appears on hover when not recording)
             if isHoveringChip && !isRecording && showTooltip && chipState != .recording {
                 tooltipView
@@ -74,6 +98,8 @@ struct FloatingWaveformChip: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHoveringChip)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isRecording)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: chipState)
+        .animation(.easeInOut(duration: 0.5), value: dockManager.dockIsHidden) // Animate position changes
+        .animation(.easeInOut(duration: 0.5), value: dockManager.dockHeight) // Animate position changes
         .onChange(of: isRecording) { _, newValue in
             if newValue {
                 chipState = .recording
@@ -82,6 +108,9 @@ struct FloatingWaveformChip: View {
                 chipState = isHoveringChip ? .hover : .normal
                 stopWaveformAnimation()
             }
+        }
+        .onAppear {
+            dockManager.updateDockInfo() // Ensure dock info is current when view appears
         }
     }
     
@@ -179,12 +208,20 @@ struct FloatingWaveformChip: View {
                         .stroke(Color(white: 0.28), lineWidth: 1)
                 )
         )
-        .onTapGesture {
+        .onTapGesture(count: 1) {
             if !isRecording {
                 toggleRecording()
             }
         }
         .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded { _ in
+                    if !isRecording {
+                        toggleRecording()
+                    }
+                }
+        )
         .onHover { hovering in
             handleHoverChange(hovering: hovering)
         }
@@ -322,6 +359,186 @@ struct FloatingWaveformChip: View {
             waveformAmplitudes = Array(repeating: 3, count: 5)
         }
     }
+    
+    // MARK: - Processing Panel
+    private func processingPanel(message: String) -> some View {
+        VStack(spacing: 12) {
+            // Header with processing icon and close button
+            HStack {
+                // Processing icon
+                Circle()
+                    .stroke(Color.blue, lineWidth: 2)
+                    .frame(width: 20, height: 20)
+                    .overlay(
+                        Image(systemName: "clock")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.blue)
+                    )
+                
+                Text("Procesare")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Close button
+                Button(action: { dismissProcessing() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Message
+            Text(message)
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+            
+            // Continue/Cancel buttons
+            HStack(spacing: 12) {
+                Button(action: { dismissProcessing() }) {
+                    Text("Anulează")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color(white: 0.35), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: { continueProcessing() }) {
+                    Text("Continuă așteptarea")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .cornerRadius(20)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(white: 0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color(white: 0.18), lineWidth: 1)
+                )
+        )
+        .frame(maxWidth: 400)
+    }
+    
+    // MARK: - Request Error Panel
+    private func requestErrorPanel(message: String, actionTitle: String) -> some View {
+        VStack(spacing: 12) {
+            // Header with error icon and close button
+            HStack {
+                // Error icon
+                Circle()
+                    .stroke(Color.red, lineWidth: 2)
+                    .frame(width: 20, height: 20)
+                    .overlay(
+                        Text("!")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.red)
+                    )
+                
+                Text("Problemă cu cererea")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Close button
+                Button(action: { dismissRequestError() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Message
+            Text(message)
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+            
+            // Action buttons
+            HStack(spacing: 12) {
+                Button(action: { dismissRequestError() }) {
+                    Text("Anulează")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color(white: 0.35), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: { retryRequest() }) {
+                    Text(actionTitle)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .cornerRadius(20)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(white: 0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color(white: 0.18), lineWidth: 1)
+                )
+        )
+        .frame(maxWidth: 400)
+    }
+    
+    // MARK: - Action Methods
+    private func dismissProcessing() {
+        withAnimation {
+            chipState = .normal
+        }
+    }
+    
+    private func continueProcessing() {
+        // Continue waiting, maintain processing state
+        // The timer or caller should manage this state
+    }
+    
+    private func dismissRequestError() {
+        withAnimation {
+            chipState = .normal
+        }
+    }
+    
+    private func retryRequest() {
+        // Trigger retry by notifying parent
+        // This would typically be handled through a callback
+        withAnimation {
+            chipState = .normal
+        }
+    }
 }
 
 // MARK: - Hover Handling
@@ -344,6 +561,19 @@ private extension FloatingWaveformChip {
             }
         } else {
             showTooltip = false
+        }
+    }
+    
+    // MARK: - Public Methods for Notifications
+    func showProcessing(message: String = "Vă rugăm să așteptați. Procesarea durează mai mult decât de obicei.") {
+        withAnimation {
+            chipState = .processing(message: message)
+        }
+    }
+    
+    func showRequestError(message: String = "A existat o problemă cu solicitarea dumneavoastră. Vă rugăm să încercați din nou.", actionTitle: String = "Încearcă din nou") {
+        withAnimation {
+            chipState = .requestError(message: message, actionTitle: actionTitle)
         }
     }
 }

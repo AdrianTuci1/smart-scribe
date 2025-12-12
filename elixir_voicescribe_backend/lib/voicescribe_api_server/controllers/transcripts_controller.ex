@@ -2,12 +2,36 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
   use VoiceScribeAPIServer, :controller
   alias VoiceScribeAPI.DynamoDBRepo
 
-  def list(conn, _params) do
+  def list(conn, params) do
     user_id = conn.assigns.current_user
-    case DynamoDBRepo.list_transcripts(user_id) do
+
+    # Get pagination parameters
+    limit = Map.get(params, "limit", "20") |> String.to_integer()
+    start_key = Map.get(params, "start_key")
+
+    case DynamoDBRepo.list_transcripts(user_id, limit: limit, start_key: start_key) do
       {:ok, result} ->
         items = (result["Items"] || []) |> Enum.map(&decode_item/1)
-        json(conn, %{data: items})
+        last_evaluated_key = Map.get(result, "LastEvaluatedKey")
+
+        response = %{
+          data: items
+        }
+
+        # Add pagination info if available
+        response =
+          if last_evaluated_key do
+            Map.put(response, "pagination", %{
+              start_key: last_evaluated_key,
+              has_more: true
+            })
+          else
+            Map.put(response, "pagination", %{
+              has_more: false
+            })
+          end
+
+        json(conn, response)
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -32,9 +56,11 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
     end
   end
 
-  def create(conn, %{"transcriptId" => transcript_id} = params) do
+  def create(conn, params) do
+    transcript_id = Map.get(params, "id")
     user_id = conn.assigns.current_user
     transcript_data = Map.merge(params, %{
+      "transcriptId" => transcript_id,
       "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
       "isFlagged" => false
     })
@@ -106,7 +132,7 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
             |> put_status(:bad_request)
             |> json(%{error: "No audio available for retry"})
 
-          audio_url ->
+          _audio_url ->
             # TODO: Trigger re-transcription with the audio file
             # For now, return the existing transcript
             # In production, this would queue a new transcription job
@@ -158,5 +184,9 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
     rescue
       _ -> %{}
     end
+  end
+
+  def audio(conn, %{"id" => transcript_id}) do
+    audio_url(conn, %{"id" => transcript_id})
   end
 end

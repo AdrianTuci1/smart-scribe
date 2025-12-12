@@ -1,0 +1,233 @@
+{
+  "projectName": "VoiceScribe iPhone",
+  "bundleIdentifier": "com.simplu.voicescribe.ios",
+  "version": "1.0.0",
+  "platform": "iOS",
+  "deploymentTarget": "16.0",
+  "deviceFamily": ["iPhone"],
+  "capabilities": [
+    "Microphone Usage Description",
+    "Speech Recognition",
+    "Background Modes",
+    "Push Notifications",
+    "Keychain Sharing"
+  ],
+  "permissions": [
+    {
+      "key": "NSMicrophoneUsageDescription",
+      "value": "VoiceScribe needs access to your microphone to record and transcribe your voice."
+    },
+    {
+      "key": "NSSpeechRecognitionUsageDescription",
+      "value": "VoiceScribe uses speech recognition to convert your voice into text."
+    },
+    {
+      "key": "UIBackgroundModes",
+      "value": ["audio", "background-processing"]
+    }
+  ],
+  "entitlements": {
+    "com.apple.security.application-groups": ["group.com.simplu.voicescribe"],
+    "keychain-access-groups": ["$(AppIdentifierPrefix)com.simplu.voicescribe.ios"]
+  },
+  "urlTypes": [
+    {
+      "name": "VoiceScribe Auth",
+      "urlSchemes": ["voicescribe"],
+      "roles": ["Editor"]
+    }
+  ],
+  "appExtensions": [
+    {
+      "name": "DictationExtension",
+      "bundleIdentifier": "com.simplu.voicescribe.ios.dictation",
+      "category": "com.apple.keyboard-service",
+      "deploymentTarget": "16.0",
+      "entryPoint": "DictationViewController",
+      "supportedOrientations": ["portrait"],
+      "requiredDeviceCapabilities": ["microphone"],
+      "permissions": [
+        {
+          "key": "NSMicrophoneUsageDescription",
+          "value": "VoiceScribe Dictation needs access to your microphone to record and transcribe your voice."
+        }
+      ],
+      "backgroundModes": ["audio"]
+    },
+    {
+      "name": "ActionExtension",
+      "bundleIdentifier": "com.simplu.voicescribe.ios.action",
+      "category": "com.apple.ui-services",
+      "deploymentTarget": "16.0",
+      "entryPoint": "ActionViewController",
+      "activationRules": {
+        "NSExtensionActivationRule": "TRUEPREDICATE"
+      },
+      "supportedOrientations": ["portrait"],
+      "requiredDeviceCapabilities": ["microphone"]
+    }
+  ],
+  "frameworks": [
+    "SwiftUI",
+    "Combine",
+    "AVFoundation",
+    "Speech",
+    "AuthenticationServices",
+    "Network",
+    "UserNotifications",
+    "BackgroundTasks"
+  ],
+  "architecture": {
+    "pattern": "MVVM + Coordinator",
+    "modules": [
+      {
+        "name": "App",
+        "components": [
+          "WisprFlowApp (AppDelegate)",
+          "SceneDelegate",
+          "NotificationManager"
+        ]
+      },
+      {
+        "name": "Authentication",
+        "components": [
+          "AuthService (Adapted for iOS)",
+          "CognitoConfig (Shared)",
+          "SignInView",
+          "SignUpView"
+        ]
+      },
+      {
+        "name": "Audio Recording",
+        "components": [
+          "AudioCaptureService (iOS adapted)",
+          "RecordingManager (iOS adapted)",
+          "TranscriptionService (iOS adapted)",
+          "PermissionManager (iOS adapted)"
+        ]
+      },
+      {
+        "name": "Core Features",
+        "components": [
+          "HomeView",
+          "TranscriptionView",
+          "HistoryView",
+          "SettingsView",
+          "DictionaryView",
+          "NotesView",
+          "SnippetsView"
+        ]
+      },
+      {
+        "name": "Extensions",
+        "components": [
+          "DictationExtension",
+          "ActionExtension",
+          "WidgetExtension"
+        ]
+      },
+      {
+        "name": "Network",
+        "components": [
+          "APIService (Shared)",
+          "NetworkMonitor"
+        ]
+      },
+      {
+        "name": "UI Components",
+        "components": [
+          "FloatingWaveformChip (iOS adapted)",
+          "WaveformView (iOS adapted)",
+          "RichTextEditor (iOS adapted)",
+          "UserMenuView (iOS adapted)",
+          "KeyboardAccessoryView"
+        ]
+      },
+      {
+        "name": "Models",
+        "components": [
+          "Transcript (Shared)",
+          "Note (Shared)",
+          "Snippet (Shared)",
+          "DictionaryEntry (Shared)"
+        ]
+      },
+      {
+        "name": "Utilities",
+        "components": [
+          "GlobalHotkeyMonitor (iOS adapted)",
+          "PermissionManager (iOS adapted)",
+          "KeyboardManager",
+          "ExtensionManager",
+          "LocalStorageManager"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": {
+    "dictationIntegration": {
+      "description": "Direct integration with iOS dictation module",
+      "activationMethod": "Custom keyboard extension or system dictation",
+      "implementation": "DictationExtension with AudioCaptureService integration"
+    },
+    "actionButtonIntegration": {
+      "description": "Action extension for quick voice input from any app",
+      "activationMethod": "Share sheet action",
+      "implementation": "ActionExtension with recording capabilities"
+    },
+    "backgroundRecording": {
+      "description": "Continue recording when app is backgrounded",
+      "implementation": "Background audio mode with persistent recording state"
+    },
+    "syncIntegration": {
+      "description": "Seamless sync with desktop app",
+      "implementation": "Shared API service and keychain group"
+    }
+  },
+  "buildConfiguration": {
+    "debug": {
+      "buildSettings": {
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "DEBUG",
+        "SWIFT_OPTIMIZATION_LEVEL": "-Onone",
+        "ENABLE_TESTABILITY": "YES"
+      }
+    },
+    "release": {
+      "buildSettings": {
+        "SWIFT_COMPILATION_MODE": "wholemodule",
+        "VALIDATE_PRODUCT": "YES",
+        "PROVISIONING_PROFILE_SPECIFIER": "",
+        "CODE_SIGN_STYLE": "Automatic"
+      }
+    }
+  },
+  "sharedCode": {
+    "models": ["Transcript", "Note", "Snippet", "DictionaryEntry", "AuthUser"],
+    "network": ["APIService", "TranscriptionService"],
+    "config": ["CognitoConfig"],
+    "utilities": ["LocalStorageManager"]
+  },
+  "iosSpecificImplementations": {
+    "audioRecording": {
+      "changes": [
+        "Replace AVAudioEngine with AVAudioRecorder for simpler iOS implementation",
+        "Add proper session management for background recording",
+        "Implement interruption handling for phone calls"
+      ]
+    },
+    "uiComponents": {
+      "changes": [
+        "Adapt FloatingWaveformChip for iPhone dimensions",
+        "Implement proper keyboard avoidance",
+        "Add navigation controller structure",
+        "Adapt for touch interactions instead of hover"
+      ]
+    },
+    "authentication": {
+      "changes": [
+        "Use ASWebAuthenticationSession for OAuth flow",
+        "Implement TouchID/FaceID for quick unlock"
+      ]
+    }
+  }
+}

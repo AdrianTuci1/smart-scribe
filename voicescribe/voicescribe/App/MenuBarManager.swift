@@ -21,6 +21,23 @@ class MenuBarManager: ObservableObject {
         setupMenu()
         setupBindings()
         requestNotificationPermission()
+        
+        // Ensure the status item button responds to clicks
+        if let button = statusItem.button {
+            button.action = #selector(statusBarButtonClicked)
+            button.target = self
+        }
+    }
+    
+    @objc private func statusBarButtonClicked() {
+        // Make sure menu is set before attempting to show it
+        if statusItem.menu == nil {
+            setupMenu()
+        }
+        
+        // Manually show the menu
+        guard let button = statusItem.button else { return }
+        statusItem.menu?.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
     }
     
     private func requestNotificationPermission() {

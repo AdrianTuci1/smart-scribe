@@ -12,7 +12,7 @@ defmodule VoiceScribeAPIServer.ConfigController do
 
     # Handle the result from DynamoDBRepo
     case result do
-      %{} ->
+      empty_map when empty_map == %{} ->
         # Empty map means no config found
         json(conn, %{data: nil})
       data ->
@@ -33,7 +33,8 @@ defmodule VoiceScribeAPIServer.ConfigController do
   end
 
   # New endpoints for dictionary and style preferences
-  def save_dictionary(conn, %{"entries" => entries}) do
+  def save_dictionary(conn, %{"dictionary" => dictionary}) do
+    entries = Map.get(dictionary, "entries", [])
     user_id = conn.assigns.current_user
 
     case BedrockClient.save_dictionary(user_id, entries) do
@@ -42,7 +43,9 @@ defmodule VoiceScribeAPIServer.ConfigController do
     end
   end
 
-  def save_style_preferences(conn, %{"context" => context, "style" => style}) do
+  def save_style_preferences(conn, %{"preferences" => preferences}) do
+    context = Map.get(preferences, "context", "No specific context")
+    style = Map.get(preferences, "style", "No specific style")
     user_id = conn.assigns.current_user
 
     case BedrockClient.save_style_preferences(user_id, context, style) do

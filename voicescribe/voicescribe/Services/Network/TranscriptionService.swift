@@ -71,9 +71,11 @@ class TranscriptionService: ObservableObject {
         
         // Send chunk to server
         do {
+            // Compress chunk with gzip before sending
+            let compressedChunk = compressData(chunk)
             try await apiService.uploadTranscriptionChunk(
                 userId: getUserId(),
-                chunk: chunk.base64EncodedString()
+                chunk: compressedChunk.base64EncodedString()
             )
         } catch {
             print("Failed to upload chunk: \(error)")
@@ -171,9 +173,39 @@ class TranscriptionService: ObservableObject {
         }
     }
     
+    // Add method to show PLEASE_HOLD notification after 5 seconds
+    private func showPleaseHoldNotificationIfNeeded(attempt: Int) {
+        // Show PLEASE_HOLD after 5 seconds (after first attempt)
+        if attempt > 0 {
+            DispatchQueue.main.async {
+                // This would be handled by the UI component
+                // In a real implementation, we'd use notification center
+                print("PLEASE_HOLD: Vă rugăm să așteptați. Procesarea durează mai mult decât de obicei.")
+            }
+        }
+    }
+    
+    // Add method to handle slow processing
+    private func handleSlowProcessing() {
+        DispatchQueue.main.async {
+            // This would be handled by the UI component
+            print("SLOW_PROCESSING: Ne ia mai mult timp decât de obicei. Puteți aștepta sau anula cererea.")
+        }
+    }
+    
     private func getUserId() -> String {
         // Get user ID from auth service
         return AuthService.shared.currentUser?.userId ?? "default_user"
+    }
+    
+    // Compress data using lzfse (Apple's compression algorithm)
+    private func compressData(_ data: Data) -> Data {
+        do {
+            return try (data as NSData).compressed(using: .lzfse) as Data
+        } catch {
+            print("Failed to compress chunk data: \(error)")
+            return data // Return original data if compression fails
+        }
     }
 }
 

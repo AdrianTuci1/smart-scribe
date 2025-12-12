@@ -100,7 +100,7 @@ struct DictionaryView: View {
                         }
                         .buttonStyle(.plain)
                         
-                        Button(action: { loadSampleData() }) {
+                        Button(action: { loadEntries() }) {
                             Image(systemName: "arrow.clockwise")
                                 .font(.system(size: 14))
                                 .foregroundColor(.secondary)
@@ -166,37 +166,21 @@ struct DictionaryView: View {
             }
         }
         .onAppear {
-            loadSampleData()
+            loadEntries()
         }
     }
     
-    private func loadSampleData() {
+    private func loadEntries() {
         Task {
             do {
                 let fetchedEntries = try await syncService.fetchDictionary()
                 DispatchQueue.main.async {
-                    if !fetchedEntries.isEmpty {
-                        self.entries = fetchedEntries
-                    } else {
-                        // Use sample data if no entries found
-                        self.entries = [
-                            DictionaryEntry(incorrectWord: "gonna", correctWord: "going to"),
-                            DictionaryEntry(incorrectWord: "wanna", correctWord: "want to"),
-                            DictionaryEntry(incorrectWord: "gotta", correctWord: "got to")
-                        ]
-                    }
+                    self.entries = fetchedEntries
                 }
             } catch {
                 print("Failed to fetch dictionary entries: \(error)")
-                // Use sample data on error
                 DispatchQueue.main.async {
-                    if self.entries.isEmpty {
-                        self.entries = [
-                            DictionaryEntry(incorrectWord: "gonna", correctWord: "going to"),
-                            DictionaryEntry(incorrectWord: "wanna", correctWord: "want to"),
-                            DictionaryEntry(incorrectWord: "gotta", correctWord: "got to")
-                        ]
-                    }
+                    self.entries = []
                 }
             }
         }

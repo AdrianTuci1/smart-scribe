@@ -61,22 +61,9 @@ class AudioCaptureService: NSObject, ObservableObject {
         print("AudioCapture: Stopped recording")
     }
     
-    /// Check microphone permission
+    /// Check microphone permission using PermissionManager
     func checkMicrophonePermission(completion: @escaping (Bool) -> Void) {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            completion(true)
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                DispatchQueue.main.async {
-                    completion(granted)
-                }
-            }
-        case .denied, .restricted:
-            completion(false)
-        @unknown default:
-            completion(false)
-        }
+        completion(PermissionManager.shared.isMicrophonePermissionGranted())
     }
     
     // MARK: - Private Methods
