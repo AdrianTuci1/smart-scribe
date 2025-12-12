@@ -8,6 +8,8 @@ struct OnboardingView: View {
     @StateObject private var authService = AuthService.shared
     @State private var isProcessingAuth = false
     
+    @State private var selectedDomains: Set<String> = []
+
     var body: some View {
         VStack {
             if currentStep == 0 {
@@ -17,9 +19,17 @@ struct OnboardingView: View {
                     nextAction: { currentStep += 1 }
                 )
             } else if currentStep == 1 {
-                PermissionsStep(nextAction: { currentStep += 1 })
+                AccessibilityStep(nextAction: { currentStep += 1 })
+            } else if currentStep == 2 {
+                MicrophoneStep(nextAction: { currentStep += 1 })
+            } else if currentStep == 3 {
+                DomainSelectionStep(nextAction: { currentStep += 1 }, selectedDomains: $selectedDomains)
+            } else if currentStep == 4 {
+                DictationTestStep(nextAction: { currentStep += 1 })
             } else {
-                SetupStep(finishAction: { hasCompletedOnboarding = true })
+                SetupStep(finishAction: {
+                    completeOnboarding()
+                })
             }
         }
         .frame(width: 600, height: 500)
@@ -40,6 +50,9 @@ struct OnboardingView: View {
                     isProcessingAuth = false
                     print("OnboardingView: Authentication state should now be persisted")
                 }
+                
+                // Fetch onboarding state from backend (if re-installing)
+                checkRemoteOnboardingStatus()
             } else {
                 print("OnboardingView: User is not authenticated")
                 if let errorMessage = authService.errorMessage {
@@ -55,6 +68,49 @@ struct OnboardingView: View {
                 
                 // Check if we already have persisted auth state
                 checkPersistedAuthState()
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        Task {
+            let config = OnboardingConfig(
+                hasCompletedOnboarding: true,
+                selectedDomains: Array(selectedDomains),
+                completedAt: Date()
+            )
+            do {
+                try await APIService.shared.saveOnboardingConfig(config)
+                print("Onboarding config saved successfully")
+            } catch {
+                print("Error saving onboarding config: \(error)")
+            }
+            
+            await MainActor.run {
+                hasCompletedOnboarding = true
+            }
+        }
+    }
+    
+    private func checkRemoteOnboardingStatus() {
+        Task {
+            do {
+                let config = try await APIService.shared.fetchOnboardingConfig()
+                if config.hasCompletedOnboarding {
+                    print("Remote onboarding confirmed complete. Syncing local state.")
+                    await MainActor.run {
+                        selectedDomains = Set(config.selectedDomains)
+                        // If they completed it, we can skip? 
+                        // But maybe we want to let them finish if they entered?
+                        // User request: "register that user passed ... so we don't pass him again"
+                        // This implies if we detect it, we might set hasCompletedOnboarding = true immediately?
+                        // Or maybe just prepopulate data.
+                        // Let's set it to true to skip if valid.
+                        hasCompletedOnboarding = true
+                    }
+                }
+            } catch {
+                print("Error fetching onboarding config: \(error)")
             }
         }
     }

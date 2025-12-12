@@ -7,6 +7,7 @@ class FloatingWaveformManager: ObservableObject {
     @Published var isPaused: Bool = false
     @Published var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 7)
     @Published var sessionState: TranscriptionSessionState = .idle
+    @Published var chipState: ChipState = .normal
     
     private var chipWindow: NSPanel?
     private var hostingController: NSHostingController<AnyView>?
@@ -22,12 +23,14 @@ class FloatingWaveformManager: ObservableObject {
     var onSelectMicrophone: (() -> Void)?
     var onTroubleshoot: (() -> Void)?
     
+    private var positionPollingTimer: Timer?
+    
     init() {
         setupBindings()
-        // Create chip immediately at initialization but keep it hidden
+        // Create chip immediately at initialization
         createFloatingChip()
-        // Hide initially
-        hide()
+        // Ensure it's visible initially
+        show()
         setupDockMonitoring()
         
         // Setup periodic visibility check when recording
@@ -64,8 +67,36 @@ class FloatingWaveformManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.sessionState = state
+                self?.handleSessionStateChange(state)
             }
             .store(in: &cancellables)
+            
+        // Bind recording state to chip state
+        recordingManager.$isRecording
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isRecording in
+                guard let self = self else { return }
+                // Only update if not in an error/processing state or if starting recording
+                if isRecording {
+                    self.chipState = .recording
+                } else if case .recording = self.chipState {
+                    self.chipState = .normal
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleSessionStateChange(_ state: TranscriptionSessionState) {
+        switch state {
+        case .error(let message):
+            self.chipState = .error(title: "Eroare", message: message, micName: "Microfon")
+            self.show()
+        case .processing:
+            // Optional: show processing state
+            break
+        default:
+            break
+        }
     }
     
     private func createFloatingChip() {
@@ -90,14 +121,18 @@ class FloatingWaveformManager: ObservableObject {
                 get: { self.isPaused },
                 set: { _ in self.togglePause() }
             ),
+            chipState: Binding(
+                get: { self.chipState },
+                set: { self.chipState = $0 }
+            ),
             onSelectMicrophone: { [weak self] in
                 self?.onSelectMicrophone?()
             },
             onTroubleshoot: { [weak self] in
                 self?.onTroubleshoot?()
             },
-            onDismissError: {
-                // Error dismissed, return to normal state
+            onDismissError: { [weak self] in
+                self?.chipState = .normal
             },
             onCancelRecording: { [weak self] in
                 self?.cancelRecording()
@@ -139,32 +174,38 @@ class FloatingWaveformManager: ObservableObject {
         // Get the screen where the mouse cursor is currently located
         guard let screen = getScreenWithCursor() ?? NSScreen.main else { return }
         
-        let screenFrame = screen.frame
         let panelWidth: CGFloat = 400  // Width to accommodate error panels
-        let panelHeight: CGFloat = 200 // Height to accommodate error panels and tooltips
-        
-        // Update dock information to ensure we have the latest state
-        dockManager.updateDockInfo()
         
         // Calculate position:
         // - Center horizontally
-        // - Position 8px above dock or bottom of screen
+        // - Position 8px above the visible area (which accounts for Dock)
+        
+        let visibleFrame = screen.visibleFrame
         
         // Center horizontally on the screen
-        let x = screenFrame.midX - (panelWidth / 2)
+        let x = visibleFrame.midX - (panelWidth / 2)
         
-        // Position vertically: 8px above dock or bottom of screen
-        // In macOS coordinates, y=0 is at bottom of screen
-        let dockHeight = dockManager.getDockHeight()
-        let y = dockHeight + 8  // Position 8px above dock or 8px above bottom if dock is hidden
+        // Position vertically: 8px above the bottom of the visible frame
+        // visibleFrame.minY is the bottom of the useful area (above dock)
+        let y = visibleFrame.minY + 8
         
         // Ensure the panel stays within visible bounds
-        let finalX = max(screenFrame.minX, min(x, screenFrame.maxX - panelWidth))
-        let finalY = max(screenFrame.minY, y)
+        let finalX = max(visibleFrame.minX, min(x, visibleFrame.maxX - panelWidth))
+        let finalY = max(visibleFrame.minY, y)
         
-        // Set the panel frame with calculated position
-        panel.setFrame(NSRect(x: finalX, y: finalY, width: panelWidth, height: panelHeight), display: true)
-        print("Positioning chip at: x=\(finalX), y=\(finalY) (dockHidden: \(dockManager.dockIsHidden), dockHeight: \(dockManager.dockHeight))")
+        // Calculate dynamic height based on state
+        var requiredHeight: CGFloat = 60 // Default compact height (chip + tooltip)
+        
+        switch chipState {
+        case .error, .processing, .requestError:
+            requiredHeight = 250 // Expanded height for error panels
+        default:
+            requiredHeight = 60
+        }
+        
+        // Set the panel frame with calculated position and dynamic height
+        panel.setFrame(NSRect(x: finalX, y: finalY, width: panelWidth, height: requiredHeight), display: true)
+        // print("Positioning chip at: x=\(finalX), y=\(finalY), h=\(requiredHeight) (visibleFrame: \(visibleFrame))")
     }
     
     private func getScreenWithCursor() -> NSScreen? {
@@ -205,31 +246,12 @@ class FloatingWaveformManager: ObservableObject {
                     }
             }
             .store(in: &cancellables)
-        
-        // Monitor dock state changes
-        dockManager.$dockIsHidden
-            .sink { [weak self] _ in
-                self?.repositionChip()
-            }
-            .store(in: &cancellables)
             
-        dockManager.$dockHeight
-            .sink { [weak self] _ in
-                self?.repositionChip()
-            }
-            .store(in: &cancellables)
-        
-        // Monitor app activation/deactivation to maintain window level
-        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
-            .sink { [weak self] _ in
-                // Ensure window maintains its level when app becomes active
-                self?.dockManager.updateDockInfo()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self?.chipWindow?.level = .floating
-                    self?.chipWindow?.orderFront(nil)
-                }
-            }
-            .store(in: &cancellables)
+        // Setup polling for dock changes that don't trigger notifications (like autohide animations)
+        // More aggressive 0.1s polling for smoother UI tracking
+        positionPollingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.repositionChip()
+        }
     }
     
     private func setupVisibilityCheck() {

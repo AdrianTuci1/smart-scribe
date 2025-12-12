@@ -14,6 +14,7 @@ struct WisprFlowApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
+        .handlesExternalEvents(matching: Set(arrayLiteral: "*"))
         .commands {
             accountCommands
         }

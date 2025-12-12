@@ -18,15 +18,18 @@ defmodule VoiceScribeAPIServer.ConfigController do
           "snippets" -> json(conn, %{data: []})
           _ -> json(conn, %{data: nil})
         end
+
       config_data ->
         # Extract the appropriate data based on type
         case type do
           "dictionary" ->
             entries = Map.get(config_data, "entries", [])
             json(conn, %{data: entries})
+
           "snippets" ->
             snippets = Map.get(config_data, "snippets", [])
             json(conn, %{data: snippets})
+
           _ ->
             # For other config types, return the whole data
             json(conn, %{data: config_data})
@@ -34,12 +37,12 @@ defmodule VoiceScribeAPIServer.ConfigController do
     end
   end
 
-
   def put_config(conn, params) do
     # Extract type from params or use default based on path
     type = Map.get(params, "type", get_default_type_from_path(conn.request_path))
 
     user_id = conn.assigns.current_user
+
     case DynamoDBRepo.put_config(user_id, type, params) do
       {:ok, _} -> json(conn, %{status: "ok"})
       {:error, reason} -> json(conn, %{error: inspect(reason)})
@@ -80,6 +83,8 @@ defmodule VoiceScribeAPIServer.ConfigController do
   # Helper function to determine type from request path
   defp get_default_type_from_path("/api/v1/config/snippets"), do: "snippets"
   defp get_default_type_from_path("/api/v1/config/dictionary"), do: "dictionary"
+  defp get_default_type_from_path("/api/v1/config/settings"), do: "settings"
+  defp get_default_type_from_path("/api/v1/config/onboarding"), do: "onboarding"
   defp get_default_type_from_path("/api/v1/config/style_preferences"), do: "style_preferences"
   defp get_default_type_from_path(_), do: "unknown"
 end

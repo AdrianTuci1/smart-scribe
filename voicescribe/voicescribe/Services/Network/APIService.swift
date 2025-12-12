@@ -665,5 +665,78 @@ struct CognitoTokenResponse: Codable {
     let refresh_token: String?
     let id_token: String
     let token_type: String
-    let expires_in: Int
 }
+
+// MARK: - User Config Methods
+
+extension APIService {
+    // MARK: - User Config Methods
+    
+    func fetchSettings() async throws -> UserSettings {
+        let url = baseURL.appendingPathComponent("config/settings")
+        let request = createRequest(url: url)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        // Handle 404/Empty as default settings
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
+             return UserSettings()
+        }
+        
+        try handleAPIResponse(data, response)
+        
+        let responseWrapper = try JSONDecoder().decode(SettingsResponse.self, from: data)
+        return responseWrapper.data ?? UserSettings()
+    }
+    
+    func saveSettings(_ settings: UserSettings) async throws {
+        let url = baseURL.appendingPathComponent("config/settings")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Backend expects the raw object or wrapped? 
+        // Based on other configs, it might just take the body as map.
+        // But ConfigController put_config merges params. 
+        // Let's send it wrapped in case we want to be safe, or just flat.
+        // The DynamoDBRepo.put_config takes "data". 
+        // If we send JSON, Phoenix parses it into params.
+        // Let's send the struct properties directly as the body.
+        let settingsData = try JSONEncoder().encode(settings)
+        request.httpBody = settingsData
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try handleAPIResponse(data, response)
+    }
+    
+    func fetchOnboardingConfig() async throws -> OnboardingConfig {
+        let url = baseURL.appendingPathComponent("config/onboarding")
+        let request = createRequest(url: url)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 404 {
+             return OnboardingConfig()
+        }
+        
+        try handleAPIResponse(data, response)
+        
+        let responseWrapper = try JSONDecoder().decode(OnboardingConfigResponse.self, from: data)
+        return responseWrapper.data ?? OnboardingConfig()
+    }
+    
+    func saveOnboardingConfig(_ config: OnboardingConfig) async throws {
+        let url = baseURL.appendingPathComponent("config/onboarding")
+        var request = createRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let configData = try JSONEncoder().encode(config)
+        request.httpBody = configData
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try handleAPIResponse(data, response)
+    }
+}
+
+
+
+

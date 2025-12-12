@@ -3,6 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var isPresented: Bool
     @State private var selectedCategory: SettingsCategory
+    @State private var settings = UserSettings()
+    @State private var isLoading = true
     
     init(isPresented: Binding<Bool>, initialCategory: SettingsCategory = .general) {
         _isPresented = isPresented
@@ -85,13 +87,13 @@ struct SettingsView: View {
                         
                         switch selectedCategory {
                         case .general:
-                            GeneralSettingsView()
+                            GeneralSettingsView(settings: $settings)
                         case .system:
-                            SystemSettingsView()
+                            SystemSettingsView(settings: $settings)
                         case .vibeCoding:
-                            VibeCodingSettingsView()
+                            VibeCodingSettingsView(settings: $settings)
                         case .experimental:
-                            ExperimentalSettingsView()
+                            ExperimentalSettingsView(settings: $settings)
                         case .account:
                             AccountSettingsView()
                         case .team:
@@ -99,7 +101,7 @@ struct SettingsView: View {
                         case .plansBilling:
                             PlansBillingSettingsView()
                         case .dataPrivacy:
-                            DataPrivacySettingsView()
+                            DataPrivacySettingsView(settings: $settings)
                         }
                     }
                     .padding(24)
@@ -200,12 +202,7 @@ enum SettingsCategory: CaseIterable {
 // MARK: - Settings Views
 
 struct GeneralSettingsView: View {
-    @State private var pushToTalkKey = "⌃⌥⌘R"
-    @State private var handsFreeModeKey = "⌃⌥⌘H"
-    @State private var commandModeEnabled = true
-    @State private var pasteLastTranscriptEnabled = true
-    @State private var selectedMicrophone = "Auto Detect"
-    @State private var selectedLanguage = "English (US)"
+    @Binding var settings: UserSettings
     @State private var capturingShortcut = false
     @State private var shortcutTarget: ShortcutTarget?
     
@@ -226,7 +223,7 @@ struct GeneralSettingsView: View {
                         HStack {
                             Text("Push to Talk")
                             Spacer()
-                            Button(pushToTalkKey) {
+                            Button(settings.pushToTalkKey) {
                                 shortcutTarget = .pushToTalk
                                 capturingShortcut = true
                             }
@@ -244,7 +241,7 @@ struct GeneralSettingsView: View {
                         HStack {
                             Text("Hands-Free Mode")
                             Spacer()
-                            Button(handsFreeModeKey) {
+                            Button(settings.handsFreeModeKey) {
                                 shortcutTarget = .handsFree
                                 capturingShortcut = true
                             }
@@ -259,13 +256,13 @@ struct GeneralSettingsView: View {
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Command Mode", isOn: $commandModeEnabled)
+                        TrailingToggleRow("Command Mode", isOn: $settings.commandModeEnabled)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Paste Last Transcript", isOn: $pasteLastTranscriptEnabled)
+                        TrailingToggleRow("Paste Last Transcript", isOn: $settings.pasteLastTranscriptEnabled)
                     }
                 }
             }
@@ -273,7 +270,7 @@ struct GeneralSettingsView: View {
             // Microphone Section
             SettingsSectionView(title: "Microphone") {
                 SettingsRowView {
-                    Picker("Microphone", selection: $selectedMicrophone) {
+                    Picker("Microphone", selection: $settings.selectedMicrophone) {
                         ForEach(microphones, id: \.self) { microphone in
                             Text(microphone).tag(microphone)
                         }
@@ -285,7 +282,7 @@ struct GeneralSettingsView: View {
             // Languages Section
             SettingsSectionView(title: "Languages") {
                 SettingsRowView {
-                    Picker("Language", selection: $selectedLanguage) {
+                    Picker("Language", selection: $settings.selectedLanguage) {
                         ForEach(languages, id: \.self) { language in
                             Text(language).tag(language)
                         }
@@ -300,9 +297,9 @@ struct GeneralSettingsView: View {
             ShortcutCaptureView(isPresented: $capturingShortcut) { newShortcut in
                 switch shortcutTarget {
                 case .pushToTalk:
-                    pushToTalkKey = newShortcut
+                    settings.pushToTalkKey = newShortcut
                 case .handsFree:
-                    handsFreeModeKey = newShortcut
+                    settings.handsFreeModeKey = newShortcut
                 case .none:
                     break
                 }
@@ -397,8 +394,7 @@ struct TrailingToggleRow: View {
 }
 
 struct VibeCodingSettingsView: View {
-    @State private var variableRecognition = true
-    @State private var fileTaggingInChat = true
+    @Binding var settings: UserSettings
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -408,7 +404,7 @@ struct VibeCodingSettingsView: View {
                         TrailingToggleRow(
                             "Variable Recognition",
                             subtitle: "Automatically recognize and highlight variables in your code",
-                            isOn: $variableRecognition
+                            isOn: $settings.variableRecognition
                         )
                     }
                     
@@ -418,7 +414,7 @@ struct VibeCodingSettingsView: View {
                         TrailingToggleRow(
                             "File Tagging in Chat",
                             subtitle: "Automatically tag files when mentioned in chat for better organization",
-                            isOn: $fileTaggingInChat
+                            isOn: $settings.fileTaggingInChat
                         )
                     }
                 }
@@ -430,7 +426,7 @@ struct VibeCodingSettingsView: View {
 }
 
 struct ExperimentalSettingsView: View {
-    @State private var advancedVoiceCommands = false
+    @Binding var settings: UserSettings
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -454,7 +450,7 @@ struct ExperimentalSettingsView: View {
                     TrailingToggleRow(
                         "Command Mode - Enable Advanced Voice Commands",
                         subtitle: "Enable advanced voice commands for more complex operations and automation",
-                        isOn: $advancedVoiceCommands
+                        isOn: $settings.advancedVoiceCommands
                     )
                 }
             }
@@ -834,24 +830,22 @@ struct PlansBillingSettingsView: View {
 }
 
 struct DataPrivacySettingsView: View {
-    @State private var privacyMode = false
-    @State private var contextAwareness = true
+    @Binding var settings: UserSettings
     @State private var showingDeleteConfirmation = false
     @State private var showingHardRefreshConfirmation = false
-    @State private var hipaaEnabled = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             SettingsSectionView(title: "Privacy Settings") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        TrailingToggleRow("Privacy Mode", isOn: $privacyMode)
+                        TrailingToggleRow("Privacy Mode", isOn: $settings.privacyMode)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Context Awareness", isOn: $contextAwareness)
+                        TrailingToggleRow("Context Awareness", isOn: $settings.contextAwareness)
                     }
                 }
             }
@@ -895,10 +889,10 @@ struct DataPrivacySettingsView: View {
             SettingsSectionView(title: "HIPAA Compliance") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        TrailingToggleRow("Enable HIPAA", isOn: $hipaaEnabled)
+                        TrailingToggleRow("Enable HIPAA", isOn: $settings.hipaaEnabled)
                     }
                     
-                    if hipaaEnabled {
+                    if settings.hipaaEnabled {
                         Divider()
                         
                         Button(action: {
@@ -943,15 +937,7 @@ struct DataPrivacySettingsView: View {
 }
 
 struct SystemSettingsView: View {
-    @State private var launchAtLogin = true
-    @State private var showFlowBarAlways = true
-    @State private var showInDock = false
-    @State private var dictationSoundEffect = true
-    @State private var muteMusicWhileDictating = false
-    @State private var autoAddToDirectory = true
-    @State private var smartFormatting = true
-    @State private var emailAutoSignature = false
-    @State private var creatorMode = false
+    @Binding var settings: UserSettings
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -959,19 +945,19 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "App Settings") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        TrailingToggleRow("Launch App at Login", isOn: $launchAtLogin)
+                        TrailingToggleRow("Launch App at Login", isOn: $settings.launchAtLogin)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Show Flow Bar at All Times", isOn: $showFlowBarAlways)
+                        TrailingToggleRow("Show Flow Bar at All Times", isOn: $settings.showFlowBarAlways)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Show in Dock", isOn: $showInDock)
+                        TrailingToggleRow("Show in Dock", isOn: $settings.showInDock)
                     }
                 }
             }
@@ -980,13 +966,13 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "Sounds") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        TrailingToggleRow("Dictation Sound Effect", isOn: $dictationSoundEffect)
+                        TrailingToggleRow("Dictation Sound Effect", isOn: $settings.dictationSoundEffect)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Mute Music While Dictating", isOn: $muteMusicWhileDictating)
+                        TrailingToggleRow("Mute Music While Dictating", isOn: $settings.muteMusicWhileDictating)
                     }
                 }
             }
@@ -995,25 +981,25 @@ struct SystemSettingsView: View {
             SettingsSectionView(title: "Extras") {
                 VStack(spacing: 0) {
                     SettingsRowView {
-                        TrailingToggleRow("Auto Add to Directory", isOn: $autoAddToDirectory)
+                        TrailingToggleRow("Auto Add to Directory", isOn: $settings.autoAddToDirectory)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Smart Formatting", isOn: $smartFormatting)
+                        TrailingToggleRow("Smart Formatting", isOn: $settings.smartFormatting)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Email Auto Signature", isOn: $emailAutoSignature)
+                        TrailingToggleRow("Email Auto Signature", isOn: $settings.emailAutoSignature)
                     }
                     
                     Divider()
                     
                     SettingsRowView {
-                        TrailingToggleRow("Creator Mode", isOn: $creatorMode)
+                        TrailingToggleRow("Creator Mode", isOn: $settings.creatorMode)
                     }
                 }
             }

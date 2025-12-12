@@ -63,6 +63,17 @@ class PermissionManager: NSObject, ObservableObject {
     /// Requests accessibility permission by opening system settings
     /// This should only be called during onboarding
     func requestAccessibilityPermission() {
+        // First try to trigger the system prompt
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String : true]
+        let isTrusted = AXIsProcessTrustedWithOptions(options)
+        
+        if isTrusted {
+            self.accessibilityPermissionStatus = true
+            UserDefaults.standard.set(true, forKey: PermissionKeys.accessibilityGranted)
+            return
+        }
+        
+        // If not trusted, open system settings
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
         

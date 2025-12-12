@@ -33,7 +33,7 @@ struct FloatingWaveformChip: View {
     
     @State private var isHoveringChip: Bool = false
     @State private var showTooltip: Bool = false
-    @State private var chipState: ChipState = .normal
+    @Binding var chipState: ChipState
     @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 5)
     
     // Dock manager for positioning
@@ -87,8 +87,8 @@ struct FloatingWaveformChip: View {
                     .padding(.bottom, 12)
             }
             
-            // Tooltip (appears on hover when not recording)
-            if isHoveringChip && !isRecording && showTooltip && chipState != .recording {
+            // Tooltip (appears on hover when not recording and no error/processing state)
+            if isHoveringChip && !isRecording && showTooltip && (chipState == .normal || chipState == .hover) {
                 tooltipView
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                     .padding(.bottom, 8)
@@ -105,10 +105,9 @@ struct FloatingWaveformChip: View {
         .animation(.easeInOut(duration: 0.5), value: dockManager.dockHeight) // Animate position changes
         .onChange(of: isRecording) { _, newValue in
             if newValue {
-                chipState = .recording
+                // state is handled by manager bindings now
                 startWaveformAnimation()
             } else {
-                chipState = isHoveringChip ? .hover : .normal
                 stopWaveformAnimation()
             }
         }
@@ -583,7 +582,11 @@ private extension FloatingWaveformChip {
         withAnimation(.easeInOut(duration: 0.15)) {
             isHoveringChip = hovering
             if !isRecording {
-                chipState = hovering ? .hover : .normal
+                // Only change state if we are currently in normal or hover state
+                // This prevents overwriting error/processing states
+                if chipState == .normal || chipState == .hover {
+                    chipState = hovering ? .hover : .normal
+                }
             }
         }
         
@@ -622,7 +625,8 @@ private extension FloatingWaveformChip {
         
         FloatingWaveformChip(
             isRecording: .constant(false),
-            isPaused: .constant(false)
+            isPaused: .constant(false),
+            chipState: .constant(.normal)
         )
     }
 }

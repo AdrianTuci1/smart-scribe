@@ -15,6 +15,7 @@ defmodule VoiceScribeAPI.DynamoDBRepoTest do
 
     test "caches transcript list result" do
       user_id = "test_user"
+
       mock_result = %{
         "Items" => [
           %{"transcriptId" => "1", "text" => "Test transcript 1"},
@@ -40,6 +41,7 @@ defmodule VoiceScribeAPI.DynamoDBRepoTest do
 
     test "respects cache TTL" do
       user_id = "test_user_ttl"
+
       mock_result = %{
         "Items" => [
           %{"transcriptId" => "1", "text" => "Test transcript with TTL"}
@@ -47,30 +49,36 @@ defmodule VoiceScribeAPI.DynamoDBRepoTest do
       }
 
       # Mock the ExAws.request and cache the result
-      {:ok, _} = DynamoDBRepo.list_transcripts(user_id_ttl, cache: true)
+      {:ok, _} = DynamoDBRepo.list_transcripts(user_id, cache: true)
 
       # Manually expire the cache entry by modifying its expiration time
       if :ets.whereis(:dynamo_cache) != :undefined do
-        cache_key = "transcripts_#{user_id_ttl}"
+        cache_key = "transcripts_#{user_id}"
+
         case :ets.lookup(:dynamo_cache, cache_key) do
           [{^cache_key, cache_entry}] ->
             # Set expiration to the past
             expired_entry = %{cache_entry | expires_at: System.system_time(:second) - 10}
             :ets.insert(:dynamo_cache, {cache_key, expired_entry})
-          _ -> :ok
+
+          _ ->
+            :ok
         end
       end
 
       # Next call should hit the database again (cache expired)
       # In a real test with mocking, you'd assert ExAws.request was called again
-      {:ok, _} = DynamoDBRepo.list_transcripts(user_id_ttl, cache: true)
+      {:ok, _} = DynamoDBRepo.list_transcripts(user_id, cache: true)
 
       # Cache should be empty now (expired)
       if :ets.whereis(:dynamo_cache) != :undefined do
-        cache_key = "transcripts_#{user_id_ttl}"
+        cache_key = "transcripts_#{user_id}"
+
         case :ets.lookup(:dynamo_cache, cache_key) do
-          [] -> :ok  # Expected - cache expired
-          _ -> :error  # Unexpected - cache should be expired
+          # Expected - cache expired
+          [] -> :ok
+          # Unexpected - cache should be expired
+          _ -> :error
         end
       end
     end
@@ -79,14 +87,14 @@ defmodule VoiceScribeAPI.DynamoDBRepoTest do
       user_id = "test_user_pagination"
 
       # Test with limit parameter
-      {:ok, _} = DynamoDBRepo.list_transcripts(user_id_pagination, limit: 5)
+      {:ok, _} = DynamoDBRepo.list_transcripts(user_id, limit: 5)
 
       # In a real test with mocking, you'd assert:
       # 1. The query includes the limit parameter
       # 2. ExAws.request was called with the correct parameters
 
       # Test with start_key parameter
-      {:ok, _} = DynamoDBRepo.list_transcripts(user_id_pagination, limit: 5, start_key: "test_key")
+      {:ok, _} = DynamoDBRepo.list_transcripts(user_id, limit: 5, start_key: "test_key")
 
       # In a real test with mocking, you'd assert:
       # 1. The query includes both limit and start_key parameters

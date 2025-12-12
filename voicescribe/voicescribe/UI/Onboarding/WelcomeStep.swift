@@ -69,26 +69,12 @@ struct WelcomeStep: View {
                             .background(Color(NSColor.controlBackgroundColor))
                             .cornerRadius(10)
                         } else {
-                            VStack {
-                                Button("Sign In with Browser") {
-                                    isProcessingAuth = true
-                                    authService.signInWithWebBrowser()
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
-                                
-                                Button("Test URL Scheme") {
-                                    // Test if URL scheme is properly registered
-                                    let testUrl = URL(string: "voicescribe://auth?code=test_code")!
-                                    if NSWorkspace.shared.open(testUrl) {
-                                        print("Test URL opened successfully")
-                                    } else {
-                                        print("Failed to open test URL")
-                                    }
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
+                            Button("Sign In with Browser") {
+                                isProcessingAuth = true
+                                authService.signInWithWebBrowser()
                             }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
                         }
                         
                         if let error = authService.errorMessage {

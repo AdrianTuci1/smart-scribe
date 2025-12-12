@@ -256,7 +256,13 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
     item =
       transcript
       |> Enum.reduce(%{}, fn {key, value}, acc ->
-        Map.put(acc, to_string(key), value)
+        val =
+          case value do
+            %DateTime{} -> DateTime.to_iso8601(value)
+            _ -> value
+          end
+
+        Map.put(acc, to_string(key), val)
       end)
 
     Dynamo.put_item(@transcripts_table, item) |> ExAws.request()

@@ -7,8 +7,8 @@ defmodule VoiceScribeAPI.AWS.SigV4 do
   def presigned_url(region, access_key, secret_key, session_token \\ nil) do
     method = "GET"
     service = "transcribe"
-    host = "transcribe.#{region}.amazonaws.com:8443"
-    endpoint = "wss://#{host}/stream-transcription-websocket"
+    host = "transcribestreaming.#{region}.amazonaws.com"
+    endpoint = "wss://#{host}:8443/stream-transcription-websocket"
 
     # Date handling
     now = DateTime.utc_now()
