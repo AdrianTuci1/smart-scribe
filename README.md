@@ -8,13 +8,13 @@ The VoiceScribe system is built on a high-performance, event-driven architecture
 
 ```mermaid
 graph LR
-    User[User (Swift App)] -- WebSocket (Audio Stream) --> Backend[Elixir Backend]
-    Backend -- HTTP/2 Stream --> Transcribe[AWS Transcribe]
-    Transcribe -- Partial/Final Results --> Backend
-    Backend -- JSON --> Bedrock[AWS Bedrock (Claude)]
-    Backend -- WebSocket (Events) --> User
-    Bedrock -- Enhanced Text --> Backend
-    Backend -- Save --> DynamoDB[(DynamoDB)]
+    User["User (Swift App)"] -- "WebSocket (Audio Stream)" --> Backend["Elixir Backend"]
+    Backend -- "HTTP/2 Stream" --> Transcribe["AWS Transcribe"]
+    Transcribe -- "Partial/Final Results" --> Backend
+    Backend -- "JSON" --> Bedrock["AWS Bedrock (Claude)"]
+    Backend -- "WebSocket (Events)" --> User
+    Bedrock -- "Enhanced Text" --> Backend
+    Backend -- "Save" --> DynamoDB[("DynamoDB")]
 ```
 
 ### Component Breakdown
