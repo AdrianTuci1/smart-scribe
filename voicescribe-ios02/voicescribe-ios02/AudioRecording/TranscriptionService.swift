@@ -167,6 +167,78 @@ class TranscriptionService: NSObject, ObservableObject {
     func formatConfidence(_ confidence: Float) -> String {
         return String(format: "%.0f%%", confidence * 100)
     }
+    
+    // MARK: - Streaming
+    
+    func startStreaming(topic: String = "transcription:live") {
+        // Connect and join channel
+        WebSocketService.shared.connect()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            WebSocketService.shared.joinChannel(topic: topic)
+        }
+        
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            errorMessage = "Audio session error: \(error.localizedDescription)"
+            return
+        }
+        
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        let targetFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true)!
+        
+        // Converter
+        guard let converter = AVAudioConverter(from: recordingFormat, to: targetFormat) else {
+            errorMessage = "Could not create audio converter"
+            return
+        }
+        
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+            let inputCallback: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+                outStatus.pointee = .haveData
+                return buffer
+            }
+            
+            let targetFrameCapacity = AVAudioFrameCount(targetFormat.sampleRate * Double(buffer.frameLength) / recordingFormat.sampleRate)
+            if let convertedBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: targetFrameCapacity) {
+                var error: NSError?
+                converter.convert(to: convertedBuffer, error: &error, withInputFrom: inputCallback)
+                
+                if let data = self.toData(buffer: convertedBuffer) {
+                    WebSocketService.shared.sendAudioData(data, topic: topic)
+                }
+            }
+        }
+        
+        audioEngine.prepare()
+        do {
+            try audioEngine.start()
+            isTranscribing = true
+        } catch {
+            errorMessage = "Audio engine error: \(error.localizedDescription)"
+        }
+    }
+    
+    func stopStreaming(topic: String = "transcription:live") {
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        
+        WebSocketService.shared.leaveChannel(topic: topic)
+        // WebSocketService.shared.disconnect() // Keep connected for other features if needed
+        
+        isTranscribing = false
+    }
+    
+    private func toData(buffer: AVAudioPCMBuffer) -> Data? {
+        let channelCount = 1 // Mono
+        let channels = UnsafeBufferPointer(start: buffer.int16ChannelData, count: channelCount)
+        guard let ch0Data = channels.first else { return nil }
+        let totalFrameCount = Int(buffer.frameLength)
+        return Data(bytes: ch0Data, count: totalFrameCount * MemoryLayout<Int16>.size)
+    }
 }
 
 enum TranscriptionError: Error, LocalizedError {

@@ -31,6 +31,10 @@ class AppCoordinator: ObservableObject {
         // In a real app, this would check with AuthService
         isAuthenticated = false // Start with false for onboarding
         currentRoute = isAuthenticated ? .home : .onboarding
+        
+        if isAuthenticated {
+            WebSocketService.shared.connect()
+        }
     }
     
     func navigateTo(_ route: Route) {
@@ -39,11 +43,13 @@ class AppCoordinator: ObservableObject {
     
     func authenticate() {
         isAuthenticated = true
+        WebSocketService.shared.connect()
         navigateTo(.home)
     }
     
     func signOut() {
         isAuthenticated = false
+        WebSocketService.shared.disconnect()
         navigateTo(.onboarding)
     }
 }
