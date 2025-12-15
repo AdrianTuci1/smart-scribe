@@ -50,33 +50,40 @@ struct FloatingWaveformChip: View {
     
     // Unified chip dimensions
     // Not hovered (idle) size baseline
-    private let chipWidth: CGFloat = 36
-    private let compactHeight: CGFloat = 13
+    // Unified chip dimensions
+    // Not hovered (idle) size baseline
+    public static let chipWidth: CGFloat = 36
+    public static let compactHeight: CGFloat = 13
     
     // Hovered width tweak
-    private let hoveredWidth: CGFloat = 52
+    public static let hoveredWidth: CGFloat = 52
     
     // Hovered/recording height baseline
-    private let expandedHeight: CGFloat = 22
+    public static let expandedHeight: CGFloat = 22
     
     // Recording width (wider to accommodate pause button)
-    private let recordingWidth: CGFloat = 130 // Increased to ensure buttons fit comfortably
+    public static let recordingWidth: CGFloat = 130 // Increased to ensure buttons fit comfortably
     
     var body: some View {
-        ZStack {
-            unifiedChip
-            
+        VStack(spacing: 8) {
+            // Panels show above the chip
             switch chipState {
             case .error(let title, let message, let micName):
                 errorPanel(title: title, message: message, micName: micName)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             case .processing(let message):
                 processingPanel(message: message)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             case .requestError(let message, let actionTitle):
                 requestErrorPanel(message: message, actionTitle: actionTitle)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             default:
                 EmptyView()
             }
+            
+            unifiedChip
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .onChange(of: isRecording) { _, recording in
             if recording {
                 startWaveformAnimation()
@@ -162,14 +169,14 @@ struct FloatingWaveformChip: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .frame(width: isRecording ? recordingWidth : (isHoveringChip ? hoveredWidth : chipWidth),
-                   height: (!isHoveringChip && !isRecording) ? compactHeight : expandedHeight)
+            .frame(width: isRecording ? Self.recordingWidth : (isHoveringChip ? Self.hoveredWidth : Self.chipWidth),
+                   height: (!isHoveringChip && !isRecording) ? Self.compactHeight : Self.expandedHeight)
             .background(
                 Capsule()
                     .fill(Color(white: 0.12))
                     .overlay(
                         Capsule()
-                            .stroke(Color(white: 0.28), lineWidth: 1)
+                            .stroke(Color(white: 0.28), lineWidth: (isHoveringChip || isRecording) ? 1 : 0)
                     )
             )
             .onTapGesture(count: 1) {

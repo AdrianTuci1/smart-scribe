@@ -76,6 +76,18 @@ class RecordingManager: ObservableObject {
                 }
             }
         }
+        
+        // Handle real-time transcripts
+        transcriptionService.onTranscriptReceived = { [weak self] text in
+            DispatchQueue.main.async {
+                self?.lastTranscription = text
+                // Copy to clipboard
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(text, forType: .string)
+                print("RecordingManager: Copied transcript to clipboard: \(text)")
+            }
+        }
     }
     
     private func setupAuthBindings() {

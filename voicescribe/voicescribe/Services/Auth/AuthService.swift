@@ -607,17 +607,27 @@ private extension AuthService {
         let preferredUsername = payload["preferred_username"] as? String
         let cognitoUsername = payload["cognito:username"] as? String
         
-        // Prioritize explicit name claims, then email, and only then Cognito username/sub
-        // Use fallbackUsername as last resort instead of cognitoUsername
+        // Prioritize explicit name claims, then username, and only then email
+        // Use fallbackUsername as last resort
         let displayName = [nameClaim,
                            fullName.isEmpty ? nil : fullName,
-                           email,
                            preferredUsername,
+                           cognitoUsername,
+                           email,
                            fallbackUsername]
             .compactMap { $0 }
             .first ?? fallbackUsername
         
         let userId = payload["sub"] as? String ?? cognitoUsername ?? preferredUsername ?? fallbackUsername
+        
+        // Log the extracted display name components for debugging
+        print("AuthService: Display Name Extraction:")
+        print("  - nameClaim: \(nameClaim ?? "nil")")
+        print("  - fullName: \(fullName)")
+        print("  - preferredUsername: \(preferredUsername ?? "nil")")
+        print("  - cognitoUsername: \(cognitoUsername ?? "nil")")
+        print("  - email: \(email ?? "nil")")
+        print("  => Selected displayName: \(displayName)")
         
         return AuthUserInfo(userId: userId, displayName: displayName, email: email)
     }

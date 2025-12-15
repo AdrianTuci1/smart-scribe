@@ -27,197 +27,10 @@ struct UserMenuView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            // User avatar with menu
-            Menu {
-                // Profile Section
-                Section {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.accentColor.gradient)
-                            .frame(width: 50, height: 50)
-                            .overlay(
-                                Text(getInitials())
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
-                            )
-                            .shadow(color: .accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(authService.userName ?? "User")
-                                .font(.headline) // Using headline font for name
-                                .foregroundColor(.primary) // Using label color
-                            
-                            if let email = authService.userEmail {
-                                Text(email)
-                                    .font(.subheadline) // Using subheadline font for email
-                                    .foregroundColor(.secondary) // Using secondaryLabel color
-                            }
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    
-                    // Pro Trial Button
-                    Button(action: {
-                        settingsCategory = .plansBilling
-                        showingSettings = true
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "crown.fill")
-                                .foregroundColor(.white)
-                            
-                            Text("Go Pro")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(Color(hex: "#C29EFF")) // Pro Trial Button Background
-                        .cornerRadius(8) // Border radius for Pro Trial button
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.horizontal, 16)
-                }
-                
-                Divider()
-                    .padding(.vertical, 8)
-                    .background(designTokens.colors.systemGray5)
-                
-                // Referral Section
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Get a free month of Flow Pro")
-                            .font(.headline) // Using headline font for referral title
-                            .foregroundColor(.primary)
-                        
-                        Text("Refer friends, earn rewards")
-                            .font(.subheadline) // Using subheadline font for referral subtitle
-                            .foregroundColor(.secondary)
-                        
-                        Button(action: {
-                            // Open referral share sheet
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.primary)
-                                
-                                Text("Refer a friend")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.primary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(designTokens.colors.systemGray) // Light gray button background
-                            .cornerRadius(8) // Border radius for referral button
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                }
-                
-                Divider()
-                    .padding(.vertical, 8)
-                    .background(designTokens.colors.systemGray5)
-                
-                // Download Section
-                Section {
-                    HStack(spacing: 12) {
-                        Image(systemName: "phone")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.primary)
-                            .frame(width: 24)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Download Flow for iOS")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.primary)
-                            
-                            Text("Scan QR code with your phone")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        // QR Code Placeholder
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white)
-                            .frame(width: 50, height: 50)
-                            .overlay(
-                                Image(systemName: "qrcode")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.black)
-                            )
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .onTapGesture {
-                        // Open iOS download link
-                        if let url = URL(string: "https://apps.apple.com/app/flow-ai-transcription/id123456789") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                }
-                
-                Divider()
-                    .padding(.vertical, 8)
-                    .background(designTokens.colors.systemGray5)
-                
-                // Settings Section
-                Section {
-                    Button(action: {
-                        settingsCategory = .account
-                        showingSettings = true
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "gearshape")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.accentColor)
-                                .frame(width: 20)
-                            
-                            Text("Manage account")
-                                .font(.system(size: 14))
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                        }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Divider()
-                        .padding(.horizontal, 16)
-                        .background(designTokens.colors.systemGray5)
-                    
-                    Button(action: {
-                        Task {
-                            authService.signOut()
-                        }
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "arrow.right.square")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.secondary)
-                                .frame(width: 20)
-                            
-                            Text("Sign Out")
-                                .font(.system(size: 14))
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                        }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            } label: {
+            // User avatar with popover
+            Button(action: {
+                isMenuOpen.toggle()
+            }) {
                 ZStack {
                     Circle()
                         .fill(Color(NSColor.controlBackgroundColor))
@@ -237,11 +50,23 @@ struct UserMenuView: View {
                 .scaleEffect(isHovering ? 1.05 : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: isHovering)
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
+            .buttonStyle(PlainButtonStyle())
             .onHover { hovering in
                 isHovering = hovering
+            }
+            .popover(isPresented: $isMenuOpen, arrowEdge: .bottom) {
+                UserMenuContent(
+                    authService: authService,
+                    onOpenSettings: { category in
+                        settingsCategory = category
+                        showingSettings = true
+                        isMenuOpen = false
+                    },
+                    onSignOut: {
+                        authService.signOut()
+                        isMenuOpen = false
+                    }
+                )
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -263,7 +88,154 @@ struct UserMenuView: View {
     }
 }
 
-// MARK: - Color Extensions
+struct UserMenuContent: View {
+    @ObservedObject var authService: AuthService
+    var onOpenSettings: (SettingsCategory) -> Void
+    var onSignOut: () -> Void
+    private let designTokens = DesignTokens()
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Profile Section
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(Color.accentColor.gradient)
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Text(getInitials())
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                        )
+                        .shadow(color: .accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(authService.userName ?? "User")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        if let email = authService.userEmail {
+                            Text(email)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Pro Trial Button
+                Button(action: {
+                    onOpenSettings(.plansBilling)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "crown.fill")
+                            .foregroundColor(.white)
+                            .font(.system(size: 12))
+                        
+                        Text("Upgrade to Pro")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: "#C29EFF"), Color(hex: "#9E7BFF")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(8)
+                    .shadow(color: Color(hex: "#9E7BFF").opacity(0.3), radius: 4, x: 0, y: 2)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(16)
+            
+            Divider()
+            
+            // Menu Items
+            VStack(spacing: 4) {
+                MenuRow(icon: "gearshape", title: "Manage account") {
+                    onOpenSettings(.account)
+                }
+                
+                MenuRow(icon: "square.and.arrow.up", title: "Refer a friend") {
+                    // Refer action
+                }
+                
+                MenuRow(icon: "phone", title: "Download Flow for iOS") {
+                    if let url = URL(string: "https://apps.apple.com/app/flow-ai-transcription/id123456789") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            
+            Divider()
+            
+            // Sign Out
+            VStack(spacing: 4) {
+                MenuRow(icon: "arrow.right.square", title: "Sign Out", role: .destructive) {
+                    onSignOut()
+                }
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+        }
+        .frame(width: 280)
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+    
+    private func getInitials() -> String {
+        guard let name = authService.userName, !name.isEmpty else { return "U" }
+        let components = name.components(separatedBy: " ")
+        if components.count >= 2 {
+            return "\(components.first?.first ?? "U")\(components.last?.first ?? " ")"
+        } else {
+            return String(name.prefix(1)).uppercased()
+        }
+    }
+}
+
+struct MenuRow: View {
+    let icon: String
+    let title: String
+    var role: ButtonRole? = nil
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(role == .destructive ? .red : .secondary)
+                    .frame(width: 20)
+                
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundColor(role == .destructive ? .red : .primary)
+                
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .background(isHovering ? Color.primary.opacity(0.05) : Color.clear)
+            .cornerRadius(6)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { isHovering = $0 }
+    }
+}
+
+// MARK: - Color Extensions (Preserved)
 
 extension Color {
     init(hex: String) {
@@ -299,6 +271,7 @@ extension Color {
     static let secondaryLabel = Color.secondary
 }
 
+// ManageAccountView (Preserved from original file to avoid breaking references if any)
 struct ManageAccountView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var authService = AuthService.shared

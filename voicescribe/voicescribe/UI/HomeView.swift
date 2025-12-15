@@ -82,18 +82,45 @@ struct HomeView: View {
                             .onHover { isHovered in
                                 hoveredTranscriptId = isHovered ? transcript.id : nil
                             }
+                            // Context menu for easier access
+                            .contextMenu {
+                                Button {
+                                    viewModel.copyTranscript(transcript)
+                                } label: {
+                                    Label("Copy", systemImage: "doc.on.doc")
+                                }
+                                
+                                Button {
+                                    viewModel.toggleFlag(transcript)
+                                } label: {
+                                    Label(transcript.isFlagged ? "Remove Flag" : "Flag", systemImage: transcript.isFlagged ? "flag.fill" : "flag")
+                                }
+                                
+                                Divider()
+                                
+                                Button(role: .destructive) {
+                                    viewModel.deleteTranscript(transcript)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }
             }
+            .refreshable {
+                viewModel.loadTranscripts()
+            }
             
             Spacer()
         }
+        .frame(maxWidth: 800, alignment: .leading)
         .padding(.horizontal, 32)
         .padding(.top, 24)
         .padding(.bottom, 32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear {
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .task {
+            // Load on task start (better than onAppear for async work)
             viewModel.loadTranscripts()
         }
         .alert("Error", isPresented: $viewModel.showError) {
@@ -159,6 +186,7 @@ struct TranscriptRow: View {
                 .font(.body)
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled) // Allow text selection
             
             // Action buttons (visible on hover)
             HStack(spacing: 8) {
@@ -219,7 +247,7 @@ struct TranscriptRow: View {
                 .menuStyle(.borderlessButton)
                 .frame(width: 20)
             }
-            .opacity(isHovered ? 1 : 0)
+            .opacity(isHovered ? 1 : 0) // Keep hover behavior but context menu is backup
             .animation(.easeInOut(duration: 0.15), value: isHovered)
         }
         .padding(.vertical, 8)
@@ -246,9 +274,18 @@ class HomeViewModel: ObservableObject {
     
     private let apiService = APIService.shared
     private let authService = AuthService.shared
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Load user info
+        // Subscribe to auth service updates
+        authService.$userName
+            .receive(on: RunLoop.main)
+            .sink { [weak self] name in
+                self?.userName = name ?? "User"
+            }
+            .store(in: &cancellables)
+            
+        // Initial value
         if let name = authService.userName {
             userName = name
         }

@@ -16,7 +16,15 @@ defmodule VoiceScribeAPIServer.AudioChannel do
     # We pass self() as caller_pid so the streamer can send results back to this channel process
     case TranscribeStreamer.start_link(user_id: user_id, caller_pid: self()) do
       {:ok, pid} ->
-        socket = assign(socket, :streamer_pid, pid)
+        # Generate session_id for persistence
+        session_id = UUID.uuid4()
+
+        socket =
+          socket
+          |> assign(:streamer_pid, pid)
+          |> assign(:session_id, session_id)
+          |> assign(:user_id, user_id)
+
         {:reply, :ok, socket}
 
       {:error, reason} ->
@@ -48,6 +56,9 @@ defmodule VoiceScribeAPIServer.AudioChannel do
     if pid = socket.assigns[:streamer_pid] do
       TranscribeStreamer.send_audio_chunk(pid, binary_data)
     else
+      # If no streamer is active, we can log a warning.
+      # Ideally we might buffer or wait, but simpler to just warn for now
+      # as the client fix should prevent this.
       Logger.warn("Received audio chunk but no streamer is active")
     end
   end
@@ -63,10 +74,47 @@ defmodule VoiceScribeAPIServer.AudioChannel do
 
   @impl true
   def handle_info({:transcription_complete, _user_id, transcript}, socket) do
-    # Push the result back to the client
-    push(socket, "transcription_complete", %{transcript: transcript})
+    # This is the final full transcript.
+    # 1. Process with Bedrock
+    # 2. Save to DynamoDB
+    # 3. Push to client
+
+    user_id = socket.assigns[:user_id]
+    session_id = socket.assigns[:session_id]
+
+    Task.start(fn ->
+      Logger.info("Processing complete transcription for session #{session_id}")
+
+      # 1. Correct
+      final_text =
+        case VoiceScribeAPI.AI.BedrockClient.correct_text(user_id, transcript) do
+          {:ok, corrected} -> corrected
+          _ -> transcript
+        end
+
+      # 2. Save
+      transcript_record = %{
+        "userId" => user_id,
+        "transcriptId" => session_id,
+        "originalText" => transcript,
+        "enhancedText" => final_text,
+        "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+
+      VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
+
+      # 3. Push to Client
+      VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
+        content: final_text
+      })
+
+      Logger.info("Session #{session_id} completed and saved.")
+    end)
+
     {:noreply, socket}
   end
+
+  # Remove the intermediate handler we added previously
 
   # Handle partial results if needed (TranscribeStreamer needs update to send them)
   # For now, let's assume we just wait for the end or handle basic completion.

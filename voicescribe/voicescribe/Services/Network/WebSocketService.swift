@@ -15,6 +15,7 @@ class WebSocketService: ObservableObject {
     
     // Callbacks
     var onTranscriptionComplete: ((String) -> Void)?
+    var onTranscriptMessage: ((String) -> Void)?
     var onError: ((String) -> Void)?
     
     private init() {}
@@ -24,17 +25,28 @@ class WebSocketService: ObservableObject {
     func connect(userId: String, token: String?) {
         guard !isConnected else { return }
         
-        let baseURLString = CognitoConfig.apiBaseUrl.replacingOccurrences(of: "http", with: "ws")
-        guard let baseURL = URL(string: baseURLString) else { return }
-        
-        let socketURL = baseURL.appendingPathComponent("socket/websocket")
-        
-        var components = URLComponents(url: socketURL, resolvingAgainstBaseURL: false)
-        if let token = token {
-            components?.queryItems = [URLQueryItem(name: "token", value: token)]
+        // Parse the existing base URL to get scheme, host, and port
+        guard let apiBaseURLComponents = URLComponents(string: CognitoConfig.apiBaseUrl),
+              let host = apiBaseURLComponents.host else {
+            print("WebSocketService: Invalid API Base URL")
+            return
         }
         
-        guard let url = components?.url else { return }
+        // Construct new URL components for the WebSocket connection
+        var components = URLComponents()
+        components.scheme = apiBaseURLComponents.scheme == "https" ? "wss" : "ws"
+        components.host = host
+        components.port = apiBaseURLComponents.port
+        components.path = "/socket/websocket"
+        
+        // Add query items
+        var queryItems = [URLQueryItem]()
+        if let token = token {
+            queryItems.append(URLQueryItem(name: "token", value: token))
+        }
+        components.queryItems = queryItems
+        
+        guard let url = components.url else { return }
         
         let request = URLRequest(url: url)
         // Phoenix channels often expect vsn param
@@ -130,10 +142,8 @@ class WebSocketService: ObservableObject {
         sendPhoenixMessage(payload)
         
         // After joining, start the stream
-        // Give it a slight delay to ensure join is processed
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.startStream(userId: userId)
-        }
+        // No delay needed - Phoenix channels process sequentially
+        self?.startStream(userId: userId)
     }
     
     private func sendPhoenixMessage(_ message: [String: Any]) {
@@ -193,6 +203,13 @@ class WebSocketService: ObservableObject {
                         self.onTranscriptionComplete?(transcript)
                     }
                 }
+            } else if event == "transcript_content" {
+                 if let payload = json["payload"] as? [String: Any],
+                    let content = payload["content"] as? String {
+                     DispatchQueue.main.async {
+                         self.onTranscriptMessage?(content)
+                     }
+                 }
             } else if event == "phx_reply" {
                 // Handle reply (e.g., to join or errors)
                  if let payload = json["payload"] as? [String: Any],

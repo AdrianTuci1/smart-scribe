@@ -11,6 +11,15 @@ struct WisprFlowApp: App {
         Window("VoiceScribe", id: "main") {
             contentView
                 .onOpenURL(perform: handleOpenURL)
+                .onAppear {
+                    // Initial sizing with a slight delay to ensure window is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        adjustWindowSize(isMainApp: hasCompletedOnboarding)
+                    }
+                }
+                .onChange(of: hasCompletedOnboarding) { newValue in
+                    adjustWindowSize(isMainApp: newValue)
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -112,5 +121,52 @@ struct WisprFlowApp: App {
     private func handleAuthError(_ message: String, _ detail: String?) {
         let errorMessage = detail ?? "Unknown error"
         print("\(message): \(errorMessage)")
+    }
+    
+    // MARK: - Window Management
+    
+    private func adjustWindowSize(isMainApp: Bool) {
+        guard let window = NSApplication.shared.windows.first(where: { $0.identifier?.rawValue == "main" }) ?? NSApplication.shared.windows.first else {
+            return
+        }
+        
+        if isMainApp {
+            // Main App: occupy almost full screen (respecting dock/menu) with padding
+            if let screen = window.screen {
+                let visibleFrame = screen.visibleFrame
+                let padding: CGFloat = 20
+                
+                let newFrame = NSRect(
+                    x: visibleFrame.origin.x + padding,
+                    y: visibleFrame.origin.y + padding,
+                    width: visibleFrame.width - (padding * 2),
+                    height: visibleFrame.height - (padding * 2)
+                )
+                
+                window.setFrame(newFrame, display: true, animate: true)
+                window.minSize = NSSize(width: 800, height: 600)
+                window.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+            }
+        } else {
+            // Onboarding: Smaller wide format (1100x650) & centered
+            let width: CGFloat = 1100
+            let height: CGFloat = 650
+            
+            // Calculate center position
+            if let screen = window.screen {
+                let screenRect = screen.visibleFrame
+                let newOriginX = screenRect.origin.x + (screenRect.width - width) / 2
+                let newOriginY = screenRect.origin.y + (screenRect.height - height) / 2
+                
+                window.setFrame(NSRect(x: newOriginX, y: newOriginY, width: width, height: height), display: true, animate: true)
+            } else {
+                window.setContentSize(NSSize(width: width, height: height))
+                window.center()
+            }
+            
+            // Fixed size for onboarding
+            window.minSize = NSSize(width: width, height: height)
+            window.maxSize = NSSize(width: width, height: height)
+        }
     }
 }

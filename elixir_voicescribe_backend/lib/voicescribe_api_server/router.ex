@@ -52,12 +52,6 @@ defmodule VoiceScribeAPIServer.Router do
       defaults: %{"type" => "style_preferences"}
     )
 
-    # Transcription endpoints
-    post("/transcribe/start", TranscribeController, :start_session)
-    post("/transcribe/chunk", TranscribeController, :upload_chunk)
-    post("/transcribe/finish", TranscribeController, :finish_session)
-    get("/transcribe/status", TranscribeController, :get_status)
-
     # Transcript history endpoints
     get("/transcripts", TranscriptsController, :list)
     get("/transcripts/:id", TranscriptsController, :show)

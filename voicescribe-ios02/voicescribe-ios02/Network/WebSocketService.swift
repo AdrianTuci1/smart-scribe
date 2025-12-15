@@ -132,7 +132,21 @@ class WebSocketService: NSObject, ObservableObject, URLSessionWebSocketDelegate 
                     DispatchQueue.main.async {
                         self.receivedMessage = text
                     }
-                    // Parse and handle specific events (like phx_reply) logic here if needed
+                    
+                    // Parse Phoenix Message
+                    if let data = text.data(using: .utf8),
+                       let jsonArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any],
+                       jsonArray.count >= 5,
+                       let event = jsonArray[3] as? String,
+                       let payload = jsonArray[4] as? [String: Any] {
+                        
+                        if event == "transcript_content", let content = payload["content"] as? String {
+                            // Forward this to a new publisher or notification
+                            DispatchQueue.main.async {
+                                NotificationCenter.default.post(name: .receivedTranscript, object: nil, userInfo: ["content": content])
+                            }
+                        }
+                    }
                     
                 case .data(let data):
                     print("Received binary data: \(data)")

@@ -43,10 +43,20 @@ class TranscriptionService: ObservableObject {
         setupWebSocketCallbacks()
     }
     
+    var onTranscriptReceived: ((String) -> Void)?
+    
     private func setupWebSocketCallbacks() {
         webSocketService.onTranscriptionComplete = { [weak self] text in
             DispatchQueue.main.async {
                 self?.sessionState = .completed(text: text)
+            }
+        }
+        
+        webSocketService.onTranscriptMessage = { [weak self] text in
+            DispatchQueue.main.async {
+                // Pass real-time transcript to whoever is listening (RecordingManager)
+                self?.onTranscriptReceived?(text)
+                // Also update session state if needed, or just keep it recording
             }
         }
     }

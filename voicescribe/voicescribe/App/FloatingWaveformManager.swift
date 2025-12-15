@@ -81,7 +81,19 @@ class FloatingWaveformManager: ObservableObject {
                     self.chipState = .recording
                 } else if case .recording = self.chipState {
                     self.chipState = .normal
+                    // Explicitly reposition after state change from recording to normal
+                    DispatchQueue.main.async {
+                        self.repositionChip()
+                    }
                 }
+            }
+            .store(in: &cancellables)
+            
+        // Reposition when chip state changes (e.g. hover, error)
+        $chipState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.repositionChip()
             }
             .store(in: &cancellables)
     }
@@ -174,38 +186,49 @@ class FloatingWaveformManager: ObservableObject {
         // Get the screen where the mouse cursor is currently located
         guard let screen = getScreenWithCursor() ?? NSScreen.main else { return }
         
-        let panelWidth: CGFloat = 400  // Width to accommodate error panels
-        
-        // Calculate position:
-        // - Center horizontally
-        // - Position 8px above the visible area (which accounts for Dock)
-        
         let visibleFrame = screen.visibleFrame
+        let fullFrame = screen.frame
         
-        // Center horizontally on the screen
-        let x = visibleFrame.midX - (panelWidth / 2)
+        // Calculate dimensions based on state
+        var requiredWidth: CGFloat = FloatingWaveformChip.chipWidth
+        var requiredHeight: CGFloat = FloatingWaveformChip.compactHeight
         
-        // Position vertically: 8px above the bottom of the visible frame
-        // visibleFrame.minY is the bottom of the useful area (above dock)
-        let y = visibleFrame.minY + 8
-        
-        // Ensure the panel stays within visible bounds
-        let finalX = max(visibleFrame.minX, min(x, visibleFrame.maxX - panelWidth))
-        let finalY = max(visibleFrame.minY, y)
-        
-        // Calculate dynamic height based on state
-        var requiredHeight: CGFloat = 60 // Default compact height (chip + tooltip)
-        
-        switch chipState {
-        case .error, .processing, .requestError:
-            requiredHeight = 250 // Expanded height for error panels
-        default:
-            requiredHeight = 60
+        if isRecording {
+            requiredWidth = FloatingWaveformChip.recordingWidth
+            requiredHeight = FloatingWaveformChip.expandedHeight
+        } else {
+            switch chipState {
+            case .hover:
+                requiredWidth = FloatingWaveformChip.hoveredWidth
+                requiredHeight = FloatingWaveformChip.expandedHeight
+            case .error, .processing, .requestError:
+                requiredWidth = 400 // Max width for panels
+                requiredHeight = 250 // Expanded height for panels
+            default:
+                requiredWidth = FloatingWaveformChip.chipWidth
+                requiredHeight = FloatingWaveformChip.compactHeight
+            }
         }
         
-        // Set the panel frame with calculated position and dynamic height
-        panel.setFrame(NSRect(x: finalX, y: finalY, width: panelWidth, height: requiredHeight), display: true)
-        // print("Positioning chip at: x=\(finalX), y=\(finalY), h=\(requiredHeight) (visibleFrame: \(visibleFrame))")
+        // Center horizontally on the PHYSICAL screen
+        let x = fullFrame.midX - (requiredWidth / 2)
+        
+        // Position vertically: Use DockManager to get the recommended bottom margin
+        // This handles hidden dock and different dock sizes
+        let bottomMargin = dockManager.getRecommendedBottomMargin()
+        let y = fullFrame.minY + bottomMargin
+        
+        // Ensure the panel stays within screen bounds horizontally
+        let finalX = max(fullFrame.minX, min(x, fullFrame.maxX - requiredWidth))
+        let finalY = y // Trust DockManager's calculation for Y
+        
+        // Update frame
+        // Use animation for smooth resizing if the window is already visible
+        if panel.isVisible {
+            panel.animator().setFrame(NSRect(x: finalX, y: finalY, width: requiredWidth, height: requiredHeight), display: true)
+        } else {
+            panel.setFrame(NSRect(x: finalX, y: finalY, width: requiredWidth, height: requiredHeight), display: true)
+        }
     }
     
     private func getScreenWithCursor() -> NSScreen? {

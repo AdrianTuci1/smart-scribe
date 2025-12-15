@@ -121,6 +121,7 @@ struct StyleOptionCard: View {
                     .font(.body)
                     .foregroundColor(.primary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 4) // Add a little breathing room but keep compact
                 
                 // Avatar placeholder
                 Circle()
@@ -137,7 +138,8 @@ struct StyleOptionCard: View {
             Spacer()
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .topLeading) // Removed maxHeight: .infinity
         .background(Color(NSColor.windowBackgroundColor))
         .cornerRadius(12)
         .overlay(

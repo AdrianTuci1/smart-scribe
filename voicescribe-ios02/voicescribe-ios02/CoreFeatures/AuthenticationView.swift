@@ -63,7 +63,7 @@ struct AuthenticationView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Skip") {
-                        appCoordinator.authenticate()
+                        appCoordinator.continueAsGuest()
                     }
                 }
             }

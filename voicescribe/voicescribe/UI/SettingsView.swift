@@ -12,71 +12,55 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Backdrop
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isPresented = false
+        HStack(spacing: 0) {
+            // Sidebar
+            VStack(alignment: .leading, spacing: 0) {
+                // Header space
+                Color.clear.frame(height: 40)
+                
+                // Title
+                Text("Settings")
+                    .font(.system(size: 20, weight: .bold))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(SettingsCategory.allCases, id: \.self) { category in
+                            SettingsSidebarButton(
+                                title: category.displayName,
+                                icon: category.icon,
+                                category: category,
+                                selection: $selectedCategory
+                            )
+                        }
                     }
+                    .padding(.horizontal, 8)
                 }
+                
+                Spacer()
+            }
+            .frame(width: 220)
+            .background(Color(NSColor.windowBackgroundColor))
             
-            // Settings panel
-            HStack(spacing: 0) {
-                // Settings sidebar
-                VStack(alignment: .leading, spacing: 4) {
-                    // Header with close button
-                    HStack {
-                        Text("Settings")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                isPresented = false
-                            }
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 18))
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.bottom, 16)
-                    
-                    ForEach(SettingsCategory.allCases, id: \.self) { category in
-                        Button(action: {
-                            selectedCategory = category
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: category.icon)
-                                    .frame(width: 20)
-                                    .foregroundColor(selectedCategory == category ? .accentColor : .secondary)
-                                Text(category.displayName)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(selectedCategory == category ? Color.accentColor.opacity(0.15) : Color.clear)
-                            .cornerRadius(8)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
+            // Content Area
+            VStack(spacing: 0) {
+                // Titlebar area
+                HStack {
                     Spacer()
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            isPresented = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(16)
                 }
-                .padding(.vertical, 16)
-                .padding(.horizontal, 12)
-                .frame(width: 220)
-                .background(Color(NSColor.windowBackgroundColor))
                 
-                Divider()
-                
-                // Settings content based on selected category
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         // Header
@@ -106,22 +90,58 @@ struct SettingsView: View {
                     }
                     .padding(24)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(NSColor.windowBackgroundColor))
             }
-            .frame(width: 800, height: 600)
-            .cornerRadius(12)
-            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
-            )
+            .background(Color(NSColor.textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+            .padding(.top, 40) // Match sidebar header spacing
+            .padding(.trailing, 12)
+            .padding(.bottom, 12)
         }
+        .frame(width: 900, height: 650)
+        .background(Color(NSColor.windowBackgroundColor))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.3), radius: 40, x: 0, y: 20)
+    }
+}
+
+// MARK: - Settings Sidebar Button
+
+struct SettingsSidebarButton: View {
+    let title: String
+    let icon: String
+    let category: SettingsCategory
+    @Binding var selection: SettingsCategory
+    
+    private var isSelected: Bool {
+        selection == category
+    }
+    
+    var body: some View {
+        Button(action: { selection = category }) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 15))
+                    .foregroundColor(isSelected ? .primary : .secondary)
+                    .frame(width: 20)
+                
+                Text(title)
+                    .font(.system(size: 14, weight: isSelected ? .medium : .regular))
+                    .foregroundColor(isSelected ? .primary : .secondary)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isSelected ? Color.primary.opacity(0.08) : Color.clear)
+            .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
 // MARK: - Settings Overlay Modifier
-
+// (Kept as is, but we might want to check its usage)
 struct SettingsOverlay: ViewModifier {
     @Binding var isPresented: Bool
     
@@ -130,8 +150,18 @@ struct SettingsOverlay: ViewModifier {
             content
             
             if isPresented {
+                // Dimmed background
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            isPresented = false
+                        }
+                    }
+                    .transition(.opacity)
+                
                 SettingsView(isPresented: $isPresented)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }
         .animation(.easeOut(duration: 0.2), value: isPresented)

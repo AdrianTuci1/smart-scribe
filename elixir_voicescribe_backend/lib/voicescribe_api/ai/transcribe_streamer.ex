@@ -77,11 +77,10 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
         # Process partial/final results
         # Accumulate final results into state.transcript
 
+        # We accumulate all results. Final processing happens on disconnect/stop.
+
         new_text = extract_text(results)
         updated_transcript = state.transcript <> new_text
-
-        # If the message indicates this is the final event, we could notify the caller
-        # But usually we just accumulate until we decide to close
 
         {:ok, %{state | transcript: updated_transcript}}
 
