@@ -151,7 +151,7 @@ class TranscriptionService: NSObject, ObservableObject {
                 let transcriptionResult = TranscriptionResult(
                     id: UUID(),
                     text: result.bestTranscription.formattedString,
-                    confidence: result.bestTranscription.averageConfidenceScore,
+                    confidence: result.bestTranscription.segments.isEmpty ? 0.0 : result.bestTranscription.segments.reduce(0.0) { $0 + $1.confidence } / Float(result.bestTranscription.segments.count),
                     date: Date()
                 )
                 

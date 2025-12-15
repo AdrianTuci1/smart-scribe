@@ -35,10 +35,21 @@ class TranscriptionService: ObservableObject {
     
     // MARK: - Private Properties
     private let apiService = APIService.shared
+    private let webSocketService = WebSocketService.shared // Use WebSocket service
     private var audioChunks: [Data] = []
     private var currentSessionId: String?
     
-    private init() {}
+    private init() {
+        setupWebSocketCallbacks()
+    }
+    
+    private func setupWebSocketCallbacks() {
+        webSocketService.onTranscriptionComplete = { [weak self] text in
+            DispatchQueue.main.async {
+                self?.sessionState = .completed(text: text)
+            }
+        }
+    }
     
     // MARK: - Public Methods
     
@@ -48,39 +59,34 @@ class TranscriptionService: ObservableObject {
             throw TranscriptionError.alreadyRecording
         }
         
-        do {
-            let response = try await apiService.startTranscriptionSession(userId: userId)
+        // For WebSocket flow, we just connect. The "start_stream" is handled in joinChannel inside connect
+        // But actually we might want to start logging session in DB separately?
+        // For now let's mirror existing behavior - assume backend creates session on join or we just go with it.
+        // Actually, the previous implementation called `apiService.startTranscriptionSession`. 
+        // We can keep that if we want a DB record, but for streaming we primarily need the socket.
+        // Let's keep the DB call for robust session tracking if needed, OR just rely on WS.
+        // The user said "I just want it to start and stop". 
+        // Let's connect WS.
+        
+        DispatchQueue.main.async {
+            self.currentSessionId = userId // Use userId as session for simplicity in WS topic
+            self.sessionState = .recording(sessionId: userId)
+            self.audioChunks = []
             
-            DispatchQueue.main.async {
-                self.currentSessionId = response.sessionId
-                self.sessionState = .recording(sessionId: response.sessionId)
-                self.audioChunks = []
-            }
-        } catch {
-            throw error
+            // Connect WebSocket
+            let token = AuthService.shared.token
+            self.webSocketService.connect(userId: userId, token: token)
         }
     }
     
     /// Add an audio chunk to the current session
     func addAudioChunk(_ chunk: Data) async throws {
-        guard case .recording = sessionState else {
-            throw TranscriptionError.notRecording
+        guard case .recording = sessionState, let userId = currentSessionId else {
+            return // Ignore if not recording or no user ID
         }
         
-        audioChunks.append(chunk)
-        
-        // Send chunk to server
-        do {
-            // Compress chunk with gzip before sending
-            let compressedChunk = compressData(chunk)
-            try await apiService.uploadTranscriptionChunk(
-                userId: getUserId(),
-                chunk: compressedChunk.base64EncodedString()
-            )
-        } catch {
-            print("Failed to upload chunk: \(error)")
-            throw error
-        }
+        // Send chunk via WebSocket
+        webSocketService.sendAudioChunk(data: chunk, userId: userId)
     }
     
     /// Finish the current transcription session and start processing
@@ -89,125 +95,25 @@ class TranscriptionService: ObservableObject {
             throw TranscriptionError.notRecording
         }
         
-        guard let sessionId = currentSessionId else {
-            throw TranscriptionError.noSession
-        }
-        
-        do {
-            DispatchQueue.main.async {
-                self.sessionState = .processing
+        DispatchQueue.main.async {
+            self.sessionState = .processing
+            // Signal to stop stream, but keep socket open for result
+            if let userId = self.currentSessionId { 
+                self.webSocketService.stopStream(userId: userId)
             }
-            
-            // Signal server to finish and process
-            try await apiService.finishTranscriptionSession(userId: getUserId())
-            
-            // Start polling for results
-            await pollForResults(sessionId: sessionId)
-            
-        } catch {
-            DispatchQueue.main.async {
-                self.sessionState = .error(error.localizedDescription)
-            }
-            throw error
         }
     }
     
     /// Cancel the current session
     func cancelTranscription() {
-        guard currentSessionId != nil else { return }
-        
         DispatchQueue.main.async {
-            self.sessionState = .idle
-            self.currentSessionId = nil
-            self.audioChunks = []
-        }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func pollForResults(sessionId: String) async {
-        let maxAttempts = 30  // 30 attempts = 5 minutes max
-        let pollingInterval: TimeInterval = 10  // 10 seconds between attempts
-        
-        for _ in 1...maxAttempts {
-            do {
-                let status = try await apiService.getTranscriptionStatus(userId: getUserId())
-                
-                if let session = status.session {
-                    switch session.status {
-                    case "completed":
-                        if let result = session.result {
-                            DispatchQueue.main.async {
-                                self.sessionState = .completed(text: result)
-                            }
-                        }
-                        return
-                    case "failed":
-                        if let error = session.error {
-                            DispatchQueue.main.async {
-                                self.sessionState = .error(error)
-                            }
-                        }
-                        return
-                    default:
-                        // Still processing, continue polling
-                        break
-                    }
-                }
-                
-                // Wait before next poll
-                try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1_000_000_000))
-                
-            } catch {
-                print("Error polling transcription status: \(error)")
-                DispatchQueue.main.async {
-                    self.sessionState = .error(error.localizedDescription)
-                }
-                return
-            }
-        }
-        
-        // Max attempts reached
-        DispatchQueue.main.async {
-            self.sessionState = .error("Transcription timed out")
-        }
-    }
-    
-    // Add method to show PLEASE_HOLD notification after 5 seconds
-    private func showPleaseHoldNotificationIfNeeded(attempt: Int) {
-        // Show PLEASE_HOLD after 5 seconds (after first attempt)
-        if attempt > 0 {
-            DispatchQueue.main.async {
-                // This would be handled by the UI component
-                // In a real implementation, we'd use notification center
-                print("PLEASE_HOLD: Vă rugăm să așteptați. Procesarea durează mai mult decât de obicei.")
-            }
-        }
-    }
-    
-    // Add method to handle slow processing
-    private func handleSlowProcessing() {
-        DispatchQueue.main.async {
-            // This would be handled by the UI component
-            print("SLOW_PROCESSING: Ne ia mai mult timp decât de obicei. Puteți aștepta sau anula cererea.")
-        }
-    }
-    
-    private func getUserId() -> String {
-        // Get user ID from auth service
-        return AuthService.shared.currentUser?.userId ?? "default_user"
-    }
-    
-    // Compress data using lzfse (Apple's compression algorithm)
-    private func compressData(_ data: Data) -> Data {
-        do {
-            return try (data as NSData).compressed(using: .lzfse) as Data
-        } catch {
-            print("Failed to compress chunk data: \(error)")
-            return data // Return original data if compression fails
+             self.webSocketService.disconnect()
+             self.sessionState = .idle
+             self.currentSessionId = nil
         }
     }
 }
+
 
 // MARK: - Transcription Error
 enum TranscriptionError: LocalizedError, Equatable {

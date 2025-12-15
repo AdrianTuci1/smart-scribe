@@ -1,0 +1,26 @@
+
+    private func colorForIndex(_ index: Int) -> Color {
+        // Simple gradient from green to yellow to red
+        let normalizedLevel = CGFloat(index) / 20.0
+        if normalizedLevel < 0.6 {
+            return .green
+        } else if normalizedLevel < 0.85 {
+            return .yellow
+        } else {
+            return .red
+        }
+    }
+    
+    private func heightForIndex(_ index: Int) -> CGFloat {
+        // Calculate based on audio level
+        // Lower indices always light up a bit if there is sound
+        // Higher indices only light up for loud sound
+        let threshold = Float(index) / 20.0
+        let level = audioProvider.audioLevel
+        
+        if level > threshold {
+            return 20 + CGFloat(level - threshold) * 80
+        } else {
+            return 4 // Base height
+        }
+    }

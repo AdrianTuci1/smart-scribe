@@ -22,23 +22,23 @@ struct MicrophoneStep: View {
             
             
             if permissionManager.microphonePermissionStatus == .authorized {
-                VStack(spacing: 20) {
+                VStack {
                     // Audio Visualizer
-                    HStack(alignment: .center, spacing: 4) {
-                        ForEach(0..<10) { index in
+                    HStack(spacing: 4) {
+                        ForEach(0..<20) { index in
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.red.opacity(0.7))
-                                .frame(width: 6, height: 10 + (CGFloat(audioProvider.audioLevel) * 50 * CGFloat.random(in: 0.5...1.5)))
+                                .fill(self.colorForIndex(index))
+                                .frame(width: 8, height: self.heightForIndex(index))
                                 .animation(.easeOut(duration: 0.1), value: audioProvider.audioLevel)
                         }
                     }
-                    .frame(height: 60)
+                    .frame(height: 100)
                     .padding()
-                    .background(Color.black.opacity(0.05))
-                    .cornerRadius(12)
+                    .background(Color.black.opacity(0.1))
+                    .cornerRadius(16)
                     
                     Text("Speak to test your microphone")
-                        .font(.caption)
+                        .font(.headline)
                         .foregroundColor(.secondary)
                 }
                 .onAppear {
@@ -77,4 +77,29 @@ struct MicrophoneStep: View {
             }
         }
     }
+    
+    private func colorForIndex(_ index: Int) -> Color {
+        // Simple gradient from green to yellow to red
+        let normalizedLevel = CGFloat(index) / 20.0
+        if normalizedLevel < 0.6 {
+            return .green
+        } else if normalizedLevel < 0.85 {
+            return .yellow
+        } else {
+            return .red
+        }
+    }
+    
+    private func heightForIndex(_ index: Int) -> CGFloat {
+        // Calculate based on audio level
+        let threshold = Float(index) / 20.0
+        let level = audioProvider.audioLevel
+        
+        if level > threshold {
+            return 20 + CGFloat(level - threshold) * 80
+        } else {
+            return 4 // Base height
+        }
+    }
 }
+

@@ -11,7 +11,8 @@ struct DictationTestStep: View {
         VStack(spacing: 25) {
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 50))
-                .foregroundColor(.blue)
+                .foregroundColor(isRecording ? .red : .blue)
+                .symbolEffect(.pulse, isActive: isRecording)
             
             Text("Test Dictation")
                 .font(.largeTitle)

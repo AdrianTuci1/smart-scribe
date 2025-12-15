@@ -3,7 +3,7 @@ import ApplicationServices
 
 struct AccessibilityStep: View {
     var nextAction: () -> Void
-    @StateObject private var permissionManager = PermissionManager.shared
+    @ObservedObject private var permissionManager = PermissionManager.shared
     
     var body: some View {
         VStack(spacing: 30) {
@@ -35,6 +35,11 @@ struct AccessibilityStep: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+                    
+                    Button("Check Again") {
+                        permissionManager.checkPermissionStatuses()
+                    }
+                    .buttonStyle(.bordered)
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Instructions:")
@@ -69,3 +74,4 @@ struct AccessibilityStep: View {
         }
     }
 }
+

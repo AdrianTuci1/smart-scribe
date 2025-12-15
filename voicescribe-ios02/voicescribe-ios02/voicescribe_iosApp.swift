@@ -6,14 +6,14 @@
 //
 
 import SwiftUI
-import Firebase
+
 
 @main
 struct VoiceScribeApp: App {
     @StateObject private var appCoordinator = AppCoordinator()
     
     init() {
-        FirebaseApp.configure()
+        // Firebase removed
     }
     
     var body: some Scene {

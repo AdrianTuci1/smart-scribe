@@ -64,7 +64,7 @@ class PermissionManager: NSObject, ObservableObject {
     /// This should only be called during onboarding
     func requestAccessibilityPermission() {
         // First try to trigger the system prompt
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String : true]
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         let isTrusted = AXIsProcessTrustedWithOptions(options)
         
         if isTrusted {
@@ -73,13 +73,35 @@ class PermissionManager: NSObject, ObservableObject {
             return
         }
         
+        // Force TCC to recognize the app layout by creating a system-wide element
+        // This is often needed to make the app appear in the list
+        print("Attempting to create system-wide element to force TCC registration...")
+        let element = AXUIElementCreateSystemWide()
+        print("System-wide element created: \(element)")
+        
+        // Attempt to read an attribute to force the TCC prompt/registration
+        // Simple creation isn't enough; we need to try to USE the API.
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &value)
+        print("Attempted to read kAXRoleAttribute from system-wide element. Result: \(result.rawValue)")
+        
+        // ATTEMPT 3: Try to post a key event. This is a very strong trigger for Accessibility.
+        // We simulate a harmless event (like pressing 'a' but without actually posting it if possible, or just creating it)
+        if CGEvent(source: nil) != nil {
+             print("Created CGEvent successfully")
+             // Just creating might not be enough, but posting is risky if we don't have permission.
+             // However, posting is exactly what fails and triggers the prompt.
+             // Let's try to post a dummy event to a location that probably ignores it?
+             // Or better, let's just rely on the fact that we tried to Use CGEvent.
+        }
+        
         // If not trusted, open system settings
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
         
         // Start monitoring for permission changes
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String : false]
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
             let granted = AXIsProcessTrustedWithOptions(options)
             
             DispatchQueue.main.async {
@@ -131,14 +153,24 @@ class PermissionManager: NSObject, ObservableObject {
         // Check microphone permission
         microphonePermissionStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         
-        // Check accessibility permission
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String : false]
-        accessibilityPermissionStatus = AXIsProcessTrustedWithOptions(options)
-    }
-    
-    /// Force refresh permission status
-    func refreshPermissionStatuses() {
-        checkPermissionStatuses()
+        // Check accessibility permission (Functional Check)
+        // Instead of relying solely on AXIsProcessTrustedWithOptions, we try to use the API.
+        // If we can read the Role of the system-wide element, we definitely have access.
+        let element = AXUIElementCreateSystemWide()
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &value)
+        
+        // kAXErrorSuccess implies we have access.
+        if result == .success {
+            print("PermissionManager: Accessibility Functional Check PASSED")
+            accessibilityPermissionStatus = true
+        } else {
+            // Fallback to the standard check just in case
+            let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
+            let isTrusted = AXIsProcessTrustedWithOptions(options)
+            print("PermissionManager: Accessibility Functional Check FAILED (Error: \(result.rawValue)). AXIsProcessTrusted: \(isTrusted)")
+            accessibilityPermissionStatus = isTrusted
+        }
     }
     
     /// Resets all permission tracking (for testing purposes)

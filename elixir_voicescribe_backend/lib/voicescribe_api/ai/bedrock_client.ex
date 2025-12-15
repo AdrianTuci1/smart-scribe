@@ -2,7 +2,7 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   require Logger
   alias VoiceScribeAPI.DynamoDBRepo
 
-  @model_id "anthropic.claude-haiku-4-5-20251001-v1:0"
+  @model_id "amazon.nova-2-lite-v1:0"
 
   def correct_text(user_id, text) do
     # Fetch dictionary
@@ -151,16 +151,28 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   end
 
   defp config_overrides do
-    %{
+    overrides = %{
       host: "bedrock-runtime.#{region()}.amazonaws.com",
       scheme: "https",
       region: region(),
-      service: "bedrock",
+      service: :bedrock,
       port: 443
     }
+
+    # Explicitly pass trimmed credentials to ensure they are clean
+    case {System.get_env("AWS_ACCESS_KEY_ID"), System.get_env("AWS_SECRET_ACCESS_KEY")} do
+      {access_key, secret_key} when is_binary(access_key) and is_binary(secret_key) ->
+        Map.merge(overrides, %{
+          access_key_id: String.trim(access_key),
+          secret_access_key: String.trim(secret_key)
+        })
+
+      _ ->
+        overrides
+    end
   end
 
   defp region do
-    System.get_env("AWS_REGION", "eu-central-1")
+    System.get_env("AWS_REGION", "eu-central-1") |> String.trim()
   end
 end

@@ -8,17 +8,29 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var appCoordinator: AppCoordinator
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            switch appCoordinator.currentRoute {
+            case .onboarding:
+                OnboardingView()
+            case .authentication:
+                AuthenticationView()
+            case .home:
+                HomeView()
+            case .transcription:
+                TranscriptionView()
+            case .history:
+                HistoryView()
+            case .settings:
+                SettingsView()
+            }
         }
-        .padding()
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AppCoordinator())
 }

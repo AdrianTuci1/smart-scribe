@@ -12,9 +12,14 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
 
     # Get configuration from env
     region = System.get_env("AWS_REGION", "eu-central-1")
-    access_key = System.get_env("AWS_ACCESS_KEY_ID")
-    secret_key = System.get_env("AWS_SECRET_ACCESS_KEY")
-    session_token = System.get_env("AWS_SESSION_TOKEN")
+    access_key = System.get_env("AWS_ACCESS_KEY_ID") |> String.trim()
+    secret_key = System.get_env("AWS_SECRET_ACCESS_KEY") |> String.trim()
+
+    session_token =
+      case System.get_env("AWS_SESSION_TOKEN") do
+        nil -> nil
+        token -> String.trim(token)
+      end
 
     if is_nil(access_key) or is_nil(secret_key) do
       {:error, :missing_credentials}

@@ -85,20 +85,27 @@ class GlobalHotkeyMonitor {
     }
     
     private func setupEventMonitors() {
-        // Use local event monitor for Fn key
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 63 { // Fn key
-                print("GlobalHotkeyMonitor: Fn key pressed locally")
-                self?.handler?()
-                return nil // Consume the event
+        // Use local event monitor for Option key
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown]) { [weak self] event in
+            // Option key is usually 58. We listen for flagsChanged to detect press/release
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.option) {
+                // Determine if this is a "press" - usually flagsChanged fires on both press and release
+                // We want to trigger only on press? Or toggle on press?
+                // The previous logic was keyCode based.
+                // Simple Option key press might interfere with system shortcuts.
+                // Let's stick to keyCode 58 (Option) detection within flagsChanged or KeyDown relative
+                if event.keyCode == 58 {
+                     print("GlobalHotkeyMonitor: Option key pressed locally")
+                     self?.handler?()
+                }
             }
-            return event // Pass through other events
+            return event // Pass through
         }
         
         // Also add global monitor to capture events when app is not focused
-        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == 63 { // Fn key
-                print("GlobalHotkeyMonitor: Fn key pressed globally")
+        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged, .keyDown]) { [weak self] event in
+             if event.keyCode == 58 { // Option key
+                print("GlobalHotkeyMonitor: Option key pressed globally")
                 self?.handler?()
             }
         }

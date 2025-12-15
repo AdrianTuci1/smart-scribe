@@ -8,7 +8,7 @@ struct WisprFlowApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     
     var body: some Scene {
-        WindowGroup {
+        Window("VoiceScribe", id: "main") {
             contentView
                 .onOpenURL(perform: handleOpenURL)
         }

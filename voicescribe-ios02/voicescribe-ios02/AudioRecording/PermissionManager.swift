@@ -9,6 +9,7 @@ import Foundation
 import AVFoundation
 import Speech
 import Combine
+import UIKit
 
 class PermissionManager: ObservableObject {
     static let shared = PermissionManager()
