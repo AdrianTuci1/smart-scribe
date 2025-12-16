@@ -143,7 +143,7 @@ class WebSocketService: ObservableObject {
         
         // After joining, start the stream
         // No delay needed - Phoenix channels process sequentially
-        self?.startStream(userId: userId)
+        self.startStream(userId: userId)
     }
     
     private func sendPhoenixMessage(_ message: [String: Any]) {

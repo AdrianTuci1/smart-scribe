@@ -17,7 +17,7 @@ struct WisprFlowApp: App {
                         adjustWindowSize(isMainApp: hasCompletedOnboarding)
                     }
                 }
-                .onChange(of: hasCompletedOnboarding) { newValue in
+                .onChange(of: hasCompletedOnboarding) { _, newValue in
                     adjustWindowSize(isMainApp: newValue)
                 }
         }
