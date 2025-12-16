@@ -101,7 +101,8 @@ class FloatingWaveformManager: ObservableObject {
     private func handleSessionStateChange(_ state: TranscriptionSessionState) {
         switch state {
         case .error(let message):
-            self.chipState = .error(title: "Eroare", message: message, micName: "Microfon")
+            // Use the compact server error state (red outline + ! icon)
+            self.chipState = .serverError
             self.show()
         case .processing:
             // Optional: show processing state
@@ -136,6 +137,13 @@ class FloatingWaveformManager: ObservableObject {
             chipState: Binding(
                 get: { self.chipState },
                 set: { self.chipState = $0 }
+            ),
+            waveformAmplitudes: Binding(
+                 get: { 
+                     // Ensure we only pass 5 elements
+                     Array(self.waveformAmplitudes.prefix(5)) 
+                 },
+                 set: { _ in } // Read-only binding from chip's perspective
             ),
             onSelectMicrophone: { [weak self] in
                 self?.onSelectMicrophone?()
@@ -186,7 +194,7 @@ class FloatingWaveformManager: ObservableObject {
         // Get the screen where the mouse cursor is currently located
         guard let screen = getScreenWithCursor() ?? NSScreen.main else { return }
         
-        let visibleFrame = screen.visibleFrame
+        // let visibleFrame = screen.visibleFrame // Unused
         let fullFrame = screen.frame
         
         // Calculate dimensions based on state
@@ -225,7 +233,11 @@ class FloatingWaveformManager: ObservableObject {
         // Update frame
         // Use animation for smooth resizing if the window is already visible
         if panel.isVisible {
-            panel.animator().setFrame(NSRect(x: finalX, y: finalY, width: requiredWidth, height: requiredHeight), display: true)
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.15
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                panel.animator().setFrame(NSRect(x: finalX, y: finalY, width: requiredWidth, height: requiredHeight), display: true)
+            }, completionHandler: nil)
         } else {
             panel.setFrame(NSRect(x: finalX, y: finalY, width: requiredWidth, height: requiredHeight), display: true)
         }
@@ -386,12 +398,12 @@ class FloatingWaveformManager: ObservableObject {
     func stopRecording() {
         recordingManager.stopRecording()
         
-        // Hide chip after a delay to allow for visual feedback
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        // Don't hide, just revert to normal size/state
+        DispatchQueue.main.async { [weak self] in
             // Only hide if not recording
-            if !(self?.isRecording ?? true) {
-                self?.hide()
-            }
+            guard let self = self else { return }
+            self.chipState = .normal
+            self.repositionChip()
         }
     }
     

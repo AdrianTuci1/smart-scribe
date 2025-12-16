@@ -11,6 +11,7 @@ bd2ecc97a82a3e9aa05b00ea1c4ac7c38c2d0299	not-for-merge	branch 'bug/xcode16-cance
 77cb597755f2719494d61062c8b5e37b90603f3c	not-for-merge	branch 'default-cancellation' of https://github.com/Alamofire/Alamofire
 a55cdee021038a93c0c3f39305a74662c241e7cf	not-for-merge	branch 'feature/background-tasks' of https://github.com/Alamofire/Alamofire
 bf5a2dfd148e05228174630d45e96fe1ec30d1c3	not-for-merge	branch 'feature/docc-docs' of https://github.com/Alamofire/Alamofire
+6b30ee99ef7ade2f4db68c35ee17c798a98b717d	not-for-merge	branch 'feature/lazy-request-and-instance-api' of https://github.com/Alamofire/Alamofire
 619ceb9b69e6c6c33c6274a70f3209871088a085	not-for-merge	branch 'feature/request-compression-part-deux' of https://github.com/Alamofire/Alamofire
 912b22829038ae126c65dfa07aeddd608534fed4	not-for-merge	branch 'feature/sendability' of https://github.com/Alamofire/Alamofire
 74456f2d852220d73ac8041bbba4729a660862fd	not-for-merge	branch 'feature/websocket-request-typed-throws' of https://github.com/Alamofire/Alamofire
@@ -1195,6 +1196,8 @@ a4461f062b978fbfcc52a9215a2bc981f1614f56	not-for-merge	'refs/pull/3988/merge' of
 fe36a4f28fa5a4dee65a647f39ac7ceb5acc7f3d	not-for-merge	'refs/pull/3993/head' of https://github.com/Alamofire/Alamofire
 62ee0876b074e7c9dc340c5b6fe6bd3cfbee3fe9	not-for-merge	'refs/pull/3994/head' of https://github.com/Alamofire/Alamofire
 e7d35619c58b8e58cad923fdf71ce5b62c04334c	not-for-merge	'refs/pull/3994/merge' of https://github.com/Alamofire/Alamofire
+6b30ee99ef7ade2f4db68c35ee17c798a98b717d	not-for-merge	'refs/pull/3996/head' of https://github.com/Alamofire/Alamofire
+8370ae7d628564b4b8f1f8592a5d2196bcf58c37	not-for-merge	'refs/pull/3996/merge' of https://github.com/Alamofire/Alamofire
 84ce8c8c1f50e34a602e8b3c20b9f50d7adcfe10	not-for-merge	'refs/pull/4/head' of https://github.com/Alamofire/Alamofire
 390fad0398cfe0212f00a7ec05ebb96049b1e94b	not-for-merge	'refs/pull/4/merge' of https://github.com/Alamofire/Alamofire
 ee567d955892438b218789ce3ebc2dc38e9cc440	not-for-merge	'refs/pull/40/head' of https://github.com/Alamofire/Alamofire

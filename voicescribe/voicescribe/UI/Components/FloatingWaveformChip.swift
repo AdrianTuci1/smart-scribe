@@ -7,12 +7,13 @@ enum ChipState: Equatable {
     case hover
     case recording
     case error(title: String, message: String, micName: String)
+    case serverError // New error state for server send failure
     case processing(message: String) // PLEASE_HOLD and SLOW_PROCESSING
     case requestError(message: String, actionTitle: String) // REQUEST_ISSUE
     
     static func == (lhs: ChipState, rhs: ChipState) -> Bool {
         switch (lhs, rhs) {
-        case (.normal, .normal), (.hover, .hover), (.recording, .recording):
+        case (.normal, .normal), (.hover, .hover), (.recording, .recording), (.serverError, .serverError):
             return true
         case (.error(let t1, let m1, let n1), .error(let t2, let m2, let n2)):
             return t1 == t2 && m1 == m2 && n1 == n2
@@ -24,6 +25,12 @@ enum ChipState: Equatable {
             return false
         }
     }
+
+    
+    var isServerError: Bool {
+        if case .serverError = self { return true }
+        return false
+    }
 }
 
 // MARK: - Main Chip View
@@ -34,7 +41,7 @@ struct FloatingWaveformChip: View {
     @State private var isHoveringChip: Bool = false
     @State private var showTooltip: Bool = false
     @Binding var chipState: ChipState
-    @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 3, count: 5)
+    @Binding var waveformAmplitudes: [CGFloat]
     
     // Dock manager for positioning
     @StateObject private var dockManager = DockManager.shared
@@ -46,7 +53,8 @@ struct FloatingWaveformChip: View {
     var onCancelRecording: (() -> Void)?
     
     // Timer for waveform animation
-    @State private var animationTimer: Timer?
+    // Timer for waveform animation - REMOVED, using Binding
+    // @State private var animationTimer: Timer?
     
     // Unified chip dimensions
     // Not hovered (idle) size baseline
@@ -84,13 +92,7 @@ struct FloatingWaveformChip: View {
             unifiedChip
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .onChange(of: isRecording) { _, recording in
-            if recording {
-                startWaveformAnimation()
-            } else {
-                stopWaveformAnimation()
-            }
-        }
+        // Animation timer removed, controlled by parent
     }
 
     // MARK: - Unified Chip (same size for normal and recording)
@@ -137,20 +139,6 @@ struct FloatingWaveformChip: View {
                 .contentShape(Rectangle())
                 
                 if isRecording {
-                    // Pause/Resume Button
-                    Button(action: togglePause) {
-                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                            .font(.system(size: 8))
-                            .foregroundColor(.white)
-                            .frame(width: 14, height: 14) // 14px as requested
-                            .background(
-                                Circle()
-                                    .fill(Color(white: 0.2))
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.leading, 6)
-                    
                     // Stop Button (Done)
                     Button(action: stopRecording) {
                         RoundedRectangle(cornerRadius: 2)
@@ -165,18 +153,24 @@ struct FloatingWaveformChip: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.leading, 6)
+                } else if case .serverError = chipState {
+                     // Error State: "!" icon in place of buttons
+                     Image(systemName: "exclamationmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.red)
+                        .frame(width: 14, height: 14)
                 }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .frame(width: isRecording ? Self.recordingWidth : (isHoveringChip ? Self.hoveredWidth : Self.chipWidth),
-                   height: (!isHoveringChip && !isRecording) ? Self.compactHeight : Self.expandedHeight)
+                   height: (!isHoveringChip && !isRecording && chipState != .serverError) ? Self.compactHeight : Self.expandedHeight)
             .background(
                 Capsule()
                     .fill(Color(white: 0.12))
                     .overlay(
                         Capsule()
-                            .stroke(Color(white: 0.28), lineWidth: (isHoveringChip || isRecording) ? 1 : 0)
+                            .stroke(chipState.isServerError ? Color.red : Color(white: 0.28), lineWidth: (isHoveringChip || isRecording || chipState.isServerError) ? 1 : 0)
                     )
             )
             .onTapGesture(count: 1) {
@@ -337,27 +331,9 @@ struct FloatingWaveformChip: View {
         }
         
         // MARK: - Waveform Animation
-        private func startWaveformAnimation() {
-            // Don't restart if already running
-            guard animationTimer == nil else { return }
-            
-            animationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                guard !isPaused else { return }
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    waveformAmplitudes = (0..<5).map { _ in
-                        CGFloat.random(in: 4...18)
-                    }
-                }
-            }
-        }
-        
-        private func stopWaveformAnimation() {
-            animationTimer?.invalidate()
-            animationTimer = nil
-            withAnimation {
-                waveformAmplitudes = Array(repeating: 3, count: 5)
-            }
-        }
+        // MARK: - Waveform Animation
+        // Handled by parent via Binding
+
         
         // MARK: - Processing Panel
         private func processingPanel(message: String) -> some View {
@@ -564,8 +540,8 @@ struct FloatingWaveformChip: View {
             FloatingWaveformChip(
                 isRecording: .constant(false),
                 isPaused: .constant(false),
-                chipState: .constant(.normal)
+                chipState: .constant(.normal),
+                waveformAmplitudes: .constant(Array(repeating: 5.0, count: 5))
             )
         }
     }
-

@@ -84,12 +84,9 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
 
     body =
       Jason.encode!(%{
-        anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 1000,
-        # Lower temperature for more precise/deterministic results
-        temperature: 0.1,
-        system: system_prompt,
-        messages: [%{role: "user", content: user_message}]
+        max_tokens: 2000,
+        system: [%{text: system_prompt}],
+        messages: [%{role: "user", content: [%{text: user_message}]}]
       })
 
     op = %ExAws.Operation.JSON{
