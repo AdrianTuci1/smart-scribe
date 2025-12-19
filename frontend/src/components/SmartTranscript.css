@@ -1,0 +1,19 @@
+.smart-transcript-section {
+    /* Section is now transparent to show page bg, container holds the black color */
+    background-color: transparent;
+    color: white;
+}
+
+
+
+.transcript-box {
+    /* outline: 1px solid rgba(239, 238, 238, 0.2); */
+    /* Softened the white outline slightly */
+    padding: 12px;
+    transition: transform 0.3s ease;
+}
+
+.transcript-container {
+    font-size: 1rem;
+    font-weight: 400;
+}

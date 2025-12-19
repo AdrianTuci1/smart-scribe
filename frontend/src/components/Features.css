@@ -1,0 +1,158 @@
+.features-section {
+    position: relative;
+    height: 350vh;
+    /* Adjust based on number of cards and scroll length preference */
+    background-color: #000000;
+}
+
+.features-viewport {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.feature-card-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center;
+}
+
+.feature-card {
+    width: 100%;
+    height: 100%;
+    padding: 100px 80px;
+    display: flex;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.feature-card-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+    z-index: 1;
+}
+
+.feature-card-left {
+    flex: 1;
+}
+
+.feature-index {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    opacity: 0.6;
+}
+
+.feature-title {
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 32px;
+}
+
+.feature-description {
+    font-size: 20px;
+    line-height: 1.5;
+    opacity: 0.8;
+    max-width: 480px;
+}
+
+.feature-card-right {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.image-frame {
+    width: 100%;
+    height: 480px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-card-wrapper:nth-child(3) .image-frame {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.placeholder-content {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.dictionary-bg .blob {
+    width: 300px;
+    height: 300px;
+    background-color: #BEF264;
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    filter: blur(60px);
+    opacity: 0.6;
+}
+
+/* Specific text colors */
+.feature-card-wrapper:nth-child(1) .feature-description,
+.feature-card-wrapper:nth-child(1) .feature-index {
+    color: #1d1d1f;
+}
+
+/* Consistent text colors for light backgrounds */
+.feature-card-wrapper .feature-title,
+.feature-card-wrapper .feature-description,
+.feature-card-wrapper .feature-index {
+    color: #1d1d1f;
+}
+
+@media (max-width: 1024px) {
+    .feature-card {
+        padding: 40px 60px;
+    }
+
+    .feature-title {
+        font-size: 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .feature-card-wrapper {
+        height: 500px;
+    }
+
+    .feature-card {
+        padding: 32px 40px;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .feature-card-content {
+        flex-direction: column;
+    }
+
+    .feature-title {
+        font-size: 36px;
+    }
+
+    .feature-description {
+        font-size: 16px;
+        margin: 0 auto;
+    }
+}

@@ -1,105 +1,134 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import './Features.css';
+
+const FeatureCard = ({ index, title, description, color, visual, progress, entryRange, exitRange }) => {
+  // scale and rotation animation for the card as it "goes behind"
+  const scale = useTransform(progress, exitRange, [1, 0.4]);
+  const rotateX = useTransform(progress, exitRange, [0, -15]);
+
+  // Alternate rotateZValue
+  const rotateZValue = index % 2 === 0 ? -8 : 8;
+  const rotateZ = useTransform(progress, exitRange, [0, rotateZValue]);
+
+  // Opacity
+  const opacity = useTransform(progress, exitRange, [1, 1]);
+
+  // Custom mapping for snappier entry:
+  // borderRadius stays 48px until the card is almost in place
+  const borderRadius = useTransform(progress,
+    [
+      entryRange[0],
+      entryRange[0] + (entryRange[1] - entryRange[0]) * 0.9,
+      entryRange[1],
+      exitRange[0],
+      exitRange[1]
+    ],
+    ["48px", "48px", "0px", "0px", "48px"]
+  );
+
+  // Padding stays 20px until the card is almost in place
+  const padding = useTransform(progress,
+    [
+      entryRange[0],
+      entryRange[0] + (entryRange[1] - entryRange[0]) * 0.9,
+      entryRange[1]
+    ],
+    ["20px", "20px", "0px"]
+  );
+
+  // Slide up from bottom
+  const y = useTransform(progress, entryRange, ["100vh", "0vh"]);
+
+  return (
+    <motion.div
+      className="feature-card-wrapper"
+      style={{
+        zIndex: index,
+        y,
+        scale,
+        rotateX,
+        rotateZ,
+        opacity,
+        padding,
+        transformStyle: "preserve-3d"
+      }}
+    >
+      <motion.div
+        className="feature-card"
+        style={{
+          backgroundColor: color,
+          borderRadius,
+          overflow: "hidden"
+        }}
+      >
+        <div className="feature-card-content">
+          <div className="feature-card-left">
+            <span className="feature-index">0{index}</span>
+            <h2 className="feature-title">{title}</h2>
+            <p className="feature-description">{description}</p>
+          </div>
+          <div className="feature-card-right">
+            <div className="image-frame">
+              {visual}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const Features = () => {
-    const features = [
-        {
-            title: "Instant Notes",
-            description: "Capture thoughts instantly. Just speak, and we'll format it into a clean note.",
-            icon: "📝"
-        },
-        {
-            title: "Smart Emails",
-            description: "Draft professional emails by voice. We handle the structure and tone.",
-            icon: "📧"
-        },
-        {
-            title: "Quick Messages",
-            description: "Send messages faster than you can type. Perfect for on-the-go communication.",
-            icon: "💬"
-        },
-        {
-            title: "Auto Correction",
-            description: "Grammar and spelling are fixed automatically. Sound professional every time.",
-            icon: "✨"
-        },
-        {
-            title: "Live Translation",
-            description: "Speak in your language, output in another. Break language barriers instantly.",
-            icon: "🌐"
-        }
-    ];
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
 
-    return (
-        <section className="features-section section">
-            <div className="container">
-                <div className="section-header">
-                    <h2 className="section-title">Everything you need to <span className="text-gradient">communicate better.</span></h2>
-                    <p className="section-subtitle">Powerful features designed to boost your productivity.</p>
-                </div>
+  const features = [
+    {
+      index: 1,
+      title: "Library",
+      description: "Manage all your transcriptions and voice notes in one centralized, searchable library. Access your thoughts anytime, anywhere.",
+      color: "#7591EE",
+      visual: <div className="placeholder-content library-bg"></div>,
+      entryRange: [-0.01, 0],
+      exitRange: [0.15, 0.45]
+    },
+    {
+      index: 2,
+      title: "Dictionary",
+      description: "Automatically learns your unique words and adds them to your personal dictionary. Smartscribe understands your industry jargon and names.",
+      color: "#C5FAAB",
+      visual: <div className="placeholder-content dictionary-bg"><div className="blob"></div></div>,
+      entryRange: [0.15, 0.45],
+      exitRange: [0.55, 0.85]
+    },
+    {
+      index: 3,
+      title: "Different Tones",
+      description: "Adapt your transcription to any context. From professional reports to casual brainstorms, Smartscribe captures the right tone for your needs.",
+      color: "#FADCAB",
+      visual: <div className="placeholder-content tones-bg"></div>,
+      entryRange: [0.55, 0.85],
+      exitRange: [1.1, 1.2] // Stays in view
+    }
+  ];
 
-                <div className="features-grid">
-                    {features.map((feature, index) => (
-                        <div className="feature-card" key={index}>
-                            <div className="feature-icon">{feature.icon}</div>
-                            <h3 className="feature-title">{feature.title}</h3>
-                            <p className="feature-description">{feature.description}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <style>{`
-        .section-header {
-          text-align: center;
-          margin-bottom: 4rem;
-        }
-
-        .section-title {
-          font-size: 2.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .section-subtitle {
-          color: var(--text-secondary);
-          font-size: 1.1rem;
-        }
-
-        .features-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 2rem;
-        }
-
-        .feature-card {
-          background: var(--card-bg);
-          border: 1px solid var(--card-border);
-          padding: 2rem;
-          border-radius: 16px;
-          transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .feature-card:hover {
-          transform: translateY(-5px);
-          border-color: var(--accent-color);
-        }
-
-        .feature-icon {
-          font-size: 2.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .feature-title {
-          font-size: 1.25rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .feature-description {
-          color: var(--text-secondary);
-          font-size: 0.95rem;
-        }
-      `}</style>
-        </section>
-    );
+  return (
+    <section className="features-section" ref={containerRef}>
+      <div className="features-viewport">
+        {features.map((feature) => (
+          <FeatureCard
+            key={feature.index}
+            {...feature}
+            progress={scrollYProgress}
+          />
+        ))}
+      </div>
+    </section>
+  );
 };
 
 export default Features;
