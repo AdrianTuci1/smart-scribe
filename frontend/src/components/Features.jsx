@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import './Features.css';
 
-const FeatureCard = ({ index, title, description, color, visual, progress, entryRange, exitRange }) => {
+const FeatureCard = ({ index, title, subtitle, description, color, visual, progress, entryRange, exitRange }) => {
   // scale and rotation animation for the card as it "goes behind"
   const scale = useTransform(progress, exitRange, [1, 0.4]);
   const rotateX = useTransform(progress, exitRange, [0, -15]);
@@ -63,10 +63,15 @@ const FeatureCard = ({ index, title, description, color, visual, progress, entry
         }}
       >
         <div className="feature-card-content">
-          <div className="feature-card-left">
-            <span className="feature-index">0{index}</span>
-            <h2 className="feature-title">{title}</h2>
-            <p className="feature-description">{description}</p>
+          <div className="feature-card-main">
+            <h1 className="feature-main-title">{title}</h1>
+            <div className="feature-card-details">
+              <span className="feature-index">0{index}</span>
+              <div className="feature-text-group">
+                <h2 className="feature-subtitle">{subtitle}</h2>
+                <p className="feature-description">{description}</p>
+              </div>
+            </div>
           </div>
           <div className="feature-card-right">
             <div className="image-frame">
@@ -90,6 +95,7 @@ const Features = () => {
     {
       index: 1,
       title: "Library",
+      subtitle: "Library, Transcriptions, Voice Notes",
       description: "Manage all your transcriptions and voice notes in one centralized, searchable library. Access your thoughts anytime, anywhere.",
       color: "#7591EE",
       visual: <div className="placeholder-content library-bg"></div>,
@@ -99,6 +105,7 @@ const Features = () => {
     {
       index: 2,
       title: "Dictionary",
+      subtitle: "Dictionary, Custom Words, Industry Jargon",
       description: "Automatically learns your unique words and adds them to your personal dictionary. Smartscribe understands your industry jargon and names.",
       color: "#C5FAAB",
       visual: <div className="placeholder-content dictionary-bg"><div className="blob"></div></div>,
@@ -108,6 +115,7 @@ const Features = () => {
     {
       index: 3,
       title: "Different Tones",
+      subtitle: "Tones, Professional, Casual",
       description: "Adapt your transcription to any context. From professional reports to casual brainstorms, Smartscribe captures the right tone for your needs.",
       color: "#FADCAB",
       visual: <div className="placeholder-content tones-bg"></div>,

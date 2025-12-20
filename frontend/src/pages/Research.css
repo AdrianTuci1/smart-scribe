@@ -1,0 +1,129 @@
+.research-section {
+    padding: 120px 0;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.research-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.research-header {
+    margin-bottom: 80px;
+}
+
+.research-title {
+    font-size: 72px;
+    font-weight: 800;
+    color: #000000;
+    margin-bottom: 14px;
+    line-height: 0.9;
+}
+
+.research-subtitle {
+    font-size: 24px;
+    font-weight: 400;
+    color: #000000;
+    max-width: 400px;
+    line-height: 1.2;
+}
+
+.research-list {
+    display: flex;
+    flex-direction: column;
+    gap: 80px;
+}
+
+.research-item {
+    display: flex;
+    gap: 60px;
+    align-items: center;
+}
+
+.research-item.reverse {
+    flex-direction: row-reverse;
+}
+
+.research-content {
+    flex: 1;
+}
+
+.research-date {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #f5f5f5;
+    color: #666666;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.research-item-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.research-item-desc {
+    font-size: 16px;
+    color: #666666;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.research-link {
+    color: #000000;
+    font-weight: 600;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.research-link:hover {
+    opacity: 0.7;
+}
+
+.research-visual {
+    flex: 1;
+    height: 300px;
+    background-color: #f0f0f0;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a3a3a3;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+    /* Skeletal loading effect or just subtle pattern */
+    background-image: radial-gradient(#e5e5e5 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+@media (max-width: 900px) {
+
+    .research-item,
+    .research-item.reverse {
+        flex-direction: column;
+        gap: 32px;
+        align-items: flex-start;
+    }
+
+    .research-visual {
+        width: 100%;
+        height: 240px;
+    }
+
+    .research-title {
+        font-size: 40px;
+    }
+}

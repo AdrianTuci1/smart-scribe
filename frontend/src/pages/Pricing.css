@@ -1,0 +1,226 @@
+.pricing-section {
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 0 40px;
+    /* Top padding accounts for navbar, bottom for spacing */
+}
+
+.pricing-container {
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.pricing-header {
+    text-align: left;
+    margin-bottom: 40px;
+    width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+}
+
+.pricing-title {
+    font-size: 72px;
+    font-weight: 800;
+    color: #000000;
+    margin-bottom: 14px;
+    line-height: 0.9;
+}
+
+.pricing-subtitle {
+    font-size: 24px;
+    font-weight: 400;
+    color: #000000;
+    max-width: 400px;
+    line-height: 1.2;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    /* Reduced gap */
+    width: 100%;
+    max-width: 900px;
+    /* Constrain width to keep cards proportionate */
+}
+
+.pricing-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 32px;
+    /* Reduced padding */
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-card:hover {
+    transform: translateY(-4px);
+    /* Subtle hover */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.05);
+}
+
+.pricing-card.highlighted {
+    background: #000000;
+    color: #ffffff;
+    border: none;
+}
+
+.pricing-card.highlighted .pricing-price-amount,
+.pricing-card.highlighted .pricing-price-period,
+.pricing-card.highlighted .pricing-feature-item,
+.pricing-card.highlighted .pricing-plan-name {
+    color: #ffffff;
+}
+
+.pricing-card.highlighted .pricing-card-desc {
+    color: #a3a3a3;
+}
+
+.pricing-plan-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #000000;
+}
+
+.pricing-price {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 16px;
+}
+
+.pricing-price-amount {
+    font-size: 40px;
+    /* Smaller amount */
+    font-weight: 800;
+    color: #000000;
+}
+
+.pricing-price-period {
+    font-size: 14px;
+    color: #666666;
+    margin-left: 6px;
+}
+
+.pricing-card-desc {
+    font-size: 14px;
+    color: #666666;
+    margin-bottom: 24px;
+    line-height: 1.4;
+    min-height: 40px;
+    /* Align descriptions */
+}
+
+.pricing-features {
+    list-style: none;
+    margin-bottom: 32px;
+    flex-grow: 1;
+}
+
+.pricing-feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    /* Tighter lines */
+    font-size: 14px;
+    /* Smaller font */
+    color: #333333;
+}
+
+.pricing-feature-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.pricing-cta {
+    width: 100%;
+    padding: 14px;
+    border-radius: 99px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    margin-top: auto;
+    /* Push to bottom */
+}
+
+.pricing-cta.primary {
+    background-color: #000000;
+    color: #ffffff;
+    border: none;
+}
+
+.pricing-cta.secondary {
+    background-color: transparent;
+    color: #000000;
+    border: 2px solid #e5e5e5;
+}
+
+.pricing-card.highlighted .pricing-cta {
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+}
+
+.pricing-cta:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 800px) {
+    .pricing-section {
+        height: auto;
+        /* Allow scroll on mobile */
+        padding: 100px 0 40px;
+    }
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-title {
+        font-size: 36px;
+    }
+}
+
+@media (max-height: 800px) and (min-width: 800px) {
+
+    /* Optimization for shorter laptop screens */
+    .pricing-header {
+        margin-bottom: 24px;
+    }
+
+    .pricing-title {
+        font-size: 36px;
+    }
+
+    .pricing-card {
+        padding: 24px;
+    }
+
+    .pricing-feature-item {
+        margin-bottom: 8px;
+    }
+
+    .pricing-card-desc {
+        margin-bottom: 16px;
+    }
+}
