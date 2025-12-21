@@ -1,6 +1,9 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import './Features.css';
+import FeatureSnippets from './FeatureSnippets';
+import FeatureDictionary from './FeatureDictionary';
+import FeatureIntegrations from './FeatureIntegrations';
 
 const FeatureCard = ({ index, title, subtitle, description, color, visual, progress, entryRange, exitRange }) => {
   // scale and rotation animation for the card as it "goes behind"
@@ -14,6 +17,7 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
   // Opacity
   const opacity = useTransform(progress, exitRange, [1, 1]);
 
+
   // Custom mapping for snappier entry:
   // borderRadius stays 48px until the card is almost in place
   const borderRadius = useTransform(progress,
@@ -24,18 +28,9 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
       exitRange[0],
       exitRange[1]
     ],
-    ["48px", "48px", "0px", "0px", "48px"]
+    ["48px", "0px", "0px", "0px", "48px"]
   );
 
-  // Padding stays 20px until the card is almost in place
-  const padding = useTransform(progress,
-    [
-      entryRange[0],
-      entryRange[0] + (entryRange[1] - entryRange[0]) * 0.9,
-      entryRange[1]
-    ],
-    ["20px", "20px", "0px"]
-  );
 
   // Slide up from bottom
   const y = useTransform(progress, entryRange, ["100vh", "0vh"]);
@@ -50,7 +45,7 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
         rotateX,
         rotateZ,
         opacity,
-        padding,
+
         transformStyle: "preserve-3d"
       }}
     >
@@ -58,7 +53,9 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
         className="feature-card"
         style={{
           backgroundColor: color,
+
           borderRadius,
+
           overflow: "hidden"
         }}
       >
@@ -75,7 +72,9 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
           </div>
           <div className="feature-card-right">
             <div className="image-frame">
-              {visual}
+              {React.isValidElement(visual)
+                ? React.cloneElement(visual, { progress, entryRange, exitRange })
+                : visual}
             </div>
           </div>
         </div>
@@ -98,7 +97,7 @@ const Features = () => {
       subtitle: "Library, Transcriptions, Voice Notes",
       description: "Manage all your transcriptions and voice notes in one centralized, searchable library. Access your thoughts anytime, anywhere.",
       color: "#7591EE",
-      visual: <div className="placeholder-content library-bg"></div>,
+      visual: <FeatureSnippets />,
       entryRange: [-0.01, 0],
       exitRange: [0.15, 0.45]
     },
@@ -108,7 +107,7 @@ const Features = () => {
       subtitle: "Dictionary, Custom Words, Industry Jargon",
       description: "Automatically learns your unique words and adds them to your personal dictionary. Smartscribe understands your industry jargon and names.",
       color: "#C5FAAB",
-      visual: <div className="placeholder-content dictionary-bg"><div className="blob"></div></div>,
+      visual: <FeatureDictionary />,
       entryRange: [0.15, 0.45],
       exitRange: [0.55, 0.85]
     },
@@ -118,7 +117,7 @@ const Features = () => {
       subtitle: "Tones, Professional, Casual",
       description: "Adapt your transcription to any context. From professional reports to casual brainstorms, Smartscribe captures the right tone for your needs.",
       color: "#FADCAB",
-      visual: <div className="placeholder-content tones-bg"></div>,
+      visual: <FeatureIntegrations />,
       entryRange: [0.55, 0.85],
       exitRange: [1.1, 1.2] // Stays in view
     }

@@ -109,7 +109,7 @@
 
 .image-frame {
     width: 100%;
-    height: 500px;
+    height: 600px;
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 48px;
     overflow: hidden;
@@ -121,24 +121,7 @@
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.placeholder-content {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.dictionary-bg .blob {
-    width: 300px;
-    height: 300px;
-    background-color: #BEF264;
-    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    filter: blur(60px);
-    opacity: 0.6;
-}
+/* Placeholder styles removed */
 
 /* Specific text colors */
 .feature-card-wrapper:nth-child(1) .feature-main-title,
@@ -180,67 +163,153 @@
     }
 
     .image-frame {
-        height: 380px;
-    }
-}
-
-@media (max-width: 768px) {
-    .feature-card-wrapper {
-        height: auto;
-        min-height: 100vh;
-        position: relative;
-    }
-
-    .feature-card {
-        padding: 40px 24px;
-    }
-
-    .feature-card-content {
-        flex-direction: column;
-        gap: 32px;
-    }
-
-    .feature-card-main {
-        flex: 0 0 auto;
-        gap: 24px;
-    }
-
-    .feature-main-title {
-        font-size: 56px;
-        margin-bottom: 8px;
-    }
-
-    .feature-card-details {
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    .feature-index {
-        font-size: 56px;
-    }
-
-    .feature-text-group {
-        width: 100%;
-    }
-
-    .feature-subtitle {
-        font-size: 24px;
-        margin-bottom: 8px;
-    }
-
-    .feature-description {
-        font-size: 16px;
-        max-width: 100%;
-    }
-
-    .feature-card-right {
-        flex: 1;
-        width: 100%;
-        height: 300px;
-    }
-
-    .image-frame {
         height: 100%;
         border-radius: 24px;
     }
+}
+
+/* Feature Visuals - Classic CSS */
+
+.feature-visual-container {
+    width: 100%;
+    height: 100%;
+    background-color: #151516;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    /* padding removed to allow edge-to-edge animation */
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.feature-visual-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 40px 40px 0 40px;
+    /* Padding applied here */
+}
+
+.feature-visual-title {
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.feature-add-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #2c2c2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.feature-add-button:hover {
+    background-color: #3a3a3c;
+}
+
+/* Snippets Styling */
+.feature-list-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 40px;
+    /* Bottom padding only */
+}
+
+.snippet-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 80px);
+    /* Full width minus margins */
+    margin-left: 40px;
+    margin-right: 40px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 9999px;
+    background-color: #1c1c1e;
+    box-sizing: border-box;
+}
+
+.snippet-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.snippet-indented-message {
+    margin-left: 60px;
+    /* 40px (container visual spacing) + 20px (indent) */
+    margin-bottom: 12px;
+    background-color: #FFB74D;
+    color: black;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    width: fit-content;
+    max-width: 340px;
+    /* Limit width as requested */
+    line-height: 1.4;
+}
+
+/* Dictionary Styling */
+.dictionary-list {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-bottom: 40px;
+    padding-top: 30px;
+    /* Push first entry down */
+    position: relative;
+    /* For fade overlay context if needed inside */
+}
+
+.dictionary-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 80px);
+    margin-left: 40px;
+    margin-right: 40px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 2px solid #10B981;
+    border-radius: 9999px;
+    background-color: #1c1c1e;
+    box-sizing: border-box;
+}
+
+.dictionary-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    margin-left: 8px;
+}
+
+.dictionary-fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    background: linear-gradient(to bottom, rgba(21, 21, 22, 0), #151516);
+    pointer-events: none;
+    z-index: 20;
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import DeviceMockup from './DeviceMockup';
 import './AnyDevice.css';
-import deviceMockup from '../assets/any-device-mockup.png';
 
 const AnyDevice = () => {
     return (
@@ -16,7 +16,7 @@ const AnyDevice = () => {
                         transition={{ duration: 0.8, ease: "easeOut" }}
                     >
                         <div className="mockup-wrapper">
-                            <img src={deviceMockup} alt="Smartscribe on multiple devices" className="device-mockup" />
+                            <DeviceMockup />
                         </div>
                     </motion.div>
 

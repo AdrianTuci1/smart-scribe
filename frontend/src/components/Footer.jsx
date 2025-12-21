@@ -75,7 +75,7 @@ const Footer = ({ revealState = { showTop: false, showBottom: false, isVisible: 
             {/* Large SMARTSCRIBE Text - Now at the very bottom */}
             <div className="footer-brand">
               <svg viewBox="0 0 100 12" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">
-                <text x="50" y="10" textAnchor="middle" fontSize="11.5" fontWeight="900" fill="currentColor" fontFamily="inherit" letterSpacing="-0.5px">
+                <text x="50" y="10" textAnchor="middle" fontSize="12.5" fontWeight="900" fill="currentColor" fontFamily="inherit" letterSpacing="-0.5px">
                   SMARTSCRIBE
                 </text>
               </svg>
