@@ -21,7 +21,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
     return (
         <div className="w-full h-full bg-[#151516] flex flex-col items-center justify-center p-8 relative overflow-hidden">
 
-            <div className="relative w-full max-w-[400px] h-[400px] flex flex-col items-center">
+            <div className="relative w-[400px] h-[400px] flex flex-col items-center scale-[0.80] sm:scale-100 origin-center">
 
                 {/* Top Chip */}
                 <motion.div
@@ -41,7 +41,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                 <svg className="absolute top-[30px] left-0 w-full h-[250px] z-0 pointer-events-none" overflow="visible">
                     {/* Left Line */}
                     <motion.path
-                        d="M200,30 C200,100 50,100 50,200"
+                        d="M200,30 C200,90 50,90 50,160"
                         fill="none"
                         stroke="#FFF8E7"
                         strokeWidth="4"
@@ -49,7 +49,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                     />
                     {/* Center Line */}
                     <motion.path
-                        d="M200,30 L200,200"
+                        d="M200,30 L200,160"
                         fill="none"
                         stroke="#FFF8E7"
                         strokeWidth="4"
@@ -57,7 +57,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                     />
                     {/* Right Line */}
                     <motion.path
-                        d="M200,30 C200,100 350,100 350,200"
+                        d="M200,30 C200,90 350,90 350,160"
                         fill="none"
                         stroke="#FFF8E7"
                         strokeWidth="4"
@@ -66,7 +66,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                 </svg>
 
                 {/* Icons Row */}
-                <div className="absolute top-[230px] w-full flex justify-between items-start px-[10px]">
+                <div className="absolute top-[190px] w-full flex justify-between items-start px-[10px]">
 
                     {/* Gmail */}
                     <motion.div style={{ y: yIcon, scale: scaleIcon, opacity: opacityIcon }} className="flex flex-col items-center gap-4">

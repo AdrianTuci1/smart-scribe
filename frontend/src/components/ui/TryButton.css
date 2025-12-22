@@ -1,0 +1,76 @@
+.try-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+.btn-icon-orb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+    background-size: 200% 200%;
+    animation: wave-gradient 3s ease infinite;
+}
+
+@keyframes wave-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Variant: Outline (Navbar) - Black Border */
+.try-btn.variant-outline {
+    background: transparent;
+    border: 1px solid #000000;
+    color: #000000;
+}
+
+.try-btn.variant-outline:hover {
+    background-color: #f8f8f8;
+}
+
+/* Variant: Outline Gray (TargetUsers) - Gray Border */
+.try-btn.variant-outline-gray {
+    background-color: #ffffff;
+    border: 1px solid #d2d2d7;
+    color: #1d1d1f;
+    font-weight: 600;
+    /* TargetUsers had bold text */
+    padding: 10px 20px;
+    gap: 10px;
+}
+
+.try-btn.variant-outline-gray:hover {
+    background-color: #f5f5f7;
+    border-color: #86868b;
+}
+
+/* For TargetUsers orb icon override if needed, but the radial gradient above mimics it well. 
+   If original used an image, we can restore it, but CSS gradient is cleaner. 
+   Let's use the image tag if the user specifically wants the orb-icon.svg 
+   Wait, the original code used an image /src/assets/orb-icon.svg. 
+   I should probably stick to that or use the CSS if the image isn't available/preferred. 
+   The Navbar used a div with background class .btn-icon which had a radial gradient.
+   The TargetUsers used an img tag. 
+   Let's unify to use the CSS gradient for consistency unless the image is special.
+   Actually, let's allow passing an icon or default to the gradient div. 
+   For now, I'll stick to the CSS gradient from Navbar as the default 'orb'.
+*/

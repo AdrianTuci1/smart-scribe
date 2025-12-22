@@ -67,23 +67,7 @@
     font-weight: 700;
 }
 
-.try-now-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: 1px solid #000000;
-    border-radius: 50px;
-    background: transparent;
-    color: #000000;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
 
-.try-now-btn:hover {
-    background-color: #f8f8f8;
-}
 
 .btn-icon {
     width: 16px;
@@ -92,12 +76,107 @@
     background: radial-gradient(circle, #4A4AFE 0%, #1A1A2E 100%);
 }
 
+/* Hamburger Button */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1002;
+    /* Above mobile menu */
+}
+
+.hamburger .bar {
+    width: 100%;
+    height: 2px;
+    background-color: #000;
+    transition: all 0.3s ease-in-out;
+    border-radius: 2px;
+}
+
+/* Hamburger Animation */
+.hamburger.active .bar:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.hamburger.active .bar:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active .bar:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: #ffffff;
+    z-index: 1001;
+    padding-top: 80px;
+    /* Space for navbar */
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.mobile-menu.open {
+    transform: translateX(0);
+}
+
+.mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Align left */
+    gap: 32px;
+    width: 100%;
+    padding-left: 40px;
+    /* Add some padding from the left edge */
+}
+
+.mobile-nav-link {
+    text-decoration: none;
+    color: #000000;
+    font-size: 24px;
+    /* Larger text for mobile */
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s ease;
+}
+
+.mobile-nav-link:hover {
+    opacity: 0.7;
+}
+
+.mobile-nav-link.active {
+    font-weight: 700;
+    color: #4A4AFE;
+    /* Highlight color */
+}
+
 @media (max-width: 768px) {
     .nav-links {
         display: none;
     }
 
+    .hamburger {
+        display: flex;
+    }
+
     .navbar-container {
-        padding: 0 1rem;
+        padding: 0 1.5rem;
+        /* Slightly larger padding for mobile usually looks better, or keep consistent */
     }
 }

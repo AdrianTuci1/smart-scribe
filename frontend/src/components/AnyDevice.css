@@ -52,17 +52,31 @@
 
 @media (max-width: 1024px) {
     .any-device-content {
-        flex-direction: column;
-        gap: 48px;
-        text-align: center;
+        flex-direction: column-reverse;
+        gap: 60px;
+        /* Increased gap */
+        text-align: left;
+        /* Changed alignment */
+    }
+
+    .any-device-left,
+    .any-device-right {
+        width: 100%;
+        flex: none;
+    }
+
+    .any-device-right {
+        padding-top: 40px;
+        /* Added extra space up */
     }
 
     .any-device-container {
-        padding: 60px 40px;
+        padding: 60px 40px 100px;
+        /* Increased bottom padding */
     }
 
     .any-device-description {
-        margin: 0 auto;
+        margin: 0;
     }
 }
 
@@ -72,7 +86,7 @@
     }
 
     .any-device-container {
-        padding: 40px 24px;
-        border-radius: 32px;
+        padding: 40px 24px 100px;
+        border-radius: 32px 32px 0 0;
     }
 }

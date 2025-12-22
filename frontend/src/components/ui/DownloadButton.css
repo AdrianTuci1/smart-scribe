@@ -1,0 +1,53 @@
+.download-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-family: inherit;
+    white-space: nowrap;
+    justify-content: center;
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+}
+
+.download-btn .apple-icon {
+    margin-bottom: 2px;
+}
+
+/* Variant: Primary (Hero) - Lavender/Purple */
+.download-btn.variant-primary {
+    background-color: #B696FF;
+    color: #000000;
+}
+
+.download-btn.variant-primary:hover {
+    background-color: #a37dfa;
+}
+
+/* Variant: Secondary (TargetUsers) - Light Purple */
+.download-btn.variant-secondary {
+    background-color: #E2E2FF;
+    color: #000000;
+    padding: 10px 20px;
+    /* Specific padding from TargetUsers */
+    gap: 10px;
+}
+
+.download-btn.variant-secondary:hover {
+    background-color: #d2d2ff;
+    transform: none;
+    /* TargetUsers button typically didn't have lift, but we can keep it consistent or remove */
+}
+
+.download-btn.variant-secondary .apple-icon {
+    width: 16px;
+    height: 16px;
+}

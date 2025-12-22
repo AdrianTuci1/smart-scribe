@@ -2,16 +2,19 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import UseCases from './pages/UseCases';
 import Pricing from './pages/Pricing';
 import Research from './pages/Research';
+import TryNow from './pages/TryNow';
 
 function App() {
 
 
   return (
     <Router>
+      <ScrollToTop />
       <AppContent />
     </Router>
   );
@@ -23,7 +26,7 @@ function AppContent() {
   const footerRef = React.useRef(null);
   const spacerRef = React.useRef(null);
   const location = useLocation();
-  const showFooter = location.pathname !== '/pricing';
+  const showFooter = location.pathname !== '/pricing' && location.pathname !== '/try-now';
 
   React.useEffect(() => {
     // Set body background to black to fix overscroll issue (hide white gap)
@@ -84,12 +87,13 @@ function AppContent() {
           marginBottom: 0 // We use the spacer now instead of margin
         }}
       >
-        <Navbar />
+        {location.pathname !== '/try-now' && <Navbar />}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/use-cases" element={<UseCases />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/research" element={<Research />} />
+          <Route path="/try-now" element={<TryNow />} />
         </Routes>
       </div>
       {/* Physical spacer that pushes content scroll height */}

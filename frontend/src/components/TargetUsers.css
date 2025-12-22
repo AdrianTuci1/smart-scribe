@@ -79,38 +79,7 @@
     gap: 16px;
 }
 
-.action-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: 100px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
 
-.try-now {
-    background-color: #ffffff;
-    border: 1px solid #d2d2d7;
-    color: #1d1d1f;
-}
-
-.try-now:hover {
-    background-color: #f5f5f7;
-    border-color: #86868b;
-}
-
-.download-macos {
-    background-color: #E2E2FF;
-    border: none;
-    color: #000000;
-}
-
-.download-macos:hover {
-    background-color: #d2d2ff;
-}
 
 .btn-icon {
     width: 20px;
@@ -125,11 +94,17 @@
 @media (max-width: 1024px) {
     .target-users-content {
         flex-direction: column;
-        gap: 32px;
+        gap: 60px;
+    }
+
+    .target-users-left,
+    .target-users-right {
+        width: 100%;
+        flex: none;
     }
 
     .target-users-container {
-        padding: 48px 40px;
+        padding: 60px 40px 100px;
     }
 }
 
@@ -139,7 +114,7 @@
     }
 
     .target-users-container {
-        padding: 32px 24px;
+        padding: 40px 24px 100px;
     }
 
     .target-users-actions {

@@ -1,0 +1,306 @@
+/* TryNow.css */
+.try-now-page {
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header/Return Home */
+.try-now-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Main Chat Area */
+.try-now-chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+    position: relative;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.chat-placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    max-width: 400px;
+}
+
+.chat-placeholder h2 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.chat-placeholder p {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.transcription-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: flex-end;
+    min-height: 0;
+}
+
+.chat-bubble {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px 24px;
+    border-radius: 24px;
+    border-bottom-left-radius: 4px;
+    max-width: 80%;
+    align-self: flex-start;
+    animation: bubbleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+}
+
+@keyframes bubbleIn {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Transcription Box - Simple bordered container */
+.transcription-box {
+    width: 100%;
+    min-height: 120px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1rem;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Scrollbar */
+.try-now-chat-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.try-now-chat-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.try-now-chat-area::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+}
+
+/* Dock */
+.try-now-dock-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 40px;
+    padding-top: 20px;
+    width: 100%;
+    /* Gradient fade for dock area */
+    background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+    position: fixed;
+    /* Fixed to not push content */
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* Container for Tooltip + Button to align them */
+.record-button-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: auto;
+}
+
+/* Record Button: Gradient Pill/Orb */
+.record-orb-btn {
+    /* Idle State: Gradient Pill */
+    height: 24px;
+    /* Sufficient height for icon */
+    min-width: 80px;
+    /* Wide pill shape */
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    overflow: hidden;
+    border: 1px solid rgba(168, 167, 167, 0.8);
+
+    /* Animated Gradient Background */
+    background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+    background-size: 200% 200%;
+    animation: wave-gradient 6s ease infinite;
+
+    color: #000000;
+    padding: 0;
+    /* Removing padding to avoid inner spacing issues */
+}
+
+/* Hover OR Recording -> Becomes Circle (Orb) */
+.record-orb-btn:hover,
+.record-orb-btn.recording {
+    min-width: 80px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    box-shadow: 0 0 30px rgba(74, 74, 254, 0.3);
+}
+
+/* Icon Wrapper */
+.btn-icon-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+/* Icons */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    color: black;
+    background: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+/* Hover Interaction */
+.icon-mic {
+    opacity: 0;
+    /* Hidden by default when not hovering */
+    transition: opacity 0.2s;
+}
+
+/* Show mic icon on hover when not recording */
+.record-orb-btn:hover .icon-mic {
+    opacity: 1;
+}
+
+.icon-stop {
+    opacity: 0;
+    /* Hidden by default */
+    position: absolute;
+    transition: opacity 0.2s;
+    transform: scale(0.8);
+}
+
+/* Recording State: Hover shows Stop */
+.record-orb-btn.recording:hover .icon-stop {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* Keep mic hidden when recording and hovering */
+.record-orb-btn.recording:hover .icon-mic {
+    opacity: 0;
+}
+
+/* Keep mic hidden when recording (even without hover) */
+.record-orb-btn.recording .icon-mic {
+    opacity: 0;
+}
+
+/* Animation Keyframes */
+@keyframes wave-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes bubbleIn {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Remove unused or redundant styles for cleaner file */
+/* .chip-content removed as it's no longer used in JSX/Design */
+
+/* Control Dock Side Elements */
+.dock-side-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 500;
+}

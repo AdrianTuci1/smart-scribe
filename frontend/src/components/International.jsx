@@ -21,6 +21,8 @@ const useWindowSize = () => {
 };
 
 
+
+
 const LANGUAGES = [
     { name: 'English' },
     { name: 'Romanian' },
@@ -80,35 +82,33 @@ const International = () => {
     return (
         <section className="bg-purple-200 relative pt-1 pb-0 overflow-hidden transition-colors duration-500 ease-out h-full" ref={containerRef}>
 
-
             <div
-                className="w-full grid grid-cols-1 md:grid-cols-2 gap-24 relative z-10 h-full"
+                className="w-full relative z-10 h-full flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-24"
                 style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}
             >
-                {/* Left Column: Single Scrolling Column */}
-                <div className="relative h-[700px] flex justify-center overflow-hidden mask-fade-y max-w-sm mx-auto md:mx-0">
+
+                {/* 1. Text Section - Order 1 on Mobile */}
+                <div className="order-1 lg:order-2 lg:col-start-2 relative z-10 pt-10 lg:pt-48 pointer-events-none text-left lg:pr-12" style={{ paddingTop: '24px' }}>
+                    <h2 className="text-5xl md:text-5xl font-black text-gray-900 leading-tight tracking-[-0.02em]">
+                        We support 100+ languages
+                    </h2>
+                    <p className="text-gray-500 text-xl md:text-xl font-medium max-w-xl md:ml-0 leading-[1.6] pt-4">
+                        Effortless transcription and translation across the globe. Breaking barriers in every conversation.
+                    </p>
+                </div>
+
+                {/* 2. Scrolling Column - Order 2 on Mobile */}
+                <div className="order-2 lg:order-1 lg:col-start-1 relative h-[500px] lg:h-[700px] flex justify-center overflow-hidden mask-fade-y max-w-sm mx-auto md:mx-0">
                     <ScrollingColumn items={LANGUAGES} speed={40} />
                 </div>
 
-                {/* Right Column: Globe and Text */}
-                <div className="relative h-full flex flex-col items-center md:items-end text-center md:text-left pr-0 md:pr-12">
-                    <div className="relative z-10 pt-24 md:pt-48 pointer-events-none" style={{ paddingTop: '24px' }}>
-                        <h2 className="text-5xl md:text-5xl font-black text-gray-900 leading-tight tracking-[-0.02em]">
-                            We support 100+ languages
-                        </h2>
-                        <p className="text-gray-500 text-xl md:text-xl font-medium max-w-xl ml-auto leading-[1.6] pt-4">
-                            Effortless transcription and translation across the globe. Breaking barriers in every conversation.
-                        </p>
-                    </div>
-
-                    {/* Man Image - Pinned to bottom and larger */}
-                    <div className="absolute bottom-0 right-0 w-[800px] flex justify-center md:justify-end">
-                        <img
-                            src="/man.svg"
-                            alt="International support"
-                            className="w-full max-w-[1000px] object-contain object-bottom"
-                        />
-                    </div>
+                {/* 3. Image - Order 3 on Mobile */}
+                <div className="order-3 lg:order-2 lg:absolute lg:bottom-0 lg:right-0 w-full lg:w-[800px] flex justify-center lg:justify-end mt-4 lg:mt-0 pointer-events-none">
+                    <img
+                        src="/man.svg"
+                        alt="International support"
+                        className="w-full max-w-[1000px] object-contain object-bottom"
+                    />
                 </div>
             </div>
         </section>

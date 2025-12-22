@@ -65,7 +65,6 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
             <div className="feature-card-details">
               <span className="feature-index">0{index}</span>
               <div className="feature-text-group">
-                <h2 className="feature-subtitle">{subtitle}</h2>
                 <p className="feature-description">{description}</p>
               </div>
             </div>
