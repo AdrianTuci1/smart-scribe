@@ -14,7 +14,7 @@ const DevelopersCase = () => {
                     {/* Message content */}
                     <div className="developers-case__message">
                         <p className="developers-case__message-text">
-                            Hey Safiya, sorry for the delay on this. We ran out of compute on our Baseten instance, but we'll still be able to get v1.3.475 out to prod by EOD tomorrow.
+                            Yo Alex, quick update on the CI/CD pipeline. The K8s cluster is scaling as expected now. v2.1.0 should be live on staging within the hour.
                         </p>
                     </div>
 

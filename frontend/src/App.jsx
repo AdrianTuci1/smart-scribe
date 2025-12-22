@@ -1,16 +1,20 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+
+// Eager load Home for faster LCP
 import Home from './pages/Home';
-import UseCases from './pages/UseCases';
-import Pricing from './pages/Pricing';
-import Research from './pages/Research';
-import ResearchArticle from './pages/ResearchArticle';
-import VoiceHabitsArticle from './pages/VoiceHabitsArticle';
-import TechnicalChallengesArticle from './pages/TechnicalChallengesArticle';
-import TryNow from './pages/TryNow';
+
+// Lazy load other pages
+const UseCases = lazy(() => import('./pages/UseCases'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const Research = lazy(() => import('./pages/Research'));
+const ResearchArticle = lazy(() => import('./pages/ResearchArticle'));
+const VoiceHabitsArticle = lazy(() => import('./pages/VoiceHabitsArticle'));
+const TechnicalChallengesArticle = lazy(() => import('./pages/TechnicalChallengesArticle'));
+const TryNow = lazy(() => import('./pages/TryNow'));
 
 function App() {
 
@@ -91,16 +95,18 @@ function AppContent() {
         }}
       >
         {location.pathname !== '/try-now' && <Navbar />}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/use-cases" element={<UseCases />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/research" element={<Research />} />
-          <Route path="/research/invisible-interface" element={<ResearchArticle />} />
-          <Route path="/research/voice-habits" element={<VoiceHabitsArticle />} />
-          <Route path="/research/technical-challenges" element={<TechnicalChallengesArticle />} />
-          <Route path="/try-now" element={<TryNow />} />
-        </Routes>
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/use-cases" element={<UseCases />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/research" element={<Research />} />
+            <Route path="/research/invisible-interface" element={<ResearchArticle />} />
+            <Route path="/research/voice-habits" element={<VoiceHabitsArticle />} />
+            <Route path="/research/technical-challenges" element={<TechnicalChallengesArticle />} />
+            <Route path="/try-now" element={<TryNow />} />
+          </Routes>
+        </Suspense>
       </div>
       {/* Physical spacer that pushes content scroll height */}
       {showFooter && (

@@ -10,14 +10,14 @@ const UseCases = () => {
         {
             id: 1,
             title: "For Developers",
-            description: "Document your code reviews and technical discussions effortlessly. Capture standup meetings, architecture decisions, and debugging sessions. Transform verbal explanations into clear technical documentation and searchable knowledge base articles.",
-            tags: ["Code Reviews", "Technical Docs", "Standups"]
+            description: "Streamline your development workflow by capturing technical updates, CI/CD pipeline status, and infrastructure decisions. Transform dev standups and architecture discussions into actionable documentation and clear team updates.",
+            tags: ["CI/CD Status", "Infra Decisions", "Staging Updates"]
         },
         {
             id: 2,
             title: "For Creators",
-            description: "Turn your podcasts and videos into SEO-friendly blog posts and social media snippets. Repurpose your best spoken content 10x faster and reach a wider audience with text. Generate captions and show notes automatically.",
-            tags: ["Podcasts", "YouTube", "Social Media"]
+            description: "Manage your creative projects and support requests with ease. Capture client feedback on asset rendering and technical issues seamlessly. Perfect for busy creators who need to turn verbal requests into trackable dashboard actions.",
+            tags: ["Asset Support", "Rendering Fixes", "Creator Dashboard"]
         },
         {
             id: 3,
@@ -27,9 +27,9 @@ const UseCases = () => {
         },
         {
             id: 4,
-            title: "For Sales",
-            description: "Never miss important details from client calls and discovery meetings. Automatically capture requirements, objections, and commitments. Focus on building relationships while Smartscribe handles the note-taking and follow-up items.",
-            tags: ["Client Calls", "Discovery", "Follow-ups"]
+            title: "For Education & Research",
+            description: "Capture complex academic lectures and research inquiries with precision. From Computational Bioethics to Neural-synthetic autonomy, Smartscribe helps students and researchers document every detail for deeper study and follow-up.",
+            tags: ["Lecture Notes", "Academic Inquiry", "Research Details"]
         }
     ];
 

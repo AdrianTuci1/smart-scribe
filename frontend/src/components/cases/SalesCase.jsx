@@ -21,7 +21,7 @@ const SalesCase = () => {
                                     <div className="sales-case__avatar">
                                         Q
                                     </div>
-                                    <span className="sales-case__recipient-name">Quackenbush Miller</span>
+                                    <span className="sales-case__recipient-name">Professor Elena Vance</span>
                                 </div>
                             </div>
 
@@ -30,7 +30,7 @@ const SalesCase = () => {
                             <div className="sales-case__subject-section">
                                 <span className="sales-case__label">Subject</span>
                                 <p className="sales-case__subject-text">
-                                    Clarification Request for Concepts in Quantum Neurophilosophy – PHIL-4892
+                                    Inquiry Regarding Computational Bioethics – BIO-3315
                                 </p>
                             </div>
 
@@ -40,10 +40,10 @@ const SalesCase = () => {
                         {/* Email body with improved typography */}
                         <div className="sales-case__body">
                             <div className="sales-case__body-content">
-                                <p className="sales-case__paragraph">Dear Professor Quackenbush,</p>
+                                <p className="sales-case__paragraph">Dear Professor Vance,</p>
 
                                 <p className="sales-case__paragraph">
-                                    I hope you're doing well. I'm writing to seek clarification on some of the concepts discussed in your lecture for Quantum Neurophilosophy: The Entangled Mind and the Logic of Non-Being (PHIL-4892).
+                                    I hope you're doing well. I'm writing to seek clarification on some of the concepts discussed in your lecture for Computational Bioethics: The Ethics of Algorithmic Life (BIO-3315).
                                 </p>
 
                                 <p className="sales-case__paragraph">
@@ -54,19 +54,19 @@ const SalesCase = () => {
                                     <li className="sales-case__list-item">
                                         <span className="sales-case__bullet sales-case__bullet--purple">•</span>
                                         <span className="sales-case__list-item-text">
-                                            <span className="sales-case__list-item-label">"Onto-epistemic feedback loops":</span> I'm struggling to understand how these interact with recent consciousness models.
+                                            <span className="sales-case__list-item-label">"Neural-synthetic autonomy":</span> I'm struggling to understand the ethical boundary between biological and core programmed intent.
                                         </span>
                                     </li>
                                     <li className="sales-case__list-item">
                                         <span className="sales-case__bullet sales-case__bullet--blue">•</span>
                                         <span className="sales-case__list-item-text">
-                                            <span className="sales-case__list-item-label">The Schrödinger-Derrida Paradox:</span> I'm unclear on its implications in the context of post-structural cognition.
+                                            <span className="sales-case__list-item-label">Sub-sentient Data Rights:</span> I'm unclear on the current legal implications for non-fully-conscious entities.
                                         </span>
                                     </li>
                                     <li className="sales-case__list-item">
                                         <span className="sales-case__bullet sales-case__bullet--orange">•</span>
                                         <span className="sales-case__list-item-text">
-                                            Your mention of <span className="sales-case__list-item-label">"metaphysical defragmentation"</span> as applied to the self-aware algorithm — could you elaborate or point me to further reading?
+                                            Your mention of <span className="sales-case__list-item-label">"proactive moral agency"</span> in predictive algorithms — could you point me to further reading on this?
                                         </span>
                                     </li>
                                 </ul>

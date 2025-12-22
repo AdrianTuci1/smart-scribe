@@ -24,79 +24,80 @@
 
 .creators-case__main-container {
     position: relative;
-    display: flex;
     height: 100%;
+    width: 100%;
 }
 
-/* Sidebar */
+.creators-case__glass-container {
+    position: absolute;
+    left: 110px;
+    top: 150px;
+    width: 580px;
+    background-color: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    border-radius: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+    display: flex;
+    height: auto;
+    min-height: 380px;
+    overflow: visible;
+}
+
+/* Sidebar Integrated */
 .creators-case__sidebar {
-    width: 64px;
-    background: linear-gradient(to bottom, #134e4a, #042f2e);
+    width: 72px;
+    background: rgba(255, 255, 255, 0.03);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 0;
-    gap: 16px;
-    border-right: 1px solid rgba(17, 94, 89, 0.5);
+    padding: 32px 0;
+    gap: 20px;
+    border-top-left-radius: 32px;
+    border-bottom-left-radius: 32px;
 }
 
 .creators-case__icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .creators-case__icon--white {
-    background-color: white;
-}
-
-.creators-case__icon--white-transparent {
-    background-color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 .creators-case__icon--green {
-    background: linear-gradient(to bottom right, #4ade80, #16a34a);
+    background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .creators-case__icon--blue {
-    background: linear-gradient(to bottom right, #3b82f6, #1d4ed8);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .creators-case__icon-shape {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(to bottom right, #115e59, #042f2e);
+    width: 22px;
+    height: 22px;
+    background: #0f172a;
     border-radius: 4px;
     clip-path: polygon(20% 0%, 100% 50%, 20% 100%, 20% 70%, 70% 50%, 20% 30%);
 }
 
-.creators-case__waveform {
-    display: flex;
-    gap: 2px;
-    height: 20px;
-    align-items: flex-end;
-}
-
-.creators-case__waveform-bar {
-    width: 2px;
-    background: linear-gradient(to top, #111827, #374151);
-    border-radius: 9999px;
-}
-
 .creators-case__icon-circle {
-    width: 20px;
-    height: 20px;
-    border: 2px solid white;
-    border-radius: 9999px;
+    width: 22px;
+    height: 22px;
+    border: 2.5px solid white;
+    border-radius: 50%;
 }
 
 .creators-case__icon-text {
     color: white;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
 }
 
@@ -104,82 +105,87 @@
 .creators-case__content {
     flex: 1;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
-.creators-case__header-waveform {
+.creators-case__orb {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+    background-size: 200% 200%;
+    animation: wave-gradient 3s ease infinite;
     position: absolute;
-    top: 32px;
+    top: -85px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(to right, #111827, #1f2937, #111827);
-    border-radius: 9999px;
-    padding: 12px 32px;
-    display: flex;
-    gap: 2px;
-    align-items: center;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(55, 65, 81, 0.5);
-    z-index: 10;
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+    z-index: 20;
 }
 
-.creators-case__header-waveform-bar {
-    width: 2px;
-    background: linear-gradient(to top, #fef3c7, #fffbeb);
-    border-radius: 9999px;
+@keyframes wave-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .creators-case__email-container {
-    height: 100%;
+    flex: 1;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 96px 40px 40px;
+    padding: 32px;
 }
 
 .creators-case__email-card {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    border-radius: 28px;
-    border: 2px solid #111827;
-    padding: 32px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    max-width: 512px;
     width: 100%;
+    max-width: 480px;
 }
 
 .creators-case__email-greeting {
-    color: #111827;
+    color: rgba(255, 255, 255, 0.6);
     font-size: 16px;
-    margin-bottom: 16px;
-    font-weight: 300;
+    margin-bottom: 20px;
 }
 
 .creators-case__email-greeting-name {
+    color: white;
     font-weight: 600;
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .creators-case__email-text {
-    color: #374151;
-    font-size: 14px;
-    line-height: 1.625;
-    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 16px;
 }
 
 .creators-case__email-text--last {
-    margin-bottom: 24px;
+    margin-bottom: 32px;
 }
 
 .creators-case__email-signature {
-    padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .creators-case__email-signature-text {
-    color: #111827;
-    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 15px;
+    line-height: 1.5;
 }
 
 .creators-case__email-signature-name {
+    color: white;
     font-weight: 600;
 }

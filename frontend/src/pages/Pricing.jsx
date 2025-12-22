@@ -4,13 +4,6 @@ const Pricing = () => {
     return (
         <main className="pricing-section">
             <div className="pricing-container">
-                <div className="pricing-header">
-                    <h1 className="pricing-title">Simple, transparent pricing</h1>
-                    <p className="pricing-subtitle">
-                        Choose the plan that fits your needs.
-                        <br />No hidden fees, cancel anytime.
-                    </p>
-                </div>
 
                 <div className="pricing-grid">
                     {/* Pro Tier */}
