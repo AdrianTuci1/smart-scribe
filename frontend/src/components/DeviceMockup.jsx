@@ -8,9 +8,9 @@ const DeviceMockup = () => {
                 {/* Background Image - Blurred photo */}
                 <div className="absolute inset-0 rounded-[48px] overflow-hidden">
                     <div
-                        className="w-full h-full bg-cover bg-center blur-sm"
+                        className="w-full h-full bg-cover bg-center"
                         style={{
-                            backgroundImage: `url('data:image/svg+xml,%3Csvg width="950" height="600" xmlns="http://www.w3.org/2000/svg"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23a0826d;stop-opacity:1" /%3E%3Cstop offset="50%25" style="stop-color:%23d4c5b0;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%235a9fb5;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="950" height="600" fill="url(%23grad)" /%3E%3C/svg%3E')`,
+                            backgroundImage: 'url(/gen05.png)',
                         }}
                     ></div>
                 </div>

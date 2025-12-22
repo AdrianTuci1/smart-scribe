@@ -1,31 +1,35 @@
 import React from 'react';
 import './UseCases.css';
+import DevelopersCase from '../components/cases/DevelopersCase';
+import CreatorsCase from '../components/cases/CreatorsCase';
+import CustomerSupportCase from '../components/cases/CustomerSupportCase';
+import SalesCase from '../components/cases/SalesCase';
 
 const UseCases = () => {
     const cases = [
         {
             id: 1,
-            title: "For Students & Researchers",
-            description: "Capture lectures and seminars without missing a beat. Search through hours of audio instantly to find that one specific reference for your paper. Focus on understanding the material instead of frantically taking notes.",
-            tags: ["Lecture Notes", "Thesis Research", "Study Groups"]
+            title: "For Developers",
+            description: "Document your code reviews and technical discussions effortlessly. Capture standup meetings, architecture decisions, and debugging sessions. Transform verbal explanations into clear technical documentation and searchable knowledge base articles.",
+            tags: ["Code Reviews", "Technical Docs", "Standups"]
         },
         {
             id: 2,
-            title: "For Meeting Minutes",
-            description: "Automate your meeting workflow. Smartscribe identifies different speakers and generates concise summaries with action items. Keeps everyone aligned without the administrative burden.",
-            tags: ["Team Syncs", "Client Calls", "Board Meetings"]
-        },
-        {
-            id: 3,
-            title: "For Content Creators",
-            description: "Turn your podcasts and videos into SEO-friendly blog posts and social media snippets. Repurpose your best spoken content 10x faster and reach a wider audience with text.",
+            title: "For Creators",
+            description: "Turn your podcasts and videos into SEO-friendly blog posts and social media snippets. Repurpose your best spoken content 10x faster and reach a wider audience with text. Generate captions and show notes automatically.",
             tags: ["Podcasts", "YouTube", "Social Media"]
         },
         {
+            id: 3,
+            title: "For Customer Support",
+            description: "Automatically transcribe customer calls and support sessions. Create accurate records of customer issues and resolutions. Build a searchable knowledge base from real conversations to improve response times and training.",
+            tags: ["Call Logs", "Issue Tracking", "Knowledge Base"]
+        },
+        {
             id: 4,
-            title: "For Medical Professionals",
-            description: "Secure, HIPAA-compliant transcription for patient notes. Dictate your observations naturally and let Smartscribe format them into structured medical records. Focus on care while we handle the documentation.",
-            tags: ["Patient Notes", "Consultations", "Medical Records"]
+            title: "For Sales",
+            description: "Never miss important details from client calls and discovery meetings. Automatically capture requirements, objections, and commitments. Focus on building relationships while Smartscribe handles the note-taking and follow-up items.",
+            tags: ["Client Calls", "Discovery", "Follow-ups"]
         }
     ];
 
@@ -56,7 +60,10 @@ const UseCases = () => {
                             </div>
                             <div className="usecase-visual-col">
                                 <div className="usecase-visual-placeholder">
-                                    <span>Image Placeholder {index + 1}</span>
+                                    {index === 0 && <DevelopersCase />}
+                                    {index === 1 && <CreatorsCase />}
+                                    {index === 2 && <CustomerSupportCase />}
+                                    {index === 3 && <SalesCase />}
                                 </div>
                             </div>
                         </div>

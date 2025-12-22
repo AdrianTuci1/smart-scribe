@@ -1,6 +1,8 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
+
+
 const useWindowSize = () => {
     const [windowSize, setWindowSize] = useState({
         width: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -73,11 +75,20 @@ const ScrollingColumn = ({ items, speed = 14 }) => {
 
 
 
+import GlobeThree from './GlobeThree';
+
+// ... (keep existing imports)
+
+// ... (keep useWindowSize)
+
+// ... (keep LANGUAGES and ScrollingColumn)
+
 const International = () => {
     const containerRef = useRef(null);
     const { width } = useWindowSize();
     const isMobile = width < 768; // md breakpoint is 768px
     const horizontalPadding = isMobile ? '10px' : '75px';
+
 
     return (
         <section className="bg-purple-200 relative pt-1 pb-0 overflow-hidden transition-colors duration-500 ease-out h-full" ref={containerRef}>
@@ -102,13 +113,8 @@ const International = () => {
                     <ScrollingColumn items={LANGUAGES} speed={40} />
                 </div>
 
-                {/* 3. Image - Order 3 on Mobile */}
-                <div className="order-3 lg:order-2 lg:absolute lg:bottom-0 lg:right-0 w-full lg:w-[800px] flex justify-center lg:justify-end mt-4 lg:mt-0 pointer-events-none">
-                    <img
-                        src="/man.svg"
-                        alt="International support"
-                        className="w-full max-w-[1000px] object-contain object-bottom"
-                    />
+                <div className="absolute bottom-0 left-0 w-full flex justify-center md:justify-end translate-y-[50%] z-0 pointer-events-none overflow-hidden md:pr-[10%]">
+                    <GlobeThree isMobile={isMobile} />
                 </div>
             </div>
         </section>

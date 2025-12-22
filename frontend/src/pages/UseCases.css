@@ -1,16 +1,17 @@
 .usecases-section {
-    padding: 120px 0;
+    padding: 0;
     width: 100%;
 }
 
 .usecases-container {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0;
 }
 
 .usecases-header {
-    margin-bottom: 80px;
+    padding: 80px;
+    margin-bottom: 0;
     text-align: left;
 }
 
@@ -34,20 +35,17 @@
 .usecases-list {
     display: flex;
     flex-direction: column;
-    gap: 120px;
-    /* Increased gap for better separation without boxes */
+    gap: 0;
 }
 
 .usecase-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 80px;
-    padding: 0;
-    /* Removing padding */
+    padding: 80px;
     background-color: transparent;
-    /* Removing background */
     border: none;
-    /* Removing border */
 }
 
 .usecase-row.reverse {
@@ -59,8 +57,8 @@
 }
 
 .usecase-visual-col {
-    flex: 1;
-    height: 400px;
+    flex: 1.2;
+    height: 650px;
 }
 
 .usecase-visual-placeholder {
@@ -77,19 +75,19 @@
 }
 
 .usecase-row-title {
-    font-size: 40px;
-    /* Slightly larger heading for impact */
+    font-size: 56px;
     font-weight: 700;
     color: #000000;
     margin-bottom: 24px;
-    line-height: 1.1;
+    line-height: 1.05;
 }
 
 .usecase-row-desc {
     font-size: 18px;
     color: #666666;
-    line-height: 1.6;
+    line-height: 1.47;
     margin-bottom: 30px;
+    max-width: 440px;
 }
 
 .usecase-tags {
@@ -102,25 +100,47 @@
     font-size: 14px;
     padding: 8px 16px;
     background-color: #f0f0f0;
-    /* Keeping tag background */
     border-radius: 50px;
     color: #333333;
     font-weight: 500;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
+    .usecases-header {
+        padding: 60px 40px;
+    }
 
     .usecase-row,
     .usecase-row.reverse {
         flex-direction: column;
-        /* Stacks vertically on mobile */
-        gap: 40px;
-        align-items: flex-start;
+        gap: 60px;
+        padding: 60px 40px;
+        text-align: left;
+    }
+
+    .usecase-text-col,
+    .usecase-visual-col {
+        width: 100%;
+        flex: none;
     }
 
     .usecase-visual-col {
-        width: 100%;
-        height: 300px;
+        height: 550px;
+    }
+
+    .usecase-row-desc {
+        margin: 0 0 30px 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .usecases-header {
+        padding: 40px 24px;
+    }
+
+    .usecase-row,
+    .usecase-row.reverse {
+        padding: 40px 24px;
     }
 
     .usecases-title {
@@ -128,6 +148,10 @@
     }
 
     .usecase-row-title {
-        font-size: 32px;
+        font-size: 40px;
+    }
+
+    .usecase-visual-col {
+        height: 450px;
     }
 }

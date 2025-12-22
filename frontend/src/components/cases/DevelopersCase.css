@@ -1,0 +1,144 @@
+.developers-case {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 40px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-image: url(/gen01.png);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.developers-case__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom right, rgba(4, 47, 46, 0.3), rgba(2, 44, 34, 0.3));
+}
+
+.developers-case__content-container {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+}
+
+.developers-case__chat-bubble {
+    width: 100%;
+    max-width: 672px;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(24px);
+    border-radius: 32px;
+    padding: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.developers-case__message {
+    margin-bottom: 24px;
+}
+
+.developers-case__message-text {
+    color: white;
+    font-size: 16px;
+    line-height: 1.625;
+    font-weight: 300;
+    letter-spacing: 0.025em;
+}
+
+@media (min-width: 640px) {
+    .developers-case__message-text {
+        font-size: 18px;
+    }
+}
+
+.developers-case__divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    margin-bottom: 24px;
+}
+
+.developers-case__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.developers-case__toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.developers-case__toolbar-button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    transition: all 0.2s;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.developers-case__toolbar-button:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.developers-case__toolbar-button--bold {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.developers-case__toolbar-button--italic {
+    font-size: 18px;
+    font-style: italic;
+    font-family: serif;
+}
+
+.developers-case__toolbar-button--strikethrough {
+    font-size: 18px;
+    text-decoration: line-through;
+}
+
+.developers-case__toolbar-button--code {
+    font-size: 14px;
+    font-family: monospace;
+}
+
+.developers-case__toolbar-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.developers-case__send-button {
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background: linear-gradient(to bottom right, #fb923c, #f97316);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: none;
+    cursor: pointer;
+}
+
+.developers-case__send-button:hover {
+    background: linear-gradient(to bottom right, #f97316, #ea580c);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+}
+
+.developers-case__send-icon {
+    width: 24px;
+    height: 24px;
+    color: white;
+}

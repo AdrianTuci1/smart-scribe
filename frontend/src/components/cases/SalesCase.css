@@ -1,0 +1,241 @@
+.sales-case {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 48px;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+}
+
+.sales-case__background {
+    position: absolute;
+    inset: 0;
+    border-radius: 48px;
+    overflow: hidden;
+}
+
+.sales-case__background-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-image: url(/gen04.png);
+}
+
+/* Main Desktop Mockup - Positioned to extend to the right, clipped by parent overflow */
+.sales-case__desktop-container {
+    position: absolute;
+    left: 64px;
+    top: 64px;
+    width: 850px;
+    height: 520px;
+    background-color: white;
+    border-radius: 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    padding: 8px;
+    overflow: hidden;
+}
+
+.sales-case__inner-container {
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a1a;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.sales-case__content {
+    padding: 40px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+/* Email Header */
+.sales-case__header {
+    margin-bottom: 24px;
+}
+
+.sales-case__recipient-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sales-case__label {
+    color: #9ca3af;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sales-case__recipient-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sales-case__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    background: linear-gradient(to bottom right, #a855f7, #7e22ce);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+}
+
+.sales-case__recipient-name {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.sales-case__divider {
+    height: 2px;
+    background: linear-gradient(to right, #a855f7, #3b82f6, #f97316);
+    margin-bottom: 20px;
+    border-radius: 9999px;
+    opacity: 0.6;
+}
+
+.sales-case__subject-section {
+    margin-bottom: 20px;
+}
+
+.sales-case__subject-text {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.sales-case__divider--thin {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+}
+
+/* Email Body */
+.sales-case__body {
+    margin-bottom: 24px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sales-case__body-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: #d1d5db;
+    line-height: 1.625;
+}
+
+.sales-case__paragraph {
+    font-size: 14px;
+    color: #d1d5db;
+}
+
+.sales-case__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-left: 4px;
+}
+
+.sales-case__list-item {
+    font-size: 14px;
+    display: flex;
+    gap: 8px;
+    color: #d1d5db;
+}
+
+.sales-case__bullet {
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.sales-case__bullet--purple {
+    color: #c084fc;
+}
+
+.sales-case__bullet--blue {
+    color: #60a5fa;
+}
+
+.sales-case__bullet--orange {
+    color: #fb923c;
+}
+
+.sales-case__list-item-text {
+    flex: 1;
+}
+
+.sales-case__list-item-label {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Toolbar - Static mockup, no interactions */
+.sales-case__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.sales-case__toolbar-button {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+}
+
+.sales-case__toolbar-button--bold {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.sales-case__toolbar-button--italic {
+    font-size: 14px;
+    font-style: italic;
+    font-family: serif;
+}
+
+.sales-case__toolbar-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.sales-case__waveform-button {
+    margin-left: auto;
+    background: linear-gradient(to right, #374151, #4b5563, #374151);
+    border-radius: 9999px;
+    padding: 10px 24px;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    border: none;
+}
+
+.sales-case__waveform-bar {
+    width: 2px;
+    background: linear-gradient(to top, white, #d1d5db);
+    border-radius: 9999px;
+}

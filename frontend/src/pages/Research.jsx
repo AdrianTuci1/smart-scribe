@@ -1,28 +1,32 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Research.css';
 
 const Research = () => {
     const researchItems = [
         {
             id: 1,
-            date: "October 2024",
-            title: "Advancements in Context-Aware Speech Recognition",
-            description: "Our latest model improves accuracy in noisy environments by 40% using a novel attention mechanism that isolates speaker voice profiles.",
-            link: "Read Paper"
+            date: "December 2024",
+            title: "The Invisible Interface: How Smartscribe Rethinks Voice AI",
+            description: "We are at the beginning of a new interface era. But instead of seeing radical new forms, we see a strange recursion: AI tools wrapped in old patterns. Discover how Smartscribe takes a different path.",
+            link: "/research/invisible-interface",
+            linkText: "Read Article"
         },
         {
             id: 2,
-            date: "August 2024",
-            title: "Real-time Sentiment Analysis in Live Transcriptions",
-            description: "Implementing lightweight NLP models on-device to detect emotional tone during live speech without compromising latency.",
-            link: "View Case Study"
+            date: "November 2024",
+            title: "Building Trust Through Voice: How Smartscribe Creates Lasting Habits",
+            description: "Our approach to voice interfaces centers on creating sticky habits that fit seamlessly into people's lives. Learn how we're building trust through workflows that matter.",
+            link: "/research/voice-habits",
+            linkText: "Read Article"
         },
         {
             id: 3,
-            date: "May 2024",
-            title: "Semantic Understanding of Technical Jargon",
-            description: "How Smartscribe learns and adapts to industry-specific terminology through few-shot learning techniques.",
-            link: "Learn More"
+            date: "October 2024",
+            title: "Engineering Excellence: The Technical Challenges Behind Smartscribe",
+            description: "Building voice AI that people trust requires solving hard problems in ML, systems engineering, and UX design. Explore the technical challenges we're tackling to make voice feel effortless.",
+            link: "/research/technical-challenges",
+            linkText: "Read Article"
         }
     ];
 
@@ -46,9 +50,15 @@ const Research = () => {
                                 <span className="research-date">{item.date}</span>
                                 <h2 className="research-item-title">{item.title}</h2>
                                 <p className="research-item-desc">{item.description}</p>
-                                <a href="#" className="research-link">
-                                    {item.link || "Read More"} <span>→</span>
-                                </a>
+                                {item.link ? (
+                                    <Link to={item.link} className="research-link">
+                                        {item.linkText || "Read More"} <span>→</span>
+                                    </Link>
+                                ) : (
+                                    <a href="#" className="research-link">
+                                        {item.linkText || "Read More"} <span>→</span>
+                                    </a>
+                                )}
                             </div>
                             <div className="research-visual">
                                 <span>Visual Placeholder {index + 1}</span>

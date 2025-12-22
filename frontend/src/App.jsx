@@ -7,6 +7,9 @@ import Home from './pages/Home';
 import UseCases from './pages/UseCases';
 import Pricing from './pages/Pricing';
 import Research from './pages/Research';
+import ResearchArticle from './pages/ResearchArticle';
+import VoiceHabitsArticle from './pages/VoiceHabitsArticle';
+import TechnicalChallengesArticle from './pages/TechnicalChallengesArticle';
 import TryNow from './pages/TryNow';
 
 function App() {
@@ -93,6 +96,9 @@ function AppContent() {
           <Route path="/use-cases" element={<UseCases />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/research" element={<Research />} />
+          <Route path="/research/invisible-interface" element={<ResearchArticle />} />
+          <Route path="/research/voice-habits" element={<VoiceHabitsArticle />} />
+          <Route path="/research/technical-challenges" element={<TechnicalChallengesArticle />} />
           <Route path="/try-now" element={<TryNow />} />
         </Routes>
       </div>
