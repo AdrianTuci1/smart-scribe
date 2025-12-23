@@ -1,14 +1,18 @@
 // WebSocket Worker - Handles WebSocket communication in a separate thread
 
+console.log('WebSocketWorker: Worker script loaded');
+
 let ws = null;
 let isConnected = false;
 let sessionId = null;
 let heartbeatTimer = null;
+let hasStartedStream = false; // Track if we've already started the stream
 const websocketUrl = 'ws://localhost:4000/socket/websocket';
 const heartbeatInterval = 30000; // 30 seconds
 
 // Listen for messages from main thread
 self.addEventListener('message', (event) => {
+    console.log('WebSocketWorker: Received message from main thread:', event.data.type);
     const { type, payload } = event.data;
 
     switch (type) {
@@ -39,12 +43,19 @@ function connect() {
         return;
     }
 
-    sessionId = generateUUID();
+    // Only generate sessionId if we don't have one
+    if (!sessionId) {
+        sessionId = generateUUID();
+        console.log(`WebSocketWorker: Generated new session ID: ${sessionId}`);
+    } else {
+        console.log(`WebSocketWorker: Reusing existing session ID: ${sessionId}`);
+    }
+
     console.log(`WebSocketWorker: Connecting to ${websocketUrl}`);
-    console.log(`WebSocketWorker: Session ID: ${sessionId}`);
 
     try {
         ws = new WebSocket(websocketUrl);
+        console.log('WebSocketWorker: WebSocket instance created');
 
         ws.onopen = () => {
             console.log('WebSocketWorker: Connected');
@@ -59,12 +70,22 @@ function connect() {
         };
 
         ws.onerror = (error) => {
-            console.error('WebSocketWorker: Error', error);
+            console.error('WebSocketWorker: WebSocket error', error);
+            console.error('WebSocketWorker: Error details:', {
+                type: error.type,
+                target: error.target,
+                readyState: ws ? ws.readyState : 'no ws'
+            });
             postMessage({ type: 'ERROR', payload: { message: 'WebSocket connection error' } });
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
             console.log('WebSocketWorker: Disconnected');
+            console.log('WebSocketWorker: Close details:', {
+                code: event.code,
+                reason: event.reason,
+                wasClean: event.wasClean
+            });
             isConnected = false;
             stopHeartbeat();
             ws = null;
@@ -87,8 +108,9 @@ function disconnect() {
     }
 
     isConnected = false;
-    sessionId = null;
-    console.log('WebSocketWorker: Disconnected');
+    sessionId = null; // Clear sessionId for next session
+    hasStartedStream = false; // Reset stream flag
+    console.log('WebSocketWorker: Disconnected and cleared session');
     postMessage({ type: 'DISCONNECTED' });
 }
 
@@ -105,15 +127,17 @@ function joinChannel() {
 }
 
 function startStream() {
+    // IMPORTANT: Use sessionId as user_id because server broadcasts to "audio:#{user_id}"
+    // We need to match the topic we joined: "audio:#{sessionId}"
     const payload = {
         topic: `audio:${sessionId}`,
         event: 'start_stream',
-        payload: { user_id: sessionId },
+        payload: { user_id: sessionId }, // Use sessionId here to match broadcast topic
         ref: generateUUID()
     };
 
     sendMessage(payload);
-    console.log('WebSocketWorker: Starting stream');
+    console.log('WebSocketWorker: Starting stream with user_id:', sessionId);
 }
 
 function stopStream() {
@@ -207,9 +231,15 @@ function handlePhxReply(message) {
             payload: { message: message.payload.response || 'Unknown error' }
         });
     } else if (message.payload && message.payload.status === 'ok') {
-        console.log('WebSocketWorker: Phoenix reply OK');
-        if (message.ref) {
+        console.log('WebSocketWorker: Phoenix reply OK for ref:', message.ref);
+
+        // Only start stream once after successful join
+        if (!hasStartedStream) {
+            console.log('WebSocketWorker: Starting stream after successful join');
+            hasStartedStream = true;
             startStream();
+        } else {
+            console.log('WebSocketWorker: Stream already started, skipping');
         }
     }
 }

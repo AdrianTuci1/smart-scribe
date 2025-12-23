@@ -84,6 +84,8 @@ defmodule VoiceScribeAPIServer.AudioChannel do
 
     Task.start(fn ->
       Logger.info("Processing complete transcription for session #{session_id}")
+      Logger.info("AudioChannel received transcript length: #{String.length(transcript)}")
+      Logger.info("AudioChannel received transcript content: '#{transcript}'")
 
       # 1. Correct
       final_text =

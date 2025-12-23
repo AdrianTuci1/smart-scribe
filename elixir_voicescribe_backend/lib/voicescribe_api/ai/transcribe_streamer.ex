@@ -32,6 +32,7 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
       WebSockex.start_link(url, __MODULE__, %{
         user_id: user_id,
         transcript: "",
+        last_partial: "",
         # The session manager process to notify
         caller_pid: args[:caller_pid]
       })
@@ -74,15 +75,10 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
   def handle_frame({:binary, frame}, state) do
     case EventStream.decode_message(frame) do
       {:ok, %{"Transcript" => %{"Results" => results}}} ->
-        # Process partial/final results
-        # Accumulate final results into state.transcript
+        {updated_transcript, new_last_partial} =
+          process_results(results, state.transcript, state.last_partial)
 
-        # We accumulate all results. Final processing happens on disconnect/stop.
-
-        new_text = extract_text(results)
-        updated_transcript = state.transcript <> new_text
-
-        {:ok, %{state | transcript: updated_transcript}}
+        {:ok, %{state | transcript: updated_transcript, last_partial: new_last_partial}}
 
       {:error, reason} ->
         Logger.error("Error decoding frame: #{inspect(reason)}")
@@ -93,15 +89,24 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
     end
   end
 
-  defp extract_text(results) do
-    # Extract text only from non-partial (final) results to avoid duplication
-    Enum.reduce(results, "", fn result, acc ->
-      if Map.get(result, "IsPartial", false) == false do
-        alternatives = Map.get(result, "Alternatives", [])
-        text = List.first(alternatives) |> Map.get("Transcript", "")
-        acc <> text <> " "
+  defp process_results(results, current_transcript, current_last_partial) do
+    Enum.reduce(results, {current_transcript, current_last_partial}, fn result,
+                                                                        {acc_transcript,
+                                                                         _acc_partial} ->
+      is_partial = Map.get(result, "IsPartial", false)
+      alternatives = Map.get(result, "Alternatives", [])
+
+      text =
+        case List.first(alternatives) do
+          nil -> ""
+          alt -> Map.get(alt, "Transcript", "")
+        end
+
+      if is_partial == false do
+        if text != "", do: Logger.info("Got final transcript chunk: #{text}")
+        {acc_transcript <> text <> " ", ""}
       else
-        acc
+        {acc_transcript, text}
       end
     end)
   end
@@ -110,9 +115,17 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
   def handle_disconnect(%{reason: reason}, state) do
     Logger.info("Disconnected from AWS Transcribe: #{inspect(reason)}")
 
+    final_text =
+      if String.trim(state.transcript) == "" and String.trim(state.last_partial) != "" do
+        Logger.info("Using last partial result as final transcript: #{state.last_partial}")
+        state.last_partial
+      else
+        state.transcript
+      end
+
     # Notify caller with the final transcript
     if state.caller_pid do
-      send(state.caller_pid, {:transcription_complete, state.user_id, state.transcript})
+      send(state.caller_pid, {:transcription_complete, state.user_id, final_text})
     end
 
     {:ok, state}

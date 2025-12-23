@@ -132,7 +132,11 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
   # Handle message from Streamer when disconnected/finished
   @impl true
   def handle_info({:transcription_complete, user_id, transcript_text}, state) do
-    Logger.info("Received transcription complete via Streamer for user #{user_id}")
+    Logger.info(
+      "Received transcription complete via Streamer for user #{user_id}. Text length: #{String.length(transcript_text)}"
+    )
+
+    Logger.info("Text content: '#{transcript_text}'")
 
     with [{^user_id, session_data}] <- :ets.lookup(:transcribe_sessions, user_id) do
       # 1. Process with Bedrock

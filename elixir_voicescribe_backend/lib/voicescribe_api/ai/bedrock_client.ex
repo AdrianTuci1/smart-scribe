@@ -2,112 +2,126 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   require Logger
   alias VoiceScribeAPI.DynamoDBRepo
 
-  @model_id "amazon.nova-2-lite-v1:0"
+  @model_id "us.amazon.nova-lite-v1:0"
+
+  def correct_text(_user_id, text) when is_nil(text) or text == "", do: {:ok, ""}
 
   def correct_text(user_id, text) do
-    # Fetch dictionary
-    dictionary =
-      case DynamoDBRepo.get_config(user_id, "dictionary") do
-        empty_map when empty_map == %{} -> %{"rules" => "No custom rules."}
-        {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-        _ -> %{"rules" => "No custom rules."}
+    if String.trim(text) == "" do
+      {:ok, text}
+    else
+      # Fetch dictionary
+      dictionary =
+        case DynamoDBRepo.get_config(user_id, "dictionary") do
+          empty_map when empty_map == %{} -> %{"rules" => "No custom rules."}
+          {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
+          _ -> %{"rules" => "No custom rules."}
+        end
+
+      # Fetch style preferences
+      style_prefs =
+        case DynamoDBRepo.get_config(user_id, "style_preferences") do
+          empty_map when empty_map == %{} ->
+            %{"context" => "No specific context", "style" => "No specific style"}
+
+          {:ok, %{"Item" => item}} ->
+            ExAws.Dynamo.decode_item(item)
+
+          _ ->
+            %{"context" => "No specific context", "style" => "No specific style"}
+        end
+
+      # Fetch snippets
+      snippets =
+        case DynamoDBRepo.get_config(user_id, "snippets") do
+          empty_map when empty_map == %{} -> %{"snippets" => []}
+          {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
+          _ -> %{"snippets" => []}
+        end
+
+      rules = Map.get(dictionary, "rules", "No custom rules.")
+
+      style_guidelines =
+        case style_prefs do
+          %{"context" => context, "style" => style} ->
+            "Context: #{context}, Style: #{style}"
+
+          _ ->
+            "No specific style preferences."
+        end
+
+      # Format snippets for use in the prompt
+      snippets_context =
+        case snippets do
+          %{"snippets" => snippet_list} when is_list(snippet_list) and length(snippet_list) > 0 ->
+            snippet_list
+            |> Enum.map(fn snippet ->
+              title = Map.get(snippet, "title", "Untitled")
+              content = Map.get(snippet, "content", "")
+              "Title: #{title}\nContent: #{content}"
+            end)
+            |> Enum.join("\n\n---\n\n")
+
+          _ ->
+            "No snippets available."
+        end
+
+      system_prompt =
+        "You are an expert AI voice assistant. Your task is to transcribe and correct the user's input into clear, professional text. IMPORTANT instructions: 1. Format times as digits (e.g., 'half past eight' -> '8:30') in any language. 2. Handle uncertainty: if the user changes their mind (e.g., 'let's go to x, or better y'), keep only the final decision ('let's go to y'). 3. Remove filler words (um, er, uh, etc.). 4. Correct spelling and logic errors based on context (e.g., city names). 5. Support mixed languages (e.g., Romanian and English intermixed) but DO NOT TRANSLATE; keep the transcription in the original language. Apply the following dictionary corrections if applicable: #{rules}. Apply these style guidelines: #{style_guidelines}. Reference the provided snippets for context and formatting when relevant. Output ONLY the corrected text. Do NOT include 'Output:' or any other label. Do NOT provide explanations. Revisit the text to ensure it is clear and professional and nothing feels off."
+
+      user_message = """
+      Input text: #{text}
+
+      Style guidelines: #{style_guidelines}
+
+      Reference snippets:
+      #{snippets_context}
+      """
+
+      Logger.info("Sending text to Bedrock for correction: #{String.slice(text, 0, 20)}...")
+
+      body =
+        Jason.encode!(%{
+          system: [%{text: system_prompt}],
+          messages: [%{role: "user", content: [%{text: user_message}]}],
+          inferenceConfig: %{max_new_tokens: 4096}
+        })
+
+      op = %ExAws.Operation.JSON{
+        http_method: :post,
+        headers: [{"content-type", "application/json"}],
+        path: "/model/#{@model_id}/invoke",
+        data: body,
+        service: :bedrock
+      }
+
+      ExAws.request(op, config_overrides())
+      |> case do
+        {:ok, %{"output" => %{"message" => %{"content" => content_list}}}} ->
+          content = hd(content_list)["text"]
+          Logger.info("Received correction from Bedrock")
+          {:ok, content}
+
+        {:ok, %{body: resp_body}} ->
+          decoded = Jason.decode!(resp_body)
+
+          content =
+            case decoded do
+              %{"output" => %{"message" => %{"content" => content_list}}} ->
+                hd(content_list)["text"]
+
+              _ ->
+                # Fallback for standard InvokeModel response if different
+                hd(decoded["content"])["text"]
+            end
+
+          Logger.info("Received correction from Bedrock (via body)")
+          {:ok, content}
+
+        error ->
+          Logger.error("Bedrock call failed: #{inspect(error)}")
+          {:error, error}
       end
-
-    # Fetch style preferences
-    style_prefs =
-      case DynamoDBRepo.get_config(user_id, "style_preferences") do
-        empty_map when empty_map == %{} ->
-          %{"context" => "No specific context", "style" => "No specific style"}
-
-        {:ok, %{"Item" => item}} ->
-          ExAws.Dynamo.decode_item(item)
-
-        _ ->
-          %{"context" => "No specific context", "style" => "No specific style"}
-      end
-
-    # Fetch snippets
-    snippets =
-      case DynamoDBRepo.get_config(user_id, "snippets") do
-        empty_map when empty_map == %{} -> %{"snippets" => []}
-        {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-        _ -> %{"snippets" => []}
-      end
-
-    rules = Map.get(dictionary, "rules", "No custom rules.")
-
-    style_guidelines =
-      case style_prefs do
-        %{"context" => context, "style" => style} ->
-          "Context: #{context}, Style: #{style}"
-
-        _ ->
-          "No specific style preferences."
-      end
-
-    # Format snippets for use in the prompt
-    snippets_context =
-      case snippets do
-        %{"snippets" => snippet_list} when is_list(snippet_list) and length(snippet_list) > 0 ->
-          snippet_list
-          |> Enum.map(fn snippet ->
-            title = Map.get(snippet, "title", "Untitled")
-            content = Map.get(snippet, "content", "")
-            "Title: #{title}\nContent: #{content}"
-          end)
-          |> Enum.join("\n\n---\n\n")
-
-        _ ->
-          "No snippets available."
-      end
-
-    system_prompt =
-      "You are an expert AI voice assistant. Your task is to transcribe, correct, and translate user's voice input into clear, professional text for the language specified. Apply the following dictionary corrections if applicable: #{rules}. Apply these style guidelines: #{style_guidelines}. Reference the provided snippets for context and formatting when relevant. Do not add any conversational filler. Output ONLY the final text."
-
-    user_message = """
-    Input text: #{text}
-
-    Style guidelines: #{style_guidelines}
-
-    Reference snippets:
-    #{snippets_context}
-
-    Instructions:
-    1. Correct any grammatical errors.
-    2. Apply dictionary corrections above.
-    3. Apply style guidelines above.
-    4. Reference the snippets for context and formatting when relevant.
-    5. Return ONLY the result.
-    """
-
-    Logger.info("Sending text to Bedrock for correction: #{String.slice(text, 0, 20)}...")
-
-    body =
-      Jason.encode!(%{
-        max_tokens: 2000,
-        system: [%{text: system_prompt}],
-        messages: [%{role: "user", content: [%{text: user_message}]}]
-      })
-
-    op = %ExAws.Operation.JSON{
-      http_method: :post,
-      headers: [{"content-type", "application/json"}],
-      path: "/model/#{@model_id}/invoke",
-      data: body,
-      service: :bedrock
-    }
-
-    ExAws.request(op, config_overrides())
-    |> case do
-      {:ok, %{body: resp_body}} ->
-        decoded = Jason.decode!(resp_body)
-        content = hd(decoded["content"])["text"]
-        Logger.info("Received correction from Bedrock")
-        {:ok, content}
-
-      error ->
-        Logger.error("Bedrock call failed: #{inspect(error)}")
-        {:error, error}
     end
   end
 
@@ -170,6 +184,6 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   end
 
   defp region do
-    System.get_env("AWS_REGION", "eu-central-1") |> String.trim()
+    System.get_env("AWS_REGION_BEDROCK", "us-east-1") |> String.trim()
   end
 end

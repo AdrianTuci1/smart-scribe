@@ -16,9 +16,7 @@ defmodule VoiceScribeAPI.Application do
       {Phoenix.PubSub, name: VoiceScribeAPI.PubSub},
       # Start a worker by calling: VoiceScribeAPI.Worker.start_link(arg)
       # {VoiceScribeAPI.Worker, arg},
-      # Start TranscribeGenServer as a named process
-      {VoiceScribeAPI.Transcription.TranscribeGenServer, []},
-      # Start TranscribeSessionManager
+      # Start TranscribeSessionManager for handling transcription sessions
       {VoiceScribeAPI.Transcription.TranscribeSessionManager, []},
       # Start to serve requests, typically the last entry
       VoiceScribeAPIServer.Endpoint

@@ -117,31 +117,53 @@ const TryNow = () => {
             console.log('TryNow: Recording stopped');
         };
 
-        // Cleanup on unmount
+        // Cleanup on unmount - don't disconnect WebSocket here
+        // React Strict Mode causes double-mount which disconnects before user can record
+        // WebSocket will disconnect when recording stops or page closes
         return () => {
-            webSocketService.disconnect();
             audioRecordingService.cleanup();
         };
     }, []);
 
+    // Watch isRecording state and trigger recording start/stop
+    useEffect(() => {
+        console.log('TryNow: isRecording changed to:', isRecording);
+        if (isRecording) {
+            startRecording();
+        } else if (wasRecordingRef.current) {
+            stopRecording();
+        }
+        wasRecordingRef.current = isRecording;
+    }, [isRecording]);
+
     const startRecording = async () => {
-        if (audioRecordingService.isRecording || webSocketService.isConnected) {
-            console.warn('TryNow: Already recording or connected');
+        console.log('TryNow: startRecording called');
+        console.log('TryNow: audioRecordingService.isRecording:', audioRecordingService.isRecording);
+
+        if (audioRecordingService.isRecording) {
+            console.warn('TryNow: Already recording');
             return;
         }
 
         setError(null);
         setIsConnecting(true);
 
-        // Connect WebSocket
+        console.log('TryNow: Calling webSocketService.connect()');
+        // Connect WebSocket - will auto-start stream after join
         webSocketService.connect();
 
+        console.log('TryNow: Calling audioRecordingService.startRecording()');
         // Start audio recording
         const success = await audioRecordingService.startRecording();
+        console.log('TryNow: audioRecordingService.startRecording() returned:', success);
+
         if (!success) {
+            console.error('TryNow: Failed to start recording, disconnecting WebSocket');
             setIsRecording(false);
             setIsConnecting(false);
             webSocketService.disconnect();
+        } else {
+            console.log('TryNow: Recording started successfully');
         }
     };
 
@@ -153,10 +175,10 @@ const TryNow = () => {
 
         audioRecordingService.stopRecording();
         webSocketService.stopStream();
-        // Keep WebSocket connected briefly to receive final transcription
+        // Keep WebSocket connected to receive final transcription
         setTimeout(() => {
             webSocketService.disconnect();
-        }, 2000);
+        }, 5000); // 5 seconds to receive transcription
     };
 
     const toggleRecording = () => {
