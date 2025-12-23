@@ -1,5 +1,6 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import './International.css';
 
 
 
@@ -76,6 +77,8 @@ const ScrollingColumn = ({ items, speed = 14 }) => {
 
 
 import GlobeThree from './GlobeThree';
+import TryButton from './ui/TryButton';
+import DownloadButton from './ui/DownloadButton';
 
 // ... (keep existing imports)
 
@@ -106,6 +109,10 @@ const International = () => {
                     <p className="text-gray-500 text-xl md:text-xl font-medium max-w-xl md:ml-0 leading-[1.6] pt-4">
                         Effortless transcription and translation across the globe. Breaking barriers in every conversation.
                     </p>
+                    <div className="international-buttons">
+                        <TryButton variant="outline" className="border-gray-900 text-gray-900 hover:bg-white/50" />
+                        <DownloadButton variant="primary" className="bg-gray-900 text-white hover:bg-gray-800" />
+                    </div>
                 </div>
 
                 {/* 2. Scrolling Column - Order 2 on Mobile */}

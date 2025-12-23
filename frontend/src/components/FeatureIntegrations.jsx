@@ -26,14 +26,24 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                 {/* Top Chip */}
                 <motion.div
                     style={{ y: yChip, opacity: opacityChip }}
-                    className="bg-[#FFF8E7] text-black px-8 py-3 rounded-full text-2xl font-bold border-2 border-[#FFF8E7] z-10 flex items-center gap-2"
+                    className="bg-[#FFF8E7] text-black px-8 py-3 rounded-full text-2xl font-bold border-2 border-[#FFF8E7] z-10 flex items-center gap-3"
                 >
-                    <div className="flex gap-1 h-6 items-center">
-                        <div className="w-1 h-3 bg-black rounded-full"></div>
-                        <div className="w-1 h-5 bg-black rounded-full"></div>
-                        <div className="w-1 h-4 bg-black rounded-full"></div>
-                        <div className="w-1 h-2 bg-black rounded-full"></div>
-                    </div>
+                    {/* Orb Animation (Inline Style to match TryNow.css) */}
+                    <style>
+                        {`
+                            @keyframes wave-gradient-mini {
+                                0% { background-position: 0% 50%; }
+                                50% { background-position: 100% 50%; }
+                                100% { background-position: 0% 50%; }
+                            }
+                            .mini-orb {
+                                background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+                                background-size: 200% 200%;
+                                animation: wave-gradient-mini 4s ease infinite;
+                            }
+                        `}
+                    </style>
+                    <div className="w-6 h-6 rounded-full mini-orb shadow-sm"></div>
                     hello
                 </motion.div>
 
@@ -70,33 +80,24 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
 
                     {/* Gmail */}
                     <motion.div style={{ y: yIcon, scale: scaleIcon, opacity: opacityIcon }} className="flex flex-col items-center gap-4">
-                        <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                            <svg viewBox="0 0 24 24" className="w-12 h-12">
-                                <path fill="#EA4335" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 6h16v.01L12 13 4 6.01V6z" />
-                            </svg>
+                        <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center shadow-lg integration-logo-wrapper gmail-wrapper" style={{ padding: '4px' }}>
+                            <img src="/logos/gmail.png" alt="Gmail" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-[#E6A055] text-xl font-bold">Hello.</span>
                     </motion.div>
 
                     {/* Slack */}
                     <motion.div style={{ y: yIcon, scale: scaleIcon, opacity: opacityIcon }} className="flex flex-col items-center gap-4">
-                        <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                            <svg viewBox="0 0 24 24" className="w-12 h-12">
-                                <path fill="#E01E5A" d="M6 15a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2h2v2zm1 0a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2h2zm0-1h-2a2 2 0 0 1-2-2 2 2 0 0 1 2-2 2 2 0 0 1 2 2v2zm-1-6a2 2 0 0 1 2-2h2a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 0 2z" />
-                                <path fill="#36C5F0" d="M15 6a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2V6zm-1 0a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2 2 2 0 0 1 2 2v2h-2zm0 1h2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2V7zm1 6a2 2 0 0 1-2 2h-2a2 2 0 0 1 2-2 2 2 0 0 1 2-2 2 2 0 0 1 0 2z" />
-                                <path fill="#2EB67D" d="M18 15a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2v-2a2 2 0 0 1 2-2zm-1 0a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2 2 2 0 0 1 2 2v2h2zm0 1h-2a2 2 0 0 1-2-2 2 2 0 0 1 2-2v2z" />
-                                <path fill="#ECB22E" d="M9 9a2 2 0 0 1-2 2v2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h2zm1 0a2 2 0 0 1 2-2V5a2 2 0 0 1-2-2 2 2 0 0 1-2 2v2h2z" />
-                            </svg>
+                        <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center shadow-lg integration-logo-wrapper slack-wrapper" style={{ padding: '4px' }}>
+                            <img src="/logos/slack.png" alt="Slack" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-[#FFE4BC] text-xl font-bold">Hello</span>
                     </motion.div>
 
-                    {/* iMessage */}
+                    {/* Apple Messages */}
                     <motion.div style={{ y: yIcon, scale: scaleIcon, opacity: opacityIcon }} className="flex flex-col items-center gap-4">
-                        <div className="w-[80px] h-[80px] bg-[#4ADE80] rounded-2xl flex items-center justify-center shadow-lg">
-                            <svg viewBox="0 0 24 24" className="w-14 h-14 text-white fill-current">
-                                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                            </svg>
+                        <div className="w-[80px] h-[80px] bg-white rounded-2xl flex items-center justify-center shadow-lg integration-logo-wrapper imessage-wrapper">
+                            <img src="/logos/imessage.png" alt="iMessage" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-[#FFF8E7] text-xl font-bold">hello</span>
                     </motion.div>

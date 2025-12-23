@@ -1,14 +1,15 @@
 import React from 'react';
+import './DeviceMockup.css';
 
 const DeviceMockup = () => {
     return (
-        <div className="relative w-full max-w-[950px] h-[600px]">
+        <div className="device-mockup-container">
             {/* Container with overflow hidden for background and desktop */}
-            <div className="absolute inset-0 overflow-hidden rounded-[48px]">
+            <div className="dm-bg-container">
                 {/* Background Image - Blurred photo */}
-                <div className="absolute inset-0 rounded-[48px] overflow-hidden">
+                <div className="dm-bg-wrapper">
                     <div
-                        className="w-full h-full bg-cover bg-center"
+                        className="dm-bg-image"
                         style={{
                             backgroundImage: 'url(/gen05.png)',
                         }}
@@ -16,10 +17,10 @@ const DeviceMockup = () => {
                 </div>
 
                 {/* Main Desktop Mockup - Partial View with White Border */}
-                <div className="absolute left-8 top-8 w-[850px] h-[520px] bg-white rounded-[32px] shadow-2xl p-3 overflow-hidden">
-                    <div className="w-full h-full bg-[#1a1a1a] rounded-[24px] border border-white/10 flex text-white font-sans text-sm select-none">
+                <div className="desktop-mockup">
+                    <div className="desktop-inner">
                         {/* Sidebar */}
-                        <div className="w-56 bg-[#1a1a1a] border-r border-white/5 flex flex-col p-3">
+                        <div className="desktop-sidebar">
                             {/* Brand */}
                             <div className="flex items-center gap-2 mb-6 px-2">
                                 <div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center text-[10px] font-bold text-black">
@@ -27,28 +28,28 @@ const DeviceMockup = () => {
                                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                                     </svg>
                                 </div>
-                                <span className="font-medium text-white text-sm">Flowin Workspace</span>
+                                <span className="font-medium text-white text-sm">Galactic Notes 🚀</span>
                             </div>
 
                             {/* Navigation */}
                             <div className="space-y-1">
-                                <NavItem icon={<HomeIcon />} label="Home" active={false} />
-                                <NavItem icon={<SearchIcon />} label="Search" active={false} />
-                                <NavItem icon={<InboxIcon />} label="Inbox" active={false} />
+                                <NavItem icon={<HomeIcon />} label="Base Station" active={false} />
+                                <NavItem icon={<SearchIcon />} label="Scan Sector" active={false} />
+                                <NavItem icon={<InboxIcon />} label="Comms" active={false} />
                             </div>
 
                             {/* Favorites */}
                             <div className="mt-6">
-                                <div className="text-xs font-medium text-gray-500 mb-2 px-2">Favorites</div>
+                                <div className="text-xs font-medium text-gray-500 mb-2 px-2">Priority Missions</div>
                                 <div className="space-y-1">
-                                    <NavItem icon={<BulbIdesIcon />} label="Crazy product ideas" active={true} />
-                                    <NavItem icon={<CheckSquareIcon />} label="My to dos" active={false} />
+                                    <NavItem icon={<BulbIdesIcon />} label="Conquer Universe" active={true} />
+                                    <NavItem icon={<CheckSquareIcon />} label="Daily Quests" active={false} />
                                 </div>
                             </div>
                         </div>
 
                         {/* Main Content */}
-                        <div className="flex-1 bg-[#1a1a1a] p-10 overflow-hidden relative">
+                        <div className="desktop-content">
                             {/* Header */}
                             <div className="mb-8">
                                 <div className="flex items-center gap-3">
@@ -57,30 +58,30 @@ const DeviceMockup = () => {
                                             <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z" />
                                         </svg>
                                     </div>
-                                    <h1 className="text-3xl font-semibold tracking-tight">Crazy product ideas</h1>
+                                    <h1 className="text-3xl font-semibold tracking-tight">Conquer Universe</h1>
                                 </div>
                             </div>
 
                             {/* Section Title */}
-                            <h2 className="text-lg font-medium mb-6">Physical Products</h2>
+                            <h2 className="text-lg font-medium mb-6">Top Secret Plans</h2>
 
                             {/* List Items */}
                             <div className="space-y-5 pl-1">
                                 <ListItem
-                                    title="Self-Watering Plant Shoes"
-                                    description="Sneakers with built-in planters and a tiny water reservoir. Walk, water, grow!"
+                                    title="Mars Colony Blueprint"
+                                    description="Architectural designs for the first self-sustaining city on Mars."
                                 />
                                 <ListItem
-                                    title="Mood Color Changing Wallpaper"
-                                    description="Smart wallpaper that shifts color based on your mood (sensed via wearable or app)."
+                                    title="Alien Language Decoder"
+                                    description="AI model trained on intergalactic radio signals to break the code."
                                 />
                                 <ListItem
-                                    title="Portable Nap Pod Backpack"
-                                    description="Backpack unfolds into a private, soundproof nap cocoon. For airports, parks, anywhere!"
+                                    title="Teleportation Device"
+                                    description="Prototype testing for instant travel between headquarters."
                                 />
                                 <ListItem
-                                    title="Pet Translator Collar"
-                                    description="Collar for dogs/cats that translates barks/meows into human speech (or at least tries)."
+                                    title="Infinite Pizza Generator"
+                                    description="Solving world hunger, one slice at a time. Cheese stuffed crust included."
                                 />
                             </div>
 
@@ -96,14 +97,14 @@ const DeviceMockup = () => {
             </div>
 
             {/* Mobile Mockup - Outside overflow container, positioned on the left, extending outside bottom */}
-            <div className="absolute left-20 bottom-[-50px] w-[240px] h-[500px] bg-[#1a1a1a] rounded-[40px] shadow-2xl border-[8px] border-gray-300 flex flex-col text-white font-sans select-none overflow-hidden z-10">
+            <div className="mobile-mockup">
                 {/* Mobile Status Bar */}
-                <div className="h-10 bg-[#1a1a1a] flex items-center justify-center relative pt-2">
-                    <div className="w-28 h-6 bg-[#1a1a1a] rounded-b-2xl absolute top-0"></div>
+                <div className="mobile-status-bar">
+                    <div className="mobile-notch"></div>
                 </div>
 
                 {/* Mobile Content - Full Screen */}
-                <div className="flex-1 bg-[#1a1a1a] px-6 py-4 overflow-hidden flex flex-col">
+                <div className="mobile-content">
                     {/* Header */}
                     <div className="mb-6">
                         <div className="flex items-center gap-2">
@@ -112,56 +113,56 @@ const DeviceMockup = () => {
                                     <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z" />
                                 </svg>
                             </div>
-                            <h1 className="text-lg font-semibold">Crazy product ideas</h1>
+                            <h1 className="text-lg font-semibold">Conquer Universe</h1>
                         </div>
                     </div>
 
                     {/* Section Title */}
-                    <h2 className="text-sm font-medium mb-4 text-gray-200">Physical Products</h2>
+                    <h2 className="text-sm font-medium mb-4 text-gray-200">Top Secret Plans</h2>
 
                     {/* List Items - Mobile */}
                     <div className="space-y-4 flex-1">
                         <MobileListItem
-                            title="Self-Watering Plant Shoes"
-                            description="Sneakers with built-in planters and a tiny water reservoir. Walk, water, grow!"
+                            title="Mars Colony Blueprint"
+                            description="Designs for the first city on Mars."
                         />
                         <MobileListItem
-                            title="Mood Color Changing Wallpaper"
-                            description="Smart wallpaper that shifts color based on your mood (sensed via wearable or app)."
+                            title="Alien Language Decoder"
+                            description="AI model to break the code."
                         />
                         <MobileListItem
-                            title="Portable Nap Pod Backpack"
-                            description="Backpack unfolds into a private, soundproof nap cocoon. For airports, parks, anywhere!"
+                            title="Teleportation Device"
+                            description="Instant travel prototype."
                         />
                     </div>
                 </div>
 
                 {/* Bottom Overlay - Waveform Card */}
-                <div className="bg-[#1a1a1a] p-4 border-t border-white/5">
-                    <div className="bg-[#252525] rounded-3xl p-4 flex flex-col gap-4">
+                <div className="mobile-bottom-overlay">
+                    <div className="mobile-card-container">
                         {/* Action Buttons */}
-                        <div className="flex justify-between items-center">
-                            <button className="w-10 h-10 rounded-full bg-[#3a3a3a] flex items-center justify-center text-white/70">
+                        <div className="mobile-action-buttons">
+                            <button className="mobile-btn-secondary">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
-                            <button className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-black">
+                            <button className="mobile-btn-primary">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                             </button>
                         </div>
 
-                        {/* Waveform */}
-                        <div className="h-16 flex items-center justify-center">
-                            <MobileAudioWaveform />
+                        {/* Waveform / Orb */}
+                        <div className="mobile-waveform-container">
+                            <div className="dm-orb"></div>
                         </div>
 
                         {/* Globe Icon */}
-                        <div className="flex justify-center">
-                            <div className="w-10 h-10 rounded-full bg-[#3a3a3a] flex items-center justify-center">
+                        <div className="mobile-globe-wrapper">
+                            <div className="mobile-globe-icon">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -170,11 +171,6 @@ const DeviceMockup = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Home Indicator */}
-                <div className="h-6 bg-[#1a1a1a] flex items-center justify-center pb-2">
-                    <div className="w-32 h-1 bg-white/30 rounded-full"></div>
                 </div>
             </div>
         </div>
@@ -207,18 +203,6 @@ const MobileListItem = ({ title, description }) => (
             <h3 className="font-medium text-white text-xs">{title}</h3>
             <p className="text-gray-400 text-[10px] leading-relaxed">{description}</p>
         </div>
-    </div>
-);
-
-const MobileAudioWaveform = () => (
-    <div className="flex items-center justify-center gap-[2px] h-full">
-        {[30, 50, 35, 70, 40, 80, 50, 35, 60, 45, 25, 50, 70, 45, 80, 55, 40, 65, 35, 25, 45, 60, 40, 75, 50].map((h, i) => (
-            <div
-                key={i}
-                className="w-[2px] bg-white rounded-full"
-                style={{ height: `${h}%` }}
-            ></div>
-        ))}
     </div>
 );
 
@@ -258,18 +242,6 @@ const Waveform = () => (
     <div className="flex gap-1 h-5 items-center">
         {[...Array(12)].map((_, i) => (
             <div key={i} className="w-0.5 bg-white rounded-full animate-pulse" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }} />
-        ))}
-    </div>
-)
-
-const AudioWaveform = () => (
-    <div className="flex items-center justify-center gap-[3px] w-full h-full">
-        {[40, 60, 45, 80, 50, 90, 60, 40, 70, 50, 30, 60, 80, 50, 90, 60, 45, 70, 40, 30].map((h, i) => (
-            <div
-                key={i}
-                className="w-1 bg-white rounded-full"
-                style={{ height: `${h}%` }}
-            ></div>
         ))}
     </div>
 )

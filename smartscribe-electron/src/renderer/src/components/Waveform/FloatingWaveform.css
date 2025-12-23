@@ -1,0 +1,120 @@
+/* FloatingWaveform.css */
+.floating-waveform-container {
+    display: flex;
+    align-items: flex-end;
+    /* Align to bottom */
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    background-color: transparent;
+    overflow: hidden;
+    padding-bottom: 20px;
+    /* Space from bottom edge */
+    user-select: none;
+}
+
+.waveform-chip {
+    background-color: #1f2937;
+    /* gray-800 */
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 22px;
+}
+
+/* States */
+.waveform-chip.idle {
+    width: 36px;
+}
+
+.waveform-chip.hover {
+    width: 52px;
+}
+
+.waveform-chip.recording {
+    width: 130px;
+    padding: 6px 10px;
+}
+
+.waveform-bars {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+}
+
+.bar {
+    width: 3px;
+    border-radius: 1.5px;
+    background-color: #9ca3af;
+    /* gray-400 */
+    height: 3px;
+    transition: height 0.1s;
+}
+
+.recording .bar {
+    background-color: #ef4444;
+    /* red-500 */
+    animation: bounce 0.5s infinite ease-in-out alternate;
+}
+
+.recording .bar:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.recording .bar:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.recording .bar:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.recording .bar:nth-child(4) {
+    animation-delay: 0.1s;
+}
+
+.recording .bar:nth-child(5) {
+    animation-delay: 0s;
+}
+
+@keyframes bounce {
+    0% {
+        height: 4px;
+    }
+
+    100% {
+        height: 16px;
+    }
+}
+
+.control-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn {
+    margin-right: 6px;
+    color: #9ca3af;
+}
+
+.stop-btn {
+    margin-left: 6px;
+    color: #ef4444;
+}
+
+.mic-icon {
+    width: 12px;
+    height: 12px;
+}

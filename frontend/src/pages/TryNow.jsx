@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TryNow.css';
+import webSocketService from '../services/WebSocketService.js';
+import audioRecordingService from '../services/AudioRecordingService.js';
 
 const TryNow = () => {
     const navigate = useNavigate();
@@ -8,6 +10,9 @@ const TryNow = () => {
     const [isHovering, setIsHovering] = useState(false);
     const [transcripts, setTranscripts] = useState([]); // Keep empty for now
     const [timerSeconds, setTimerSeconds] = useState(0);
+    const [userInput, setUserInput] = useState('');
+    const [error, setError] = useState(null);
+    const [isConnecting, setIsConnecting] = useState(false);
     const bottomRef = useRef(null);
     const pressStartTime = useRef(0);
     const pressTimeout = useRef(null);
@@ -31,17 +36,17 @@ const TryNow = () => {
         }
     }, [transcripts]);
 
-    // Keyboard interaction (Hold Space to Record)
+    // Keyboard interaction (Hold Control to Record)
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === ' ' && !e.repeat) {
+            if (e.key === 'Control' && !e.repeat) {
                 e.preventDefault();
                 setIsRecording(true);
             }
         };
 
         const handleKeyUp = (e) => {
-            if (e.key === ' ') {
+            if (e.key === 'Control') {
                 e.preventDefault();
                 setIsRecording(false);
             }
@@ -55,8 +60,113 @@ const TryNow = () => {
         };
     }, []);
 
+    // Initialize services and set up callbacks
+    useEffect(() => {
+        // Request microphone permission on mount
+        audioRecordingService.requestMicrophonePermission().then(granted => {
+            if (granted) {
+                console.log('TryNow: Microphone permission granted on mount');
+            } else {
+                setError('Microphone permission is required for transcription');
+            }
+        });
+
+        // WebSocket callbacks
+        webSocketService.onTranscriptContent = (content) => {
+            console.log('TryNow: Received transcript content:', content);
+            setUserInput(content);
+        };
+
+        webSocketService.onTranscriptionComplete = (transcript) => {
+            console.log('TryNow: Transcription complete:', transcript);
+            setUserInput(transcript);
+        };
+
+        webSocketService.onError = (errorMsg) => {
+            console.error('TryNow: WebSocket error:', errorMsg);
+            setError(errorMsg);
+            setIsRecording(false);
+        };
+
+        webSocketService.onConnected = () => {
+            console.log('TryNow: WebSocket connected');
+            setIsConnecting(false);
+        };
+
+        webSocketService.onDisconnected = () => {
+            console.log('TryNow: WebSocket disconnected');
+            setIsConnecting(false);
+        };
+
+        // Audio recording callbacks
+        audioRecordingService.onAudioChunk = (base64Data) => {
+            webSocketService.sendAudioChunk(base64Data);
+        };
+
+        audioRecordingService.onError = (errorMsg) => {
+            console.error('TryNow: Audio recording error:', errorMsg);
+            setError(errorMsg);
+            setIsRecording(false);
+        };
+
+        audioRecordingService.onRecordingStart = () => {
+            console.log('TryNow: Recording started');
+        };
+
+        audioRecordingService.onRecordingStop = () => {
+            console.log('TryNow: Recording stopped');
+        };
+
+        // Cleanup on unmount
+        return () => {
+            webSocketService.disconnect();
+            audioRecordingService.cleanup();
+        };
+    }, []);
+
+    const startRecording = async () => {
+        if (audioRecordingService.isRecording || webSocketService.isConnected) {
+            console.warn('TryNow: Already recording or connected');
+            return;
+        }
+
+        setError(null);
+        setIsConnecting(true);
+
+        // Connect WebSocket
+        webSocketService.connect();
+
+        // Start audio recording
+        const success = await audioRecordingService.startRecording();
+        if (!success) {
+            setIsRecording(false);
+            setIsConnecting(false);
+            webSocketService.disconnect();
+        }
+    };
+
+    const stopRecording = () => {
+        if (!audioRecordingService.isRecording) {
+            console.warn('TryNow: Not currently recording');
+            return;
+        }
+
+        audioRecordingService.stopRecording();
+        webSocketService.stopStream();
+        // Keep WebSocket connected briefly to receive final transcription
+        setTimeout(() => {
+            webSocketService.disconnect();
+        }, 2000);
+    };
+
     const toggleRecording = () => {
-        setIsRecording(prev => !prev);
+        if (isRecording) {
+            stopRecording();
+            setIsRecording(false);
+        } else {
+            setIsRecording(true);
+            startRecording();
+        }
     };
 
     const goBack = () => {
@@ -81,17 +191,22 @@ const TryNow = () => {
             </header>
 
             <div className="try-now-chat-area">
-                {transcripts.length === 0 && !isRecording && (
-                    <div className="chat-placeholder">
-                        <h2>Ready to transcribe?</h2>
-                        <p>Press the orb or hold space to start.</p>
-                    </div>
-                )}
-
                 <div className="transcription-container">
-                    {isRecording && transcripts.length === 0 && (
-                        <div className="transcription-box">
-                            Your transcription will appear here once you finish speaking
+                    <textarea
+                        className="transcription-placeholder"
+                        placeholder="I prefer to plan a week-long itinerary to the Carpathians. Include hiking trails, traditional villages, and local cuisine recommendations. Make sure to highlight the best time to visit and any cultural festivals happening during the year."
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        rows={5}
+                    />
+                    {!isRecording && transcripts.length === 0 && (
+                        <div className="transcription-helper-text">
+                            Press the orb or hold Control to start the transcription
+                        </div>
+                    )}
+                    {error && (
+                        <div className="transcription-error-text">
+                            {error}
                         </div>
                     )}
                     {/* Empty for now as requested */}

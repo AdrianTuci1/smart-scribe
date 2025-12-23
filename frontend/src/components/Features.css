@@ -299,6 +299,21 @@
     line-height: 1.4;
 }
 
+/* Snippet Animation - Scroll-triggered and reversible */
+.snippet-item-hidden {
+    opacity: 0;
+    transform: translateX(400px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition-delay: var(--delay, 0s);
+}
+
+.snippet-item-visible {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition-delay: var(--delay, 0s);
+}
+
 /* Dictionary Styling */
 .dictionary-list {
     flex: 1;

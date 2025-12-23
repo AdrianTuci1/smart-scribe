@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import DeviceMockup from './DeviceMockup';
 import './AnyDevice.css';
+import TryButton from './ui/TryButton';
+import DownloadButton from './ui/DownloadButton';
 
 const AnyDevice = () => {
     return (
@@ -33,6 +35,10 @@ const AnyDevice = () => {
                         <p className="any-device-description">
                             Whether you're in the office or out in the world, Smartscribe follows your lead. With real-time syncing of your notes and personal vocabulary, your workspace is wherever you happen to be.
                         </p>
+                        <div className="any-device-buttons">
+                            <TryButton variant="outline-white" />
+                            <DownloadButton variant="primary" />
+                        </div>
                     </motion.div>
                 </div>
             </div>

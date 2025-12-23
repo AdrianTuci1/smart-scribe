@@ -1,48 +1,42 @@
-import React from 'react';
-import { motion, useTransform } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
 
-const SnippetItem = ({ text, delay, x, customStyle }) => (
-    <motion.div
-        style={{ x, opacity: 1, ...customStyle }}
-        className="snippet-item"
+const SnippetItem = ({ text, delay, customStyle, isVisible }) => (
+    <div
+        style={{ '--delay': delay, ...customStyle }}
+        className={`snippet-item ${isVisible ? 'snippet-item-visible' : 'snippet-item-hidden'}`}
     >
         <span className="snippet-text">{text}</span>
-    </motion.div>
+    </div>
 );
 
-const FeatureSnippets = ({ progress, entryRange }) => {
-    // Map progress to entry animation
-    // When progress is at entryRange[0], items are offscreen
-    // When progress is at entryRange[1], items are in place
+const FeatureSnippets = () => {
+    const containerRef = useRef(null);
+    const [isVisible, setIsVisible] = useState(false);
 
-    // We'll create a staggered effect by using slightly different ranges or offsets
-    // But strictly using useTransform with the single progress value:
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+            },
+            {
+                threshold: 0.2, // Trigger when 20% of component is visible
+                rootMargin: '-50px'
+            }
+        );
 
-    const start = entryRange[0];
-    const end = entryRange[1];
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
 
-    // First item (Calendar) slides in from right
-    const x1 = useTransform(progress, [start, end], [400, 0]);
-
-    // List items slide down from under the Calendar item
-    const y2 = useTransform(progress, [start, end], [-40, 0]);
-    const y3 = useTransform(progress, [start, end], [-80, 0]);
-    const y4 = useTransform(progress, [start, end], [-120, 0]);
-    const y5 = useTransform(progress, [start, end], [-160, 0]);
-
-    // Message specialized animation
-    // Starts with negative Y (moved up behind the item) and opaque
-    const yMessage = useTransform(progress, [start, end], [-60, 0]);
-    const opacityMessage = useTransform(progress, [start, end], [1, 1]); // Keep opaque for mask effect
-
-    // Opacity fade in for list items
-    const opacity2 = useTransform(progress, [start, end], [0, 1]);
-    const opacity3 = useTransform(progress, [start, end], [0, 1]);
-    const opacity4 = useTransform(progress, [start, end], [0, 1]);
-    const opacity5 = useTransform(progress, [start, end], [0, 1]);
+        return () => {
+            if (containerRef.current) {
+                observer.unobserve(containerRef.current);
+            }
+        };
+    }, []);
 
     return (
-        <div className="feature-visual-container">
+        <div className="feature-visual-container" ref={containerRef}>
             {/* Header */}
             <div className="feature-visual-header">
                 <h3 className="feature-visual-title">Your Snippets</h3>
@@ -53,23 +47,24 @@ const FeatureSnippets = ({ progress, entryRange }) => {
 
             {/* List */}
             <div className="feature-list-container">
-                <SnippetItem text="Calendar" x={x1} customStyle={{ zIndex: 10, position: 'relative' }} />
+                <SnippetItem text="Calendar" delay="0s" customStyle={{ zIndex: 10, position: 'relative' }} isVisible={isVisible} />
 
-                {/* Indented Message - Slides down from under Calendar */}
-                <motion.div
-                    style={{ opacity: opacityMessage, x: x1, y: yMessage, zIndex: 1, position: 'relative' }}
-                    className="snippet-indented-message"
+                {/* Indented Message - Slides in like the others */}
+                <div
+                    style={{ '--delay': '0.1s', zIndex: 1, position: 'relative' }}
+                    className={`snippet-indented-message ${isVisible ? 'snippet-item-visible' : 'snippet-item-hidden'}`}
                 >
-                    You can book a 30-minute call with me here: calendly.com/wisprflow
-                </motion.div>
+                    You can book a 30-minute call with me here: calendly.com/smartscribe
+                </div>
 
-                <SnippetItem text="Hours" x={0} customStyle={{ y: y2, opacity: opacity2 }} />
-                <SnippetItem text="Support intro" x={0} customStyle={{ y: y3, opacity: opacity3 }} />
-                <SnippetItem text="FAQ" x={0} customStyle={{ y: y4, opacity: opacity4 }} />
+                <SnippetItem text="Hours" delay="0.2s" isVisible={isVisible} />
+                <SnippetItem text="Support intro" delay="0.3s" isVisible={isVisible} />
+                <SnippetItem text="FAQ" delay="0.4s" isVisible={isVisible} />
                 <div className="opacity-50" style={{ opacity: 0.5 }}>
-                    <SnippetItem text="Careers link" x={0} customStyle={{ y: y5, opacity: opacity5 }} />
+                    <SnippetItem text="Careers link" delay="0.5s" isVisible={isVisible} />
                 </div>
             </div>
+            <div className="dictionary-fade-overlay"></div>
         </div>
     );
 };

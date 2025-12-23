@@ -1,0 +1,40 @@
+/* TitleBar.css */
+.titlebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding-left: 78px;
+    /* Space for traffic lights */
+    padding-right: 16px;
+    -webkit-app-region: drag;
+    z-index: 50;
+}
+
+.sidebar-toggle {
+    -webkit-app-region: no-drag;
+    background: none;
+    border: none;
+    color: #6b7280;
+    /* gray-500 */
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    margin-right: auto;
+}
+
+.sidebar-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #111827;
+    /* gray-900 */
+}
+
+@media (prefers-color-scheme: dark) {
+    .sidebar-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+}

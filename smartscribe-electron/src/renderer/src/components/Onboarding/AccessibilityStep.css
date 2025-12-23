@@ -1,0 +1,46 @@
+/* AccessibilityStep.css */
+.accessibility-icon {
+    width: 4rem;
+    height: 4rem;
+    color: #3b82f6;
+    /* blue-500 */
+    margin-bottom: 1.5rem;
+}
+
+.permission-status {
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-granted {
+    color: #16a34a;
+    /* green-600 */
+}
+
+.status-denied {
+    color: #dc2626;
+    /* red-600 */
+}
+
+.check-button {
+    background-color: #f3f4f6;
+    /* gray-100 */
+    color: #374151;
+    /* gray-700 */
+    padding: 0.625rem 1.5rem;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+    /* gray-300 */
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 1rem;
+}
+
+.check-button:hover {
+    background-color: #e5e7eb;
+    /* gray-200 */
+}

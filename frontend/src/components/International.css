@@ -1,0 +1,6 @@
+.international-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+    pointer-events: auto;
+}

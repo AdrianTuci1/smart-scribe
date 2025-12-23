@@ -1,0 +1,9 @@
+/* MicrophoneStep.css */
+/* Reusing some styles from AccessibilityStep.cs and WelcomeStep.css mostly */
+.mic-icon {
+    width: 4rem;
+    height: 4rem;
+    color: #ef4444;
+    /* red-500 */
+    margin-bottom: 1.5rem;
+}

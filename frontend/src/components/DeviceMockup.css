@@ -1,0 +1,230 @@
+.device-mockup-container {
+    position: relative;
+    width: 100%;
+    max-width: 950px;
+    height: 600px;
+}
+
+/* Background */
+.dm-bg-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 48px;
+}
+
+.dm-bg-wrapper {
+    position: absolute;
+    inset: 0;
+    border-radius: 48px;
+    overflow: hidden;
+}
+
+.dm-bg-image {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Desktop Mockup */
+.desktop-mockup {
+    position: absolute;
+    left: 2rem;
+    top: 2rem;
+    width: 850px;
+    height: 520px;
+    background-color: white;
+    border-radius: 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    padding: 0.75rem;
+    overflow: hidden;
+}
+
+.desktop-inner {
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a1a;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    color: white;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.875rem;
+    user-select: none;
+}
+
+.desktop-sidebar {
+    width: 14rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+
+.desktop-content {
+    flex: 1;
+    background-color: #1a1a1a;
+    padding: 2.5rem;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Mobile Mockup */
+.mobile-mockup {
+    position: absolute;
+    left: 5rem;
+    bottom: -50px;
+    width: 240px;
+    height: 500px;
+    background-color: #1a1a1a;
+    border-radius: 40px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 8px solid #d1d5db;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    user-select: none;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.mobile-status-bar {
+    height: 2.5rem;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding-top: 0.5rem;
+}
+
+.mobile-notch {
+    width: 7rem;
+    height: 1.5rem;
+    background-color: #1a1a1a;
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+    position: absolute;
+    top: 0;
+}
+
+.mobile-content {
+    flex: 1;
+    background-color: #1a1a1a;
+    padding: 1rem 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-bottom-overlay {
+    background-color: #1a1a1a;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mobile-card-container {
+    background-color: #252525;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mobile-action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mobile-btn-secondary {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: #3a3a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-btn-primary {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-waveform-container {
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Orb Style adapted from TryButton */
+.dm-orb {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+    background-size: 200% 200%;
+    animation: dm-wave-gradient 3s ease infinite;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    /* Added glow for "modern" feel */
+}
+
+@keyframes dm-wave-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.mobile-globe-wrapper {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.mobile-globe-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background-color: #3a3a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-home-indicator {
+    height: 1.5rem;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+}
+
+.mobile-home-bar {
+    width: 8rem;
+    height: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 9999px;
+}

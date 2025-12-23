@@ -80,6 +80,58 @@
     min-height: 0;
 }
 
+.transcription-placeholder {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px 28px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    text-align: left;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.4s ease-in-out;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    resize: none;
+    min-height: 140px;
+    outline: none;
+}
+
+.transcription-placeholder::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.transcription-placeholder:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.transcription-helper-text {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.95rem;
+    margin-top: 12px;
+    font-weight: 400;
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+.transcription-error-text {
+    text-align: center;
+    color: rgba(255, 80, 80, 0.9);
+    font-size: 0.9rem;
+    margin-top: 12px;
+    font-weight: 500;
+    animation: fadeIn 0.4s ease-in-out;
+    background: rgba(255, 80, 80, 0.1);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 80, 80, 0.3);
+}
+
+
 .chat-bubble {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.05);

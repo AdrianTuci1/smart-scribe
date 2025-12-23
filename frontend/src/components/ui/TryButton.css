@@ -63,14 +63,14 @@
     border-color: #86868b;
 }
 
-/* For TargetUsers orb icon override if needed, but the radial gradient above mimics it well. 
-   If original used an image, we can restore it, but CSS gradient is cleaner. 
-   Let's use the image tag if the user specifically wants the orb-icon.svg 
-   Wait, the original code used an image /src/assets/orb-icon.svg. 
-   I should probably stick to that or use the CSS if the image isn't available/preferred. 
-   The Navbar used a div with background class .btn-icon which had a radial gradient.
-   The TargetUsers used an img tag. 
-   Let's unify to use the CSS gradient for consistency unless the image is special.
-   Actually, let's allow passing an icon or default to the gradient div. 
-   For now, I'll stick to the CSS gradient from Navbar as the default 'orb'.
-*/
+/* Variant: Outline White (Dark Backgrounds) */
+.try-btn.variant-outline-white {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.try-btn.variant-outline-white:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #ffffff;
+}

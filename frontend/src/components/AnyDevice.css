@@ -90,3 +90,9 @@
         border-radius: 32px 32px 0 0;
     }
 }
+
+.any-device-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+}
