@@ -220,7 +220,7 @@ const SmartTranscript = () => {
             {/* Reduced height from 600px to 400px */}
             <div
                 ref={containerRef}
-                className="transcript-main-container bg-[#1f1d1d] relative w-full h-[440px] overflow-hidden flex flex-col items-center justify-center mask-gradient"
+                className="transcript-main-container bg-[#1f1d1d] relative w-full h-[440px] overflow-hidden flex flex-col items-center justify-center mask-gradient max-w-[1460px]"
             >
                 {/* Masking Gradient Layer */}
                 <div className="absolute inset-0 pointer-events-none z-30"

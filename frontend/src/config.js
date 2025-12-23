@@ -3,7 +3,9 @@
 const config = {
     // WebSocket server configuration
     websocket: {
-        url: 'ws://localhost:4000/socket/websocket',
+        url: import.meta.env.PROD
+            ? 'wss://api.smartscribe.app/socket/websocket'
+            : 'ws://localhost:4000/socket/websocket',
         reconnectInterval: 5000, // ms
         heartbeatInterval: 30000, // ms (30 seconds, matching Swift implementation)
     },

@@ -1,9 +1,13 @@
+.any-device {
+    border-radius: 64px 64px 0 0;
+}
+
 .any-device-container {
     margin: 0 auto;
-    background-color: #121212;
     padding: 80px;
     overflow: hidden;
-    border-radius: 48px 48px 0 0;
+    border-radius: 64px 64px 0 0;
+    width: 100%;
 }
 
 .any-device-content {

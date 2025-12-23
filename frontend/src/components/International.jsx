@@ -94,10 +94,10 @@ const International = () => {
 
 
     return (
-        <section className="bg-purple-200 relative pt-1 pb-0 overflow-hidden transition-colors duration-500 ease-out h-full" ref={containerRef}>
+        <section className="bg-purple-200 relative pt-1 pb-0 overflow-hidden transition-colors duration-500 ease-out h-full w-full flex justify-center" ref={containerRef}>
 
             <div
-                className="w-full relative z-10 h-full flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-24"
+                className="w-full relative z-10 h-full flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1460px] mx-auto"
                 style={{ paddingLeft: horizontalPadding, paddingRight: horizontalPadding }}
             >
 

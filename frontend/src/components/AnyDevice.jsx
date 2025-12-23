@@ -7,8 +7,8 @@ import DownloadButton from './ui/DownloadButton';
 
 const AnyDevice = () => {
     return (
-        <section className="any-device">
-            <div className="any-device-container">
+        <section className="any-device bg-[#121212]">
+            <div className="any-device-container max-w-[1460px] mx-auto">
                 <div className="any-device-content">
                     <motion.div
                         className="any-device-left"

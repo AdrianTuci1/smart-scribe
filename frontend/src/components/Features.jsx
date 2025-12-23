@@ -59,7 +59,7 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
           overflow: "hidden"
         }}
       >
-        <div className="feature-card-content">
+        <div className="feature-card-content max-w-[1460px] mx-auto">
           <div className="feature-card-main">
             <h1 className="feature-main-title">{title}</h1>
             <div className="feature-card-details">
@@ -123,8 +123,8 @@ const Features = () => {
   ];
 
   return (
-    <section className="features-section" ref={containerRef}>
-      <div className="features-viewport">
+    <section className="features-section w-full flex justify-center" ref={containerRef} style={{ backgroundColor: 'transparent' }}>
+      <div className="features-viewport bg-[#121212] overflow-hidden">
         {features.map((feature) => (
           <FeatureCard
             key={feature.index}
