@@ -1,14 +1,9 @@
 .smart-transcript-section {
-    /* Section is now transparent to show page bg, container holds the black color */
     background-color: transparent;
     color: white;
 }
 
-
-
 .transcript-box {
-    /* outline: 1px solid rgba(239, 238, 238, 0.2); */
-    /* Softened the white outline slightly */
     padding: 12px;
     transition: transform 0.3s ease;
 }
@@ -16,4 +11,48 @@
 .transcript-container {
     font-size: 1rem;
     font-weight: 400;
+}
+
+.correction-tag {
+    background-color: #000000;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 12px;
+    border: 1px solid #f97316;
+    /* orange-500 */
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* 
+   Wrapper for the motion div to ensure positioning is absolute relative to parent word.
+   We use a dedicated class for the animation container.
+*/
+.tag-motion-container {
+    position: absolute;
+    top: -24px;
+    /* Adjusted to sit above word */
+    left: 50%;
+    /* We DON'T set transform here because Framer Motion handles it, 
+       OR we use x: '-50%' in Framer Motion props. */
+    z-index: 20;
+    pointer-events: none;
+    /* We need to ensure the origin is center for scaling */
+    transform-origin: center bottom;
+}
+
+/* 
+   Inner rotator to handle the tilt separately from the entrance animation 
+*/
+.tag-rotator {
+    /* The transform will be set via inline style or separate class for rotation 
+       but we ensure it handles centering offset if not handled by parent */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
