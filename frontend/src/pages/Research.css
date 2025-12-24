@@ -83,7 +83,6 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    text-decoration: underline;
     text-underline-offset: 4px;
     transition: opacity 0.2s ease;
 }

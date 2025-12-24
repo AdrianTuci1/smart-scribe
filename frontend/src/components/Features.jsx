@@ -45,6 +45,8 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
         rotateX,
         rotateZ,
         opacity,
+        backfaceVisibility: 'hidden', // Fix for mobile flickering/z-index
+        WebkitBackfaceVisibility: 'hidden', // Safari prefix
 
         transformStyle: "preserve-3d"
       }}
@@ -124,7 +126,7 @@ const Features = () => {
 
   return (
     <section className="features-section w-full flex justify-center" ref={containerRef} style={{ backgroundColor: 'transparent' }}>
-      <div className="features-viewport bg-[#121212] overflow-hidden">
+      <div className="features-viewport bg-[#121212] overflow-hidden" style={{ perspective: '1000px', WebkitPerspective: '1000px' }}>
         {features.map((feature) => (
           <FeatureCard
             key={feature.index}

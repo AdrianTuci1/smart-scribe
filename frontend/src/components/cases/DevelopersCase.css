@@ -83,13 +83,10 @@
     transition: all 0.2s;
     background: transparent;
     border: none;
-    cursor: pointer;
+    cursor: default;
 }
 
-.developers-case__toolbar-button:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-}
+
 
 .developers-case__toolbar-button--bold {
     font-size: 18px;
@@ -128,17 +125,48 @@
     justify-content: center;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: none;
-    cursor: pointer;
+    cursor: default;
 }
 
-.developers-case__send-button:hover {
-    background: linear-gradient(to bottom right, #f97316, #ea580c);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    transform: scale(1.05);
-}
+
 
 .developers-case__send-icon {
     width: 24px;
     height: 24px;
     color: white;
+}
+
+@media (max-width: 639px) {
+    .developers-case__toolbar-left {
+        display: none;
+    }
+
+    .developers-case__toolbar {
+        justify-content: flex-end;
+    }
+
+    .developers-case__message {
+        margin-bottom: 12px;
+    }
+
+    .developers-case__send-icon {
+        width: 14px;
+        height: 14px;
+        color: white;
+    }
+
+    .developers-case__send-button {
+        width: 32px;
+        height: 32px;
+        border-radius: 9999px;
+        background: linear-gradient(to bottom right, #fb923c, #f97316);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: none;
+        cursor: default;
+    }
+
 }

@@ -25,7 +25,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
 
                 {/* Top Chip */}
                 <motion.div
-                    style={{ y: yChip, opacity: opacityChip }}
+                    style={{ y: yChip, opacity: opacityChip, padding: '5px' }}
                     className="bg-[#FFF8E7] text-black px-8 py-3 rounded-full text-2xl font-bold border-2 border-[#FFF8E7] z-10 flex items-center gap-3"
                 >
                     {/* Orb Animation (Inline Style to match TryNow.css) */}
@@ -59,7 +59,7 @@ const FeatureIntegrations = ({ progress, entryRange }) => {
                     />
                     {/* Center Line */}
                     <motion.path
-                        d="M200,30 L200,160"
+                        d="M200,10 L200,160"
                         fill="none"
                         stroke="#FFF8E7"
                         strokeWidth="4"

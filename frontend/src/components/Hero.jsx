@@ -17,7 +17,7 @@ const Hero = () => {
           <div className="cta-wrapper">
             <DownloadButton variant="primary" />
             <p className="compatibility-text">
-              Available on Mac, Windows and iPhone
+              For MacOS, Windows and iPhone
             </p>
           </div>
         </div>

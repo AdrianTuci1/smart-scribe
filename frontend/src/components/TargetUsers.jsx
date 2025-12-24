@@ -4,7 +4,7 @@ import DownloadButton from './ui/DownloadButton';
 import './TargetUsers.css';
 
 const TargetUsers = () => {
-    const users = ['Consultants', 'Creators', 'Engineers', 'Educators', 'Lawyers'];
+    const users = ['Consultants', 'Creators', 'Engineers', 'Lawyers', 'Doctors', 'Scientists', 'Researchers', 'Teachers', 'Teams', 'Customer Support'];
 
     return (
         <section className="target-users">

@@ -189,3 +189,9 @@
     color: white;
     font-weight: 600;
 }
+
+@media (max-width: 768px) {
+    .creators-case__orb {
+        left: 30%;
+    }
+}
