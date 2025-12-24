@@ -6,7 +6,7 @@ const ResearchArticle = () => {
         <main className="research-section">
             <article className="research-article">
                 <header className="article-header">
-                    <span className="article-date">December 2024</span>
+                    <span className="article-date">December 2025</span>
                     <h1 className="article-title">The Invisible Interface: How Smartscribe Rethinks Voice AI</h1>
                     <p className="article-intro">
                         We are at the beginning of a new interface era. But instead of seeing radical new forms, we see a strange recursion: AI tools wrapped in old patterns. Chatbots that mimic search boxes. Assistants that parrot human tone, not understanding. Sidebars full of toggles. Everywhere, AI is being bolted onto existing UI like an afterthought, and it shows.

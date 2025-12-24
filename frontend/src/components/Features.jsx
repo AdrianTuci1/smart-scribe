@@ -1,11 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import './Features.css';
 import FeatureSnippets from './FeatureSnippets';
 import FeatureDictionary from './FeatureDictionary';
 import FeatureIntegrations from './FeatureIntegrations';
 
-const FeatureCard = ({ index, title, subtitle, description, color, visual, progress, entryRange, exitRange }) => {
+const FeatureCard = ({ index, title, subtitle, description, color, visual, progress, entryRange, exitRange, isMobile }) => {
   // scale and rotation animation for the card as it "goes behind"
   const scale = useTransform(progress, exitRange, [1, 0.4]);
   const rotateX = useTransform(progress, exitRange, [0, -15]);
@@ -35,30 +35,49 @@ const FeatureCard = ({ index, title, subtitle, description, color, visual, progr
   // Slide up from bottom
   const y = useTransform(progress, entryRange, ["100vh", "0vh"]);
 
+  // Mobile checks to disable animations and enforce vertical stacking
+  const cardStyle = isMobile
+    ? {
+      position: 'relative',
+      height: 'auto',
+      marginBottom: '20px',
+      opacity: 1,
+      // Reset transforms for mobile
+      scale: 1,
+      rotateX: 0,
+      rotateZ: 0,
+      y: 0,
+      zIndex: 1, // Basic stacking
+    }
+    : {
+      zIndex: index,
+      y,
+      scale,
+      rotateX,
+      rotateZ,
+      opacity,
+      backfaceVisibility: 'hidden', // Fix for mobile flickering/z-index
+      WebkitBackfaceVisibility: 'hidden', // Safari prefix
+      transformStyle: 'preserve-3d', // Safari fixing
+      willChange: 'transform, opacity', // Performance optimization
+    };
+
   return (
     <motion.div
       className="feature-card-wrapper"
-      style={{
-        zIndex: index,
-        y,
-        scale,
-        rotateX,
-        rotateZ,
-        opacity,
-        backfaceVisibility: 'hidden', // Fix for mobile flickering/z-index
-        WebkitBackfaceVisibility: 'hidden', // Safari prefix
-
-        transformStyle: "preserve-3d"
-      }}
+      style={cardStyle}
     >
       <motion.div
         className="feature-card"
         style={{
           backgroundColor: color,
 
-          borderRadius,
+          borderRadius: isMobile ? '24px' : borderRadius,
 
-          overflow: "hidden"
+          overflow: "hidden",
+          // Safari fix for nested overflow radius
+          maskImage: 'radial-gradient(white, black)',
+          WebkitMaskImage: '-webkit-radial-gradient(white, black)',
         }}
       >
         <div className="feature-card-content max-w-[1460px] mx-auto">
@@ -90,6 +109,20 @@ const Features = () => {
     target: containerRef,
     offset: ["start start", "end end"]
   });
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkMobile();
+
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const features = [
     {
@@ -125,13 +158,29 @@ const Features = () => {
   ];
 
   return (
-    <section className="features-section w-full flex justify-center" ref={containerRef} style={{ backgroundColor: 'transparent' }}>
-      <div className="features-viewport bg-[#121212] overflow-hidden" style={{ perspective: '1000px', WebkitPerspective: '1000px' }}>
+    <section
+      className="features-section w-full flex justify-center"
+      ref={containerRef}
+      style={{
+        backgroundColor: 'transparent',
+        height: isMobile ? 'auto' : '350vh' // Let it flow naturally on mobile
+      }}
+    >
+      <div
+        className="features-viewport bg-[#121212] overflow-hidden"
+        style={{
+          position: isMobile ? 'relative' : 'sticky',
+          height: isMobile ? 'auto' : '100vh',
+          display: isMobile ? 'block' : 'flex',
+          padding: isMobile ? '20px 10px' : '0'
+        }}
+      >
         {features.map((feature) => (
           <FeatureCard
             key={feature.index}
             {...feature}
             progress={scrollYProgress}
+            isMobile={isMobile}
           />
         ))}
       </div>

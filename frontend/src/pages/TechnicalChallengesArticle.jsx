@@ -6,7 +6,7 @@ const TechnicalChallengesArticle = () => {
         <main className="research-section">
             <article className="research-article">
                 <header className="article-header">
-                    <span className="article-date">October 2024</span>
+                    <span className="article-date">October 2025</span>
                     <h1 className="article-title">Engineering Excellence: The Technical Challenges Behind Smartscribe</h1>
                     <p className="article-intro">
                         Building a voice AI system that people trust requires solving some of the hardest problems in machine learning, systems engineering, and user experience design. Here's what we're working on at Smartscribe to make voice transcription feel effortless.

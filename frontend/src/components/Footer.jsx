@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = ({ revealState = { showTop: false, showBottom: false, isVisible: false } }) => {
@@ -19,11 +20,10 @@ const Footer = ({ revealState = { showTop: false, showBottom: false, isVisible: 
             <div className="footer-column">
               <h4>Sitemap</h4>
               <nav className="footer-links">
-                <a href="#features">Features</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#about">About</a>
-                <a href="#blog">Blog</a>
-                <a href="#support">Support</a>
+                <Link to="/">Home</Link>
+                <Link to="/use-cases">Use Cases</Link>
+                <Link to="/pricing">Pricing</Link>
+                <Link to="/research">Research</Link>
               </nav>
             </div>
 

@@ -6,7 +6,7 @@ const VoiceHabitsArticle = () => {
         <main className="research-section">
             <article className="research-article">
                 <header className="article-header">
-                    <span className="article-date">November 2024</span>
+                    <span className="article-date">November 2025</span>
                     <h1 className="article-title">Building Trust Through Voice: How Smartscribe Creates Lasting Habits</h1>
                     <p className="article-intro">
                         Our goal at Smartscribe is to make interacting with your devices feel as effortless as talking to a close friend. We want people to have a voice interface that they trust, that's capable, and that really understands them on the first try.

@@ -6,7 +6,7 @@ const Research = () => {
     const researchItems = [
         {
             id: 1,
-            date: "December 2024",
+            date: "December 2025",
             title: "The Invisible Interface: How Smartscribe Rethinks Voice AI",
             description: "We are at the beginning of a new interface era. But instead of seeing radical new forms, we see a strange recursion: AI tools wrapped in old patterns. Discover how Smartscribe takes a different path.",
             link: "/research/invisible-interface",
@@ -15,7 +15,7 @@ const Research = () => {
         },
         {
             id: 2,
-            date: "November 2024",
+            date: "November 2025",
             title: "Building Trust Through Voice: How Smartscribe Creates Lasting Habits",
             description: "Our approach to voice interfaces centers on creating sticky habits that fit seamlessly into people's lives. Learn how we're building trust through workflows that matter.",
             link: "/research/voice-habits",
@@ -24,7 +24,7 @@ const Research = () => {
         },
         {
             id: 3,
-            date: "October 2024",
+            date: "October 2025",
             title: "Engineering Excellence: The Technical Challenges Behind Smartscribe",
             description: "Building voice AI that people trust requires solving hard problems in ML, systems engineering, and UX design. Explore the technical challenges we're tackling to make voice feel effortless.",
             link: "/research/technical-challenges",

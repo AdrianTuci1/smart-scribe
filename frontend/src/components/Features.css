@@ -199,7 +199,28 @@
 
 @media (max-width: 768px) {
     .feature-card {
-        padding: 82px 10px;
+        padding: 60px 10px;
+        /* Adjusted padding */
+        height: auto !important;
+        /* Allow natural height */
+    }
+
+    .features-section {
+        height: auto !important;
+        /* Override scroll height */
+    }
+
+    .features-viewport {
+        height: auto !important;
+        position: relative !important;
+        display: block !important;
+    }
+
+    .feature-card-wrapper {
+        position: relative !important;
+        height: auto !important;
+        width: 100%;
+        margin-bottom: 20px;
     }
 }
 

@@ -32,7 +32,7 @@ const TRANSCRIPT_GROUPS = [
             { id: 23, text: "now—", type: 'strike' },
             { id: 24, text: "actually, ", type: 'strike', tag: 'removed filler' },
             { id: 25, text: "no, ", type: 'strike' },
-            { id: 26, text: "we're ", type: 'default' },
+            { id: 26, text: "we're ", type: 'strike' },
             { id: 27, text: "taking ", type: 'default' },
             { id: 28, text: "a ", type: 'default' },
             { id: 29, text: "taxi ", type: 'chip', color: 'bg-yellow-600' },
