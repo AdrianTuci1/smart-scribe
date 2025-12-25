@@ -20,6 +20,10 @@ import_electron.contextBridge.exposeInMainWorld("electron", {
     openWaveform: () => import_electron.ipcRenderer.invoke("open-waveform"),
     getSettings: (key) => import_electron.ipcRenderer.invoke("get-settings", key),
     setSetting: (key, value) => import_electron.ipcRenderer.invoke("set-setting", key, value),
-    getAllSettings: () => import_electron.ipcRenderer.invoke("get-all-settings")
+    getAllSettings: () => import_electron.ipcRenderer.invoke("get-all-settings"),
+    // Helper Features
+    getActiveApp: () => import_electron.ipcRenderer.invoke("get-active-app"),
+    insertText: (text) => import_electron.ipcRenderer.invoke("insert-text", text),
+    checkPermissions: () => import_electron.ipcRenderer.invoke("check-permissions")
   }
 });

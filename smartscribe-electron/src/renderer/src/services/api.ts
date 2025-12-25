@@ -74,17 +74,70 @@ class ApiService {
         });
     }
 
+    // Transcripts
+    public async getTranscripts(): Promise<any[]> { // Replace any with Transcript[] when imported
+        return this.request('/transcripts');
+    }
+
+    public async updateTranscript(transcript: any): Promise<any> {
+        return this.request(`/transcripts/${transcript.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(transcript)
+        });
+    }
+
+    public async deleteTranscript(id: string): Promise<void> {
+        return this.request(`/transcripts/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    public async retryTranscription(id: string): Promise<any> {
+        return this.request(`/transcripts/${id}/retry`, {
+            method: 'POST'
+        });
+    }
+
+    // Dictionary
+    public async getDictionary(): Promise<any[]> {
+        return this.request('/dictionary');
+    }
+
+    public async syncDictionary(entries: any[]): Promise<void> {
+        return this.request('/dictionary/sync', {
+            method: 'POST',
+            body: JSON.stringify({ entries })
+        });
+    }
+
     // Notes
-    public async getNotes() {
+    public async getNotes(): Promise<any[]> {
         return this.request('/notes');
+    }
+
+    public async syncNote(note: any): Promise<any> {
+        return this.request('/notes', {
+            method: 'POST',
+            body: JSON.stringify(note)
+        });
+    }
+
+    // Snippets
+    public async getSnippets(): Promise<any[]> {
+        return this.request('/snippets');
+    }
+
+    public async syncSnippets(snippets: any[]): Promise<void> {
+        return this.request('/snippets/sync', {
+            method: 'POST',
+            body: JSON.stringify({ snippets })
+        });
     }
 
     // Config
     public async getSettings() {
         return this.request('/config/settings');
     }
-
-    // Add more methods as needed mirroring Swift
 }
 
 export const apiService = ApiService.getInstance();

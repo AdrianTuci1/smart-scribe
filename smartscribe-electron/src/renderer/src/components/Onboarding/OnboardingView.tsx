@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { WelcomeStep } from './WelcomeStep';
+import { LoginStep } from './LoginStep';
 import { AccessibilityStep } from './AccessibilityStep';
 import { MicrophoneStep } from './MicrophoneStep';
 import { DomainSelectionStep } from './DomainSelectionStep';
@@ -17,23 +17,24 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
 
     switch (currentStep) {
         case 0:
-            return <WelcomeStep onNext={nextStep} />;
+            return <LoginStep key="login" onNext={nextStep} />;
         case 1:
-            return <AccessibilityStep onNext={nextStep} />;
+            return <AccessibilityStep key="access" onNext={nextStep} />;
         case 2:
-            return <MicrophoneStep onNext={nextStep} />;
+            return <MicrophoneStep key="mic" onNext={nextStep} />;
         case 3:
             return (
                 <DomainSelectionStep
+                    key="domain"
                     selectedDomains={selectedDomains}
                     setSelectedDomains={setSelectedDomains}
                     onNext={nextStep}
                 />
             );
         case 4:
-            return <PlaceholderStep title="Dictation Test" onNext={nextStep} />;
+            return <PlaceholderStep key="test" title="Dictation Test" onNext={nextStep} />;
         case 5:
-            return <PlaceholderStep title="Setup Complete" onNext={onComplete} />;
+            return <PlaceholderStep key="complete" title="Setup Complete" onNext={onComplete} />;
         default:
             return null;
     }

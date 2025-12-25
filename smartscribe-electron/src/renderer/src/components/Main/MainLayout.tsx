@@ -10,13 +10,20 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ sidebar, children, titleBar }) => {
     return (
         <div className="main-layout">
-            {sidebar}
-            <div className="main-content">
-                <div className="content-area">
-                    {children}
+            {/* Back Layer */}
+            <div className="layout-content-layer">
+                {sidebar}
+                <div className="main-content">
+                    <div className="content-area">
+                        {children}
+                    </div>
                 </div>
             </div>
-            {titleBar}
+
+            {/* Front Layer - Overlay */}
+            <div className="layout-overlay-layer">
+                {titleBar}
+            </div>
         </div>
     );
 };

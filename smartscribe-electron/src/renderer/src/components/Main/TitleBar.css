@@ -12,6 +12,8 @@
     padding-right: 16px;
     -webkit-app-region: drag;
     z-index: 50;
+    pointer-events: auto;
+    /* Re-enable pointer events since parent has none */
 }
 
 .sidebar-toggle {

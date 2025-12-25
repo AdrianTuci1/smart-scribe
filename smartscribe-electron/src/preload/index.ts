@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
     ipcRenderer: {
-        send: (channel: string, data: any) => ipcRenderer.send(channel, data),
+        send: (channel: string, ...args: any[]) => ipcRenderer.send(channel, ...args),
         on: (channel: string, func: (...args: any[]) => void) => {
             const subscription = (_event: any, ...args: any[]) => func(...args)
             ipcRenderer.on(channel, subscription)
@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('electron', {
         openWaveform: () => ipcRenderer.invoke('open-waveform'),
         getSettings: (key: string) => ipcRenderer.invoke('get-settings', key),
         setSetting: (key: string, value: any) => ipcRenderer.invoke('set-setting', key, value),
-        getAllSettings: () => ipcRenderer.invoke('get-all-settings')
+        getAllSettings: () => ipcRenderer.invoke('get-all-settings'),
+
+        // Helper Features
+        getActiveApp: () => ipcRenderer.invoke('get-active-app'),
+        insertText: (text: string) => ipcRenderer.invoke('insert-text', text),
+        checkPermissions: () => ipcRenderer.invoke('check-permissions')
     }
 })

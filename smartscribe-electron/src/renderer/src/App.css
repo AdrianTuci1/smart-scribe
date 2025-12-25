@@ -1,0 +1,38 @@
+.app-container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.settings-button {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    /* Ensure icon is centered if needed, though p-3 usually handles it */
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.settings-icon {
+    transition: transform 500ms ease;
+}
+
+.settings-button:hover .settings-icon {
+    transform: rotate(45deg);
+}

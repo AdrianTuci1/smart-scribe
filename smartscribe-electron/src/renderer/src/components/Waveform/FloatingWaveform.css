@@ -1,120 +1,247 @@
 /* FloatingWaveform.css */
-.floating-waveform-container {
+.floating-waveform-wrapper {
     display: flex;
+    justify-content: center;
     align-items: flex-end;
-    /* Align to bottom */
-    justify-content: center;
-    height: 100vh;
     width: 100vw;
-    background-color: transparent;
-    overflow: hidden;
-    padding-bottom: 20px;
-    /* Space from bottom edge */
-    user-select: none;
+    height: 100vh;
+    padding-bottom: 30px;
+    /* Aligned by main process, but we center horizontally */
+    background: transparent !important;
+    pointer-events: none;
+    /* Let clicks pass through outside the button */
 }
 
-.waveform-chip {
-    background-color: #1f2937;
-    /* gray-800 */
-    border-radius: 9999px;
+/* Container for the button to enable pointer events */
+.orb-container {
+    pointer-events: auto;
     display: flex;
+    flex-direction: column;
     align-items: center;
+}
+
+/* Record Button: Gradient Pill/Orb */
+.record-orb-btn {
+    /* Idle State: Gradient Pill */
+    height: 14px;
+    min-width: 44px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    display: flex;
     justify-content: center;
-    padding: 6px 10px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: all 0.2s ease-in-out;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    height: 22px;
-}
-
-/* States */
-.waveform-chip.idle {
-    width: 36px;
-}
-
-.waveform-chip.hover {
-    width: 52px;
-}
-
-.waveform-chip.recording {
-    width: 130px;
-    padding: 6px 10px;
-}
-
-.waveform-bars {
-    display: flex;
     align-items: center;
-    gap: 3px;
-    height: 18px;
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    overflow: hidden;
+    border: 1px solid rgba(168, 167, 167, 0.8);
+
+    /* Animated Gradient Background */
+    background: linear-gradient(45deg, #4A4AFE, #a855f7, #4A4AFE);
+    background-size: 200% 200%;
+    animation: wave-gradient 6s ease infinite;
+
+    color: #000000;
+    padding: 0;
+    -webkit-app-region: no-drag;
+    /* Ensure clickable */
 }
 
-.bar {
-    width: 3px;
-    border-radius: 1.5px;
-    background-color: #9ca3af;
-    /* gray-400 */
-    height: 3px;
-    transition: height 0.1s;
+/* Hover OR Recording -> Becomes Circle (Orb) */
+.record-orb-btn:hover,
+.record-orb-btn.recording {
+    min-width: 60px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 0 30px rgba(74, 74, 254, 0.3);
 }
 
-.recording .bar {
-    background-color: #ef4444;
-    /* red-500 */
-    animation: bounce 0.5s infinite ease-in-out alternate;
+/* Icon Wrapper */
+.btn-icon-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
 }
 
-.recording .bar:nth-child(1) {
-    animation-delay: 0s;
+/* Icons */
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    color: black;
+    fill: currentColor;
+    background: none;
+    border: none;
 }
 
-.recording .bar:nth-child(2) {
-    animation-delay: 0.1s;
+/* Hover Interaction */
+.icon-mic {
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
-.recording .bar:nth-child(3) {
-    animation-delay: 0.2s;
+/* Show mic icon on hover when not recording */
+.record-orb-btn:hover .icon-mic {
+    opacity: 1;
 }
 
-.recording .bar:nth-child(4) {
-    animation-delay: 0.1s;
+.icon-stop {
+    opacity: 0;
+    position: absolute;
+    transition: opacity 0.2s;
+    transform: scale(0.8);
 }
 
-.recording .bar:nth-child(5) {
-    animation-delay: 0s;
+/* Recording State: Hover shows Stop */
+.record-orb-btn.recording:hover .icon-stop {
+    opacity: 1;
+    transform: scale(1.2);
 }
 
-@keyframes bounce {
+/* Keep mic hidden when recording */
+.record-orb-btn.recording .icon-mic,
+.record-orb-btn.recording:hover .icon-mic {
+    opacity: 0;
+}
+
+@keyframes wave-gradient {
     0% {
-        height: 4px;
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
     }
 
     100% {
-        height: 16px;
+        background-position: 0% 50%;
     }
 }
 
-.control-btn {
+/* --- New Functionalities --- */
+
+/* 1. Hover Hint */
+.hover-hint {
+    position: absolute;
+    bottom: 80px;
+    /* Above the orb */
+    background: #000000;
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    z-index: 100;
+}
+
+/* Show hint on hover of the container, but only if warning is not visible */
+.orb-container:hover .hover-hint {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Hide hint if warning is active - controlled by React class or adjacent sibling */
+.orb-container.has-warning .hover-hint {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.fn-key {
+    color: #ff69b4;
+    /* Pink color for 'fn' */
+    font-weight: 700;
+}
+
+/* 2. Warning Toast */
+.warning-toast {
+    position: absolute;
+    bottom: 90px;
+    background: #0a0a0a;
+    color: white;
+    padding: 16px;
+    border-radius: 24px;
+    width: 320px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 101;
+    transform-origin: bottom center;
+    animation: toast-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.warning-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.warning-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.warning-icon {
+    color: #a855f7;
+    /* Purple icon */
+    width: 20px;
+    height: 20px;
+}
+
+.warning-close-btn {
     background: none;
     border: none;
-    color: white;
+    color: #666;
     cursor: pointer;
-    padding: 0;
+    padding: 4px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s;
 }
 
-.close-btn {
-    margin-right: 6px;
+.warning-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.warning-body {
     color: #9ca3af;
-}
-
-.stop-btn {
-    margin-left: 6px;
-    color: #ef4444;
-}
-
-.mic-icon {
-    width: 12px;
-    height: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    padding: 0 8px;
 }

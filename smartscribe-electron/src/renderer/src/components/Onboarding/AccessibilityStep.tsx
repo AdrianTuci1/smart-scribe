@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { OnboardingLayout } from './OnboardingLayout';
-import { CheckCircle, XCircle, Keyboard } from 'lucide-react';
 import './AccessibilityStep.css';
+import { OnboardingLayout } from './OnboardingLayout';
+import { CheckCircle, Keyboard, ArrowRight, ShieldAlert } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface AccessibilityStepProps {
     onNext: () => void;
@@ -14,10 +15,9 @@ export const AccessibilityStep: React.FC<AccessibilityStepProps> = ({ onNext }) 
     const checkPermission = async () => {
         setIsChecking(true);
         try {
-            const granted = await window.electron.ipcRenderer.requestAccessibility();
+            const granted = await (window as any).electron.ipcRenderer.requestAccessibility();
             setHasPermission(granted);
             if (granted) {
-                // Auto advance after a short delay if granted
                 setTimeout(onNext, 1000);
             }
         } catch (error) {
@@ -28,9 +28,8 @@ export const AccessibilityStep: React.FC<AccessibilityStepProps> = ({ onNext }) 
     };
 
     useEffect(() => {
-        // Initial check without prompting
         const initCheck = async () => {
-            const granted = await window.electron.ipcRenderer.checkAccessibility();
+            const granted = await (window as any).electron.ipcRenderer.checkAccessibility();
             setHasPermission(granted);
         };
         initCheck();
@@ -38,35 +37,55 @@ export const AccessibilityStep: React.FC<AccessibilityStepProps> = ({ onNext }) 
 
     return (
         <OnboardingLayout>
-            <div className="flex flex-col items-center justify-center h-full">
-                <Keyboard className="accessibility-icon" />
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="accessibility-container"
+            >
+                <div className="accessibility-icon-container">
+                    <Keyboard size={32} className="keyboard-icon" />
+                </div>
 
-                <h1 className="welcome-title">Accessibility Access</h1>
-                <p className="welcome-description">
-                    SmartScribe needs accessibility permissions to detect where to insert text and to handle global shortcuts.
+                <h1 className="accessibility-title">Enable Accessibility</h1>
+                <p className="accessibility-description">
+                    SmartScribe needs accessibility permissions to detect where to insert text and handle shortcuts.
                 </p>
 
-                <button
-                    onClick={checkPermission}
-                    className="welcome-button"
-                    disabled={hasPermission}
-                >
-                    {hasPermission ? 'Permission Granted' : 'Grant Permission'}
-                </button>
+                {!hasPermission ? (
+                    <div className="accessibility-actions">
+                        <button
+                            onClick={checkPermission}
+                            disabled={isChecking}
+                            className="grant-button"
+                        >
+                            {isChecking ? 'Checking...' : 'Grant Permission'}
+                        </button>
 
-                {hasPermission && (
-                    <div className="permission-status status-granted">
-                        <CheckCircle size={16} />
-                        <span>Access Granted</span>
+                        <div className="system-settings-note">
+                            <ShieldAlert size={14} className="shield-icon" />
+                            <span>System Settings will open</span>
+                        </div>
                     </div>
+                ) : (
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="permission-granted"
+                    >
+                        <CheckCircle size={32} className="check-icon" />
+                        <span className="permission-granted-text">Permission Granted</span>
+                    </motion.div>
                 )}
 
                 {!hasPermission && (
-                    <div className="mt-4">
-                        <button onClick={onNext} className="text-gray-400 text-sm underline">Skip for now (Dev)</button>
-                    </div>
+                    <button
+                        onClick={onNext}
+                        className="skip-link"
+                    >
+                        Skip for development <ArrowRight size={14} className="arrow-icon" />
+                    </button>
                 )}
-            </div>
+            </motion.div>
         </OnboardingLayout>
     );
 };

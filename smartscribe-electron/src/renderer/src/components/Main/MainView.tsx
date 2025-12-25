@@ -7,7 +7,7 @@ import { DictionaryView } from './Views/DictionaryView';
 import { SnippetsView } from './Views/SnippetsView';
 import { StyleView } from './Views/StyleView';
 import { NotesView } from './Views/NotesView';
-import { SettingsView } from './Views/SettingsView';
+import { SettingsView } from '../Settings/SettingsView';
 
 export const MainView: React.FC = () => {
     const [currentView, setCurrentView] = useState<ViewType>('home');

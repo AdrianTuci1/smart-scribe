@@ -147,9 +147,9 @@ var require_path_exists = __commonJS({
   "node_modules/path-exists/index.js"(exports2, module2) {
     "use strict";
     var fs = require("fs");
-    module2.exports = (fp) => new Promise((resolve) => {
+    module2.exports = (fp) => new Promise((resolve2) => {
       fs.access(fp, (err) => {
-        resolve(!err);
+        resolve2(!err);
       });
     });
     module2.exports.sync = (fp) => {
@@ -167,8 +167,8 @@ var require_path_exists = __commonJS({
 var require_p_try = __commonJS({
   "node_modules/p-try/index.js"(exports2, module2) {
     "use strict";
-    var pTry = (fn, ...arguments_) => new Promise((resolve) => {
-      resolve(fn(...arguments_));
+    var pTry = (fn, ...arguments_) => new Promise((resolve2) => {
+      resolve2(fn(...arguments_));
     });
     module2.exports = pTry;
     module2.exports.default = pTry;
@@ -192,20 +192,20 @@ var require_p_limit = __commonJS({
           queue.shift()();
         }
       };
-      const run = (fn, resolve, ...args) => {
+      const run = (fn, resolve2, ...args) => {
         activeCount++;
         const result = pTry(fn, ...args);
-        resolve(result);
+        resolve2(result);
         result.then(next, next);
       };
-      const enqueue = (fn, resolve, ...args) => {
+      const enqueue = (fn, resolve2, ...args) => {
         if (activeCount < concurrency) {
-          run(fn, resolve, ...args);
+          run(fn, resolve2, ...args);
         } else {
-          queue.push(run.bind(null, fn, resolve, ...args));
+          queue.push(run.bind(null, fn, resolve2, ...args));
         }
       };
-      const generator = (fn, ...args) => new Promise((resolve) => enqueue(fn, resolve, ...args));
+      const generator = (fn, ...args) => new Promise((resolve2) => enqueue(fn, resolve2, ...args));
       Object.defineProperties(generator, {
         activeCount: {
           get: () => activeCount
@@ -289,13 +289,13 @@ var require_find_up = __commonJS({
       const startDir = path.resolve(opts.cwd || "");
       const { root } = path.parse(startDir);
       const filenames = [].concat(filename);
-      return new Promise((resolve) => {
+      return new Promise((resolve2) => {
         (function find(dir) {
           locatePath(filenames, { cwd: dir }).then((file) => {
             if (file) {
-              resolve(path.join(dir, file));
+              resolve2(path.join(dir, file));
             } else if (dir === root) {
-              resolve(null);
+              resolve2(null);
             } else {
               find(path.dirname(dir));
             }
@@ -521,9 +521,9 @@ var require_retryify_queue = __commonJS({
         RetryfyQueue.queueActive.delete(fn);
       },
       schedule: () => {
-        return new Promise((resolve) => {
+        return new Promise((resolve2) => {
           const cleanup = () => RetryfyQueue.remove(resolver);
-          const resolver = () => resolve(cleanup);
+          const resolver = () => resolve2(cleanup);
           RetryfyQueue.add(resolver);
         });
       },
@@ -564,7 +564,7 @@ var require_retryify = __commonJS({
               if (Date.now() >= timestamp)
                 throw error;
               if (isRetriableError(error)) {
-                const delay = Math.round(100 + 400 * Math.random()), delayPromise = new Promise((resolve) => setTimeout(resolve, delay));
+                const delay = Math.round(100 + 400 * Math.random()), delayPromise = new Promise((resolve2) => setTimeout(resolve2, delay));
                 return delayPromise.then(() => attempt.apply(void 0, arguments));
               }
               throw error;
@@ -678,14 +678,14 @@ var require_scheduler = __commonJS({
         }
       },
       schedule: (id) => {
-        return new Promise((resolve) => {
+        return new Promise((resolve2) => {
           let queue = Queues[id];
           if (!queue)
             queue = Queues[id] = [];
-          queue.push(resolve);
+          queue.push(resolve2);
           if (queue.length > 1)
             return;
-          resolve(() => Scheduler.next(id));
+          resolve2(() => Scheduler.next(id));
         });
       }
     };
@@ -3871,7 +3871,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve2.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -3898,7 +3898,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve2(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -4473,7 +4473,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve(baseURI, relativeURI, options) {
+    function resolve2(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse(baseURI, schemelessOptions), parse(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -4700,7 +4700,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve,
+      resolve: resolve2,
       resolveComponent,
       equal,
       serialize,
@@ -10446,7 +10446,7 @@ var require_compile2 = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve2.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -10473,7 +10473,7 @@ var require_compile2 = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve2(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -15882,7 +15882,7 @@ var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
     var path = require("path");
-    var { app: app2, ipcMain: ipcMain2, ipcRenderer, shell } = require("electron");
+    var { app: app2, ipcMain: ipcMain2, ipcRenderer, shell: shell2 } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
@@ -15935,7 +15935,7 @@ var require_electron_store = __commonJS({
         initDataListener();
       }
       async openInEditor() {
-        const error = await shell.openPath(this.path);
+        const error = await shell2.openPath(this.path);
         if (error) {
           throw new Error(error);
         }
@@ -15950,18 +15950,68 @@ var import_electron = require("electron");
 var import_path = require("path");
 var import_electron_store = __toESM(require_electron_store());
 var import_electron2 = require("electron");
+var import_electron3 = require("electron");
+var import_child_process = require("child_process");
+var import_electron4 = require("electron");
 var store = new import_electron_store.default();
 var tray = null;
 var isQuitting = false;
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    import_electron.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path.resolve)(process.argv[1])]);
+  }
+} else {
+  import_electron.app.setAsDefaultProtocolClient("voicescribe");
+}
+var gotTheLock = import_electron.app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  import_electron.app.quit();
+} else {
+  import_electron.app.on("second-instance", (_event, commandLine) => {
+    const mainWindow = import_electron.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    const url = commandLine.find((arg) => arg.startsWith("voicescribe://"));
+    if (url && mainWindow) {
+      mainWindow.webContents.send("deep-link", url);
+    }
+  });
+}
+import_electron.app.on("open-url", (event, url) => {
+  event.preventDefault();
+  const mainWindow = import_electron.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow);
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.webContents.send("deep-link", url);
+  } else {
+  }
+});
 var createWindow = () => {
   const mainWindow = new import_electron.BrowserWindow({
-    width: 600,
-    height: 500,
+    width: 900,
+    // Slightly larger starting size
+    height: 670,
+    minWidth: 800,
+    // Match Swift L93
+    minHeight: 600,
+    // Match Swift L93
     show: false,
     frame: false,
-    // frameless
-    titleBarStyle: "hiddenInset",
-    // macOS style
+    titleBarStyle: "hidden",
+    // Full control
+    trafficLightPosition: { x: 20, y: 18 },
+    // Adjust traffic lights
+    transparent: true,
+    // Enable transparency for vibrancy
+    vibrancy: "under-window",
+    // Match macOS window style
+    visualEffectState: "active",
+    // Ensure vibrancy stays active
     autoHideMenuBar: true,
     webPreferences: {
       preload: (0, import_path.join)(__dirname, "../preload/index.js"),
@@ -15972,6 +16022,11 @@ var createWindow = () => {
     mainWindow.show();
     mainWindow.webContents.openDevTools();
   });
+  if (process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  } else {
+    mainWindow.loadFile((0, import_path.join)(__dirname, "../renderer/index.html"));
+  }
   mainWindow.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -16046,6 +16101,46 @@ import_electron2.ipcMain.handle("request-microphone", async () => {
   }
   return true;
 });
+import_electron2.ipcMain.handle("get-active-app", async () => {
+  try {
+    const activeWin = await import("active-win");
+    const result = await activeWin.default();
+    return {
+      title: result?.title || "",
+      owner: {
+        name: result?.owner?.name || "",
+        bundleId: result?.owner?.bundleId || "",
+        path: result?.owner?.path || ""
+      }
+    };
+  } catch (error) {
+    console.error("Failed to get active window:", error);
+    return null;
+  }
+});
+import_electron2.ipcMain.handle("insert-text", async (_event, text) => {
+  try {
+    import_electron3.clipboard.writeText(text);
+    if (process.platform === "darwin") {
+      const script = `tell application "System Events" to keystroke "v" using command down`;
+      (0, import_child_process.exec)(`osascript -e '${script}'`);
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("Failed to insert text:", error);
+    return false;
+  }
+});
+import_electron2.ipcMain.handle("check-permissions", () => {
+  const micStatus = process.platform === "darwin" ? import_electron2.systemPreferences.getMediaAccessStatus("microphone") : "granted";
+  const accessibilityStatus = process.platform === "darwin" ? import_electron2.systemPreferences.isTrustedAccessibilityClient(false) : true;
+  return {
+    microphone: micStatus,
+    accessibility: accessibilityStatus
+  };
+});
 import_electron2.ipcMain.handle("resize-window", (_event, width, height) => {
   const window = import_electron.BrowserWindow.getFocusedWindow();
   if (window) {
@@ -16057,25 +16152,47 @@ var waveformWindow = null;
 var createWaveformWindow = () => {
   if (waveformWindow) return;
   waveformWindow = new import_electron.BrowserWindow({
-    width: 100,
-    // Slightly larger for debug visibility
-    height: 100,
+    width: 600,
+    height: 120,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
-    resizable: true,
+    resizable: false,
     hasShadow: false,
     focusable: true,
+    // Needs focus for interaction? Maybe false to not steal? User said "chip".
+    type: "panel",
+    // macOS: floats above full screen apps
     webPreferences: {
       preload: (0, import_path.join)(__dirname, "../preload/index.js"),
-      sandbox: false
+      sandbox: false,
+      backgroundThrottling: false
     }
   });
+  updateWaveformPosition();
+  const positionInterval = setInterval(() => {
+    if (!waveformWindow || waveformWindow.isDestroyed()) {
+      clearInterval(positionInterval);
+      return;
+    }
+    updateWaveformPosition();
+  }, 50);
+  const fullscreenInterval = setInterval(() => {
+    if (!waveformWindow || waveformWindow.isDestroyed()) {
+      clearInterval(fullscreenInterval);
+      return;
+    }
+    checkFullscreenState();
+  }, 1e3);
   const { screen } = require("electron");
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-  waveformWindow.setPosition(Math.floor(width / 2 - 18), height - 80);
+  const handleDisplayChange = () => {
+    if (waveformWindow && !waveformWindow.isDestroyed()) {
+      updateWaveformPosition();
+    }
+  };
+  screen.on("display-metrics-changed", handleDisplayChange);
+  screen.on("work-area-changed", handleDisplayChange);
   if (process.env["ELECTRON_RENDERER_URL"]) {
     waveformWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/#/waveform`);
   } else {
@@ -16083,7 +16200,44 @@ var createWaveformWindow = () => {
   }
   waveformWindow.on("closed", () => {
     waveformWindow = null;
+    clearInterval(positionInterval);
+    clearInterval(fullscreenInterval);
+    screen.removeListener("display-metrics-changed", handleDisplayChange);
+    screen.removeListener("work-area-changed", handleDisplayChange);
   });
+};
+var isFullscreen = false;
+var checkFullscreenState = async () => {
+  try {
+    const { screen } = require("electron");
+    const activeWin = await import("active-win");
+    const result = await activeWin.default();
+    if (result && result.bounds) {
+      const cursorPoint = screen.getCursorScreenPoint();
+      const display = screen.getDisplayNearestPoint(cursorPoint);
+      const isFull = result.bounds.x === display.bounds.x && result.bounds.y === display.bounds.y && result.bounds.width === display.bounds.width && result.bounds.height === display.bounds.height;
+      isFullscreen = isFull;
+    }
+  } catch (e) {
+    isFullscreen = false;
+  }
+};
+var updateWaveformPosition = () => {
+  if (!waveformWindow || waveformWindow.isDestroyed()) return;
+  const { screen } = require("electron");
+  const cursorPoint = screen.getCursorScreenPoint();
+  const display = screen.getDisplayNearestPoint(cursorPoint);
+  const { x, y, width, height } = display.workArea;
+  const winBounds = waveformWindow.getBounds();
+  let targetX = Math.floor(x + width / 2 - winBounds.width / 2);
+  let targetY = Math.floor(y + height - winBounds.height - 8);
+  if (isFullscreen) {
+    const absoluteBottom = display.bounds.y + display.bounds.height;
+    targetY = Math.floor(absoluteBottom - winBounds.height - 8);
+  }
+  if (winBounds.x !== targetX || winBounds.y !== targetY) {
+    waveformWindow.setPosition(targetX, targetY);
+  }
 };
 import_electron2.ipcMain.handle("open-waveform", () => {
   if (!waveformWindow) {
@@ -16100,4 +16254,7 @@ import_electron2.ipcMain.handle("set-setting", (_event, key, value) => {
 });
 import_electron2.ipcMain.handle("get-all-settings", () => {
   return store.store;
+});
+import_electron2.ipcMain.handle("open-external", (_event, url) => {
+  return import_electron4.shell.openExternal(url);
 });

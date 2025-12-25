@@ -38,7 +38,7 @@ export const DomainSelectionStep: React.FC<DomainSelectionStepProps> = ({
 
     return (
         <OnboardingLayout>
-            <div className="flex flex-col h-full w-full">
+            <div className="domain-selection-container">
                 <div className="domain-header">
                     <h1 className="domain-title">Tailor Your Experience</h1>
                     <p className="domain-description">

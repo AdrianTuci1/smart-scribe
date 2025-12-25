@@ -6,7 +6,14 @@
     display: flex;
     flex-direction: column;
     padding-top: 50px;
-    /* Aligned with content */
+    /* Aligned with titlebar height to avoid overlap */
+    -webkit-app-region: no-drag;
+    /* Ensure sidebar itself is not draggable */
+    flex-shrink: 0;
+    /* Prevent shrinking */
+    position: relative;
+    z-index: 40;
+    /* Ensure it is above main content if needed, but below TitleBar (50) */
 }
 
 .sidebar.expanded {

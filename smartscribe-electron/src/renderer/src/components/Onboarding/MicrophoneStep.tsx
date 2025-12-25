@@ -13,7 +13,7 @@ export const MicrophoneStep: React.FC<MicrophoneStepProps> = ({ onNext }) => {
 
     const requestPermission = async () => {
         try {
-            const granted = await window.electron.ipcRenderer.requestMicrophone();
+            const granted = await (window as any).electron.ipcRenderer.requestMicrophone();
             setHasPermission(granted);
             if (granted) {
                 setTimeout(onNext, 1000);
@@ -25,7 +25,7 @@ export const MicrophoneStep: React.FC<MicrophoneStepProps> = ({ onNext }) => {
 
     useEffect(() => {
         const initCheck = async () => {
-            const status = await window.electron.ipcRenderer.checkMicrophone();
+            const status = await (window as any).electron.ipcRenderer.checkMicrophone();
             setHasPermission(status === 'granted');
         };
         initCheck();
@@ -33,18 +33,18 @@ export const MicrophoneStep: React.FC<MicrophoneStepProps> = ({ onNext }) => {
 
     return (
         <OnboardingLayout>
-            <div className="flex flex-col items-center justify-center h-full">
+            <div className="microphone-container">
                 <Mic className="mic-icon" />
 
-                <h1 className="welcome-title">Microphone Access</h1>
-                <p className="welcome-description">
+                <h1 className="accessibility-title">Microphone Access</h1>
+                <p className="accessibility-description">
                     SmartScribe needs access to your microphone to capture your voice for transcription.
                 </p>
 
                 <button
                     onClick={requestPermission}
-                    className="welcome-button"
-                    style={{ backgroundColor: '#ef4444' }} // Red color for mic
+                    className="grant-button"
+                    style={{ backgroundColor: hasPermission ? undefined : '#ef4444' }} // Red color for mic override if needed, or stick to default
                     disabled={hasPermission}
                 >
                     {hasPermission ? 'Access Granted' : 'Enable Microphone'}
@@ -58,8 +58,8 @@ export const MicrophoneStep: React.FC<MicrophoneStepProps> = ({ onNext }) => {
                 )}
 
                 {!hasPermission && (
-                    <div className="mt-4">
-                        <button onClick={onNext} className="text-gray-400 text-sm underline">Skip for now (Dev)</button>
+                    <div className="skip-container">
+                        <button onClick={onNext} className="skip-link-mic">Skip for now (Dev)</button>
                     </div>
                 )}
             </div>
