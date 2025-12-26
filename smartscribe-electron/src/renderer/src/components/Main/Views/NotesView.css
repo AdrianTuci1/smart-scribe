@@ -35,7 +35,6 @@
 
 .notes-card {
     width: 100%;
-    background-color: white;
     border-radius: 1.5rem;
     /* rounded-3xl */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -49,11 +48,12 @@
     margin-bottom: 4rem;
     /* mb-16 */
     border: 1px solid #f3f4f6;
+    background-color: #fbfbfb;
     /* border-gray-100 */
 }
 
 :global(.dark) .notes-card {
-    background-color: #1c1c1e;
+    background-color: #fbfbfb;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
     /* dark:shadow-black/40 */
     border-color: rgba(255, 255, 255, 0.05);
@@ -169,16 +169,15 @@
 }
 
 :global(.dark) .finish-btn {
-    background-color: #3f3f46;
-    /* dark:bg-zinc-700 */
-    color: white;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
 }
 
 :global(.dark) .finish-btn:hover {
-    background-color: #52525b;
-    /* dark:hover:bg-zinc-600 */
+    background-color: rgba(255, 255, 255, 0.15);
 }
+
+
 
 .finish-btn:disabled {
     opacity: 0.5;
@@ -202,8 +201,7 @@
 }
 
 :global(.dark) .recents-header {
-    border-bottom-color: #1f2937;
-    /* dark:border-gray-800 */
+    border-bottom-color: rgba(255, 255, 255, 0.15);
 }
 
 .recents-title {
@@ -240,6 +238,10 @@
     /* hover:text-gray-600 */
 }
 
+:global(.dark) .recents-action-btn:hover {
+    color: #e5e7eb;
+}
+
 .recents-list {
     display: flex;
     flex-direction: column;
@@ -267,8 +269,7 @@
 }
 
 :global(.dark) .note-item {
-    border-bottom-color: #1f2937;
-    /* dark:border-gray-800 */
+    border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .note-item:hover {

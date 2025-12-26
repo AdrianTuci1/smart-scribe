@@ -76,8 +76,7 @@
 }
 
 :global(.dark) .snippets-controls {
-    border-bottom-color: #1f2937;
-    /* dark:border-gray-800 */
+    border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .snippets-tabs {
@@ -160,8 +159,7 @@
 }
 
 :global(.dark) .search-container {
-    background-color: rgba(255, 255, 255, 0.1);
-    /* dark:bg-white/10 */
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .search-container.open {
@@ -220,10 +218,8 @@
 }
 
 :global(.dark) .snippets-list {
-    border-color: #1f2937;
-    /* dark:border-gray-800 */
-    background-color: rgba(30, 30, 30, 0.5);
-    /* dark:bg-[#1e1e1e]/50 */
+    border-color: rgba(255, 255, 255, 0.08);
+    background-color: #1C1C1E;
     backdrop-filter: blur(4px);
 }
 
@@ -236,6 +232,10 @@
     color: #6b7280;
     /* text-gray-500 */
     font-weight: 500;
+}
+
+:global(.dark) .empty-text {
+    color: #9ca3af;
 }
 
 .snippet-item {
@@ -254,8 +254,7 @@
 }
 
 :global(.dark) .snippet-item:not(:last-child) {
-    border-bottom-color: #1f2937;
-    /* dark:border-gray-800 */
+    border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .snippet-item:hover {

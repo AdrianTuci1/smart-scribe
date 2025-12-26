@@ -8,12 +8,20 @@ import { SnippetsView } from './Views/SnippetsView';
 import { StyleView } from './Views/StyleView';
 import { NotesView } from './Views/NotesView';
 import { SettingsView } from '../Settings/SettingsView';
+import { SettingsCategory } from '../Settings/types';
 
 export const MainView: React.FC = () => {
     const [currentView, setCurrentView] = useState<ViewType>('home');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [settingsTab, setSettingsTab] = useState<SettingsCategory>('account');
 
     const toggleSidebar = () => setIsSidebarCollapsed(prev => !prev);
+
+    const openSettings = (tab: SettingsCategory = 'account') => {
+        setSettingsTab(tab);
+        setIsSettingsOpen(true);
+    };
 
     const renderContent = () => {
         switch (currentView) {
@@ -22,23 +30,31 @@ export const MainView: React.FC = () => {
             case 'snippets': return <SnippetsView />;
             case 'style': return <StyleView />;
             case 'notes': return <NotesView />;
-            case 'settings': return <SettingsView />;
+            // Settings case removed as it's now a modal
             default: return <HomeView />;
         }
     };
 
     return (
         <MainLayout
-            titleBar={<TitleBar toggleSidebar={toggleSidebar} isSidebarCollapsed={isSidebarCollapsed} />}
+            titleBar={
+                <TitleBar
+                    toggleSidebar={toggleSidebar}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    onManageAccount={() => openSettings('account')}
+                />
+            }
             sidebar={
                 <Sidebar
                     currentView={currentView}
                     onViewChange={setCurrentView}
                     isCollapsed={isSidebarCollapsed}
+                    onOpenSettings={openSettings}
                 />
             }
         >
             {renderContent()}
+            {isSettingsOpen && <SettingsView onClose={() => setIsSettingsOpen(false)} initialTab={settingsTab} />}
         </MainLayout>
     );
 };

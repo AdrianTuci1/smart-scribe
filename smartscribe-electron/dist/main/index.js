@@ -15882,7 +15882,7 @@ var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
     var path = require("path");
-    var { app: app2, ipcMain: ipcMain2, ipcRenderer, shell: shell2 } = require("electron");
+    var { app: app2, ipcMain: ipcMain2, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
@@ -15935,7 +15935,7 @@ var require_electron_store = __commonJS({
         initDataListener();
       }
       async openInEditor() {
-        const error = await shell2.openPath(this.path);
+        const error = await shell.openPath(this.path);
         if (error) {
           throw new Error(error);
         }
@@ -16040,25 +16040,92 @@ import_electron.app.whenReady().then(() => {
   const mainWindow = createWindow();
   const icon = import_electron.nativeImage.createFromPath((0, import_path.join)(__dirname, "../../resources/icon.png"));
   tray = new import_electron.Tray(icon);
-  const contextMenu = import_electron.Menu.buildFromTemplate([
-    {
-      label: "Show SmartScribe",
-      click: () => {
-        mainWindow.show();
-        mainWindow.focus();
+  const updateTrayMenu = () => {
+    const lastTranscript = store.get("lastTranscript");
+    const contextMenu = import_electron.Menu.buildFromTemplate([
+      {
+        label: "Home",
+        click: () => {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      },
+      {
+        label: "Check for updates...",
+        click: () => {
+          const { shell } = require("electron");
+          shell.openExternal("https://smartscribe.getwispr.com/updates");
+        }
+      },
+      {
+        label: "Paste last transcript",
+        accelerator: "Ctrl+Command+V",
+        enabled: !!lastTranscript,
+        click: () => {
+          if (lastTranscript) {
+            const { clipboard: clipboard2 } = require("electron");
+            const { exec: exec2 } = require("child_process");
+            clipboard2.writeText(lastTranscript);
+            if (process.platform === "darwin") {
+              const script = `tell application "System Events" to keystroke "v" using command down`;
+              exec2(`osascript -e '${script}'`);
+            }
+          }
+        }
+      },
+      { type: "separator" },
+      { label: "Shortcuts", enabled: false },
+      {
+        label: "Microphone",
+        submenu: [
+          { label: "Auto-detect (System Default)", type: "radio", checked: true },
+          { label: "Built-in Microphone", type: "radio", checked: false }
+        ]
+      },
+      {
+        label: "Languages",
+        submenu: [
+          { label: "English", type: "radio", checked: true },
+          { label: "Romanian", type: "radio", checked: false }
+        ]
+      },
+      { type: "separator" },
+      {
+        label: "Help Center",
+        click: () => {
+          require("electron").shell.openExternal("https://help.smartscribe.ai");
+        }
+      },
+      {
+        label: "Talk to support",
+        accelerator: "Command+/",
+        click: () => {
+          require("electron").shell.openExternal("https://smartscribe.ai/support");
+        }
+      },
+      {
+        label: "General feedback",
+        click: () => {
+          require("electron").shell.openExternal("mailto:feedback@smartscribe.ai");
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Quit SmartScribe",
+        accelerator: "Command+Q",
+        click: () => {
+          isQuitting = true;
+          import_electron.app.quit();
+        }
       }
-    },
-    { type: "separator" },
-    {
-      label: "Quit",
-      click: () => {
-        isQuitting = true;
-        import_electron.app.quit();
-      }
-    }
-  ]);
+    ]);
+    tray?.setContextMenu(contextMenu);
+  };
+  updateTrayMenu();
   tray.setToolTip("SmartScribe");
-  tray.setContextMenu(contextMenu);
+  import_electron2.ipcMain.on("update-tray", () => {
+    updateTrayMenu();
+  });
   tray.on("click", () => {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -16249,12 +16316,50 @@ import_electron2.ipcMain.handle("open-waveform", () => {
 import_electron2.ipcMain.handle("get-settings", (_event, key) => {
   return store.get(key);
 });
+var updateGlobalShortcuts = () => {
+  import_electron4.globalShortcut.unregisterAll();
+  const pushToTalkKey = store.get("pushToTalkKey");
+  const handsFreeKey = store.get("handsFreeModeKey");
+  if (pushToTalkKey) {
+    try {
+      const accelerator = pushToTalkKey.replace("Cmd", "Command");
+      import_electron4.globalShortcut.register(accelerator, () => {
+        const wins = import_electron.BrowserWindow.getAllWindows();
+        wins.forEach((w) => w.webContents.send("shortcut-triggered", "pushToTalk"));
+        console.log("Push to Talk Triggered");
+      });
+    } catch (e) {
+      console.error(`Failed to register shortcut ${pushToTalkKey}`, e);
+    }
+  }
+  if (handsFreeKey) {
+    try {
+      const accelerator = handsFreeKey.replace("Cmd", "Command");
+      import_electron4.globalShortcut.register(accelerator, () => {
+        const wins = import_electron.BrowserWindow.getAllWindows();
+        wins.forEach((w) => w.webContents.send("shortcut-triggered", "handsFree"));
+        console.log("Hands Free Triggered");
+      });
+    } catch (e) {
+      console.error(`Failed to register shortcut ${handsFreeKey}`, e);
+    }
+  }
+};
+import_electron.app.on("ready", () => {
+  updateGlobalShortcuts();
+});
 import_electron2.ipcMain.handle("set-setting", (_event, key, value) => {
   store.set(key, value);
+  if (key === "pushToTalkKey" || key === "handsFreeModeKey") {
+    updateGlobalShortcuts();
+  }
 });
 import_electron2.ipcMain.handle("get-all-settings", () => {
   return store.store;
 });
-import_electron2.ipcMain.handle("open-external", (_event, url) => {
-  return import_electron4.shell.openExternal(url);
+import_electron2.ipcMain.on("set-ignore-mouse-events", (event, ignore, options) => {
+  const window = import_electron.BrowserWindow.fromWebContents(event.sender);
+  if (window) {
+    window.setIgnoreMouseEvents(ignore, options);
+  }
 });

@@ -4,7 +4,7 @@
 var import_electron = require("electron");
 import_electron.contextBridge.exposeInMainWorld("electron", {
   ipcRenderer: {
-    send: (channel, data) => import_electron.ipcRenderer.send(channel, data),
+    send: (channel, ...args) => import_electron.ipcRenderer.send(channel, ...args),
     on: (channel, func) => {
       const subscription = (_event, ...args) => func(...args);
       import_electron.ipcRenderer.on(channel, subscription);

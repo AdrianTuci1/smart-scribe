@@ -11,18 +11,51 @@ interface AccessibilityStepProps {
 export const AccessibilityStep: React.FC<AccessibilityStepProps> = ({ onNext }) => {
     const [hasPermission, setHasPermission] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
+    const pollInterval = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup polling on unmount
+    useEffect(() => {
+        return () => {
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
+        };
+    }, []);
+
+    const startPolling = () => {
+        if (pollInterval.current) return;
+
+        pollInterval.current = setInterval(async () => {
+            try {
+                const granted = await (window as any).electron.ipcRenderer.checkAccessibility();
+                if (granted) {
+                    if (pollInterval.current) clearInterval(pollInterval.current);
+                    setHasPermission(true);
+                    setIsChecking(false);
+                    setTimeout(onNext, 1000);
+                }
+            } catch (error) {
+                console.error('Polling check failed:', error);
+            }
+        }, 1000);
+    };
 
     const checkPermission = async () => {
         setIsChecking(true);
         try {
+            // Trigger the explicit request (opens system dialog)
             const granted = await (window as any).electron.ipcRenderer.requestAccessibility();
-            setHasPermission(granted);
+
             if (granted) {
+                setHasPermission(true);
+                setIsChecking(false);
                 setTimeout(onNext, 1000);
+            } else {
+                // Not granted immediately, start polling for external change
+                startPolling();
             }
         } catch (error) {
             console.error('Failed to check accessibility:', error);
-        } finally {
             setIsChecking(false);
         }
     };
@@ -31,9 +64,12 @@ export const AccessibilityStep: React.FC<AccessibilityStepProps> = ({ onNext }) 
         const initCheck = async () => {
             const granted = await (window as any).electron.ipcRenderer.checkAccessibility();
             setHasPermission(granted);
+            if (granted) {
+                onNext();
+            }
         };
         initCheck();
-    }, []);
+    }, [onNext]);
 
     return (
         <OnboardingLayout>

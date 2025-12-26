@@ -105,25 +105,91 @@ app.whenReady().then(() => {
     const mainWindow = createWindow()
 
     // Create Tray
+    // Create Tray
     const icon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png')) // Placeholder path
     tray = new Tray(icon)
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: 'Show SmartScribe', click: () => {
-                mainWindow.show()
-                mainWindow.focus()
+
+    const updateTrayMenu = () => {
+        const lastTranscript = (store as any).get('lastTranscript')
+        const contextMenu = Menu.buildFromTemplate([
+            {
+                label: 'Home', click: () => {
+                    mainWindow.show()
+                    mainWindow.focus()
+                }
+            },
+            {
+                label: 'Check for updates...', click: () => {
+                    const { shell } = require('electron')
+                    shell.openExternal('https://smartscribe.getwispr.com/updates') // Placeholder
+                }
+            },
+            {
+                label: 'Paste last transcript',
+                accelerator: 'Ctrl+Command+V',
+                enabled: !!lastTranscript,
+                click: () => {
+                    if (lastTranscript) {
+                        const { clipboard } = require('electron')
+                        const { exec } = require('child_process')
+                        clipboard.writeText(lastTranscript)
+                        if (process.platform === 'darwin') {
+                            const script = `tell application "System Events" to keystroke "v" using command down`
+                            exec(`osascript -e '${script}'`)
+                        }
+                    }
+                }
+            },
+            { type: 'separator' },
+            { label: 'Shortcuts', enabled: false },
+            {
+                label: 'Microphone',
+                submenu: [
+                    { label: 'Auto-detect (System Default)', type: 'radio', checked: true },
+                    { label: 'Built-in Microphone', type: 'radio', checked: false }
+                ]
+            },
+            {
+                label: 'Languages',
+                submenu: [
+                    { label: 'English', type: 'radio', checked: true },
+                    { label: 'Romanian', type: 'radio', checked: false }
+                ]
+            },
+            { type: 'separator' },
+            {
+                label: 'Help Center', click: () => {
+                    require('electron').shell.openExternal('https://help.smartscribe.ai')
+                }
+            },
+            {
+                label: 'Talk to support', accelerator: 'Command+/', click: () => {
+                    require('electron').shell.openExternal('https://smartscribe.ai/support')
+                }
+            },
+            {
+                label: 'General feedback', click: () => {
+                    require('electron').shell.openExternal('mailto:feedback@smartscribe.ai')
+                }
+            },
+            { type: 'separator' },
+            {
+                label: 'Quit SmartScribe', accelerator: 'Command+Q', click: () => {
+                    isQuitting = true
+                    app.quit()
+                }
             }
-        },
-        { type: 'separator' },
-        {
-            label: 'Quit', click: () => {
-                isQuitting = true
-                app.quit()
-            }
-        }
-    ])
+        ])
+        tray?.setContextMenu(contextMenu)
+    }
+
+    updateTrayMenu()
     tray.setToolTip('SmartScribe')
-    tray.setContextMenu(contextMenu)
+
+    // Listen for events to update tray
+    ipcMain.on('update-tray', () => {
+        updateTrayMenu()
+    })
 
     // Toggle window on tray click
     tray.on('click', () => {
@@ -387,13 +453,68 @@ ipcMain.handle('open-waveform', () => {
 })
 
 // Settings IPC
-// Settings IPC
 ipcMain.handle('get-settings', (_event, key) => {
     return (store as any).get(key)
 })
 
+import { globalShortcut } from 'electron'
+
+// Helper to register global shortcuts based on settings
+const updateGlobalShortcuts = () => {
+    globalShortcut.unregisterAll()
+
+    const pushToTalkKey = (store as any).get('pushToTalkKey') as string
+    const handsFreeKey = (store as any).get('handsFreeModeKey') as string
+
+    if (pushToTalkKey) {
+        try {
+            // Electron accelerators use + as separator, but verify format
+            // Our frontend sends "Cmd+Shift+P", Electron expects "CommandOrControl+Shift+P" or similar
+            // But "Cmd" is usually mapped to Command on Mac.
+            // Let's do a basic replacement of "Cmd" -> "Command" just in case, though Electron usually handles "Cmd" on Mac.
+            // Actually "Cmd" works in Accelerator.
+            const accelerator = pushToTalkKey.replace('Cmd', 'Command')
+            globalShortcut.register(accelerator, () => {
+                // Determine logic for Push to Talk
+                // For now, toggle or send event to renderer
+                const wins = BrowserWindow.getAllWindows()
+                wins.forEach(w => w.webContents.send('shortcut-triggered', 'pushToTalk'))
+                console.log('Push to Talk Triggered')
+            })
+        } catch (e) {
+            console.error(`Failed to register shortcut ${pushToTalkKey}`, e)
+        }
+    }
+
+    if (handsFreeKey) {
+        try {
+            const accelerator = handsFreeKey.replace('Cmd', 'Command')
+            globalShortcut.register(accelerator, () => {
+                const wins = BrowserWindow.getAllWindows()
+                wins.forEach(w => w.webContents.send('shortcut-triggered', 'handsFree'))
+                console.log('Hands Free Triggered')
+            })
+        } catch (e) {
+            console.error(`Failed to register shortcut ${handsFreeKey}`, e)
+        }
+    }
+}
+
+// Register on app ready (call this in whenReady block or here if store is ready)
+// We'll call it once initially if app checks out, but better to call it when ready.
+// Insert call in app.whenReady() or just call it now since store is synchronous.
+// However globalShortcut module must be used after app is ready.
+app.on('ready', () => {
+    updateGlobalShortcuts()
+})
+
 ipcMain.handle('set-setting', (_event, key, value) => {
     (store as any).set(key, value)
+
+    // If a shortcut setting changed, update registration
+    if (key === 'pushToTalkKey' || key === 'handsFreeModeKey') {
+        updateGlobalShortcuts()
+    }
 })
 
 ipcMain.handle('get-all-settings', () => {

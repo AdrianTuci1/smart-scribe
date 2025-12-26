@@ -64,14 +64,6 @@ const MainApp = () => {
     return (
         <div className="app-container">
             <MainView />
-
-            {/* Temporary Floating Settings Button for Access */}
-            <Link
-                to="/settings"
-                className="settings-button"
-            >
-                <SettingsIcon size={20} className="settings-icon" />
-            </Link>
         </div>
     );
 };

@@ -1,13 +1,15 @@
 import React from 'react';
 import { PanelLeft } from 'lucide-react';
+import { UserMenu } from './UserMenu';
 import './TitleBar.css';
 
 interface TitleBarProps {
     toggleSidebar: () => void;
     isSidebarCollapsed: boolean;
+    onManageAccount?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ toggleSidebar }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({ toggleSidebar, onManageAccount }) => {
     return (
         <div className="titlebar">
             <button className="sidebar-toggle" onClick={toggleSidebar}>
@@ -17,9 +19,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({ toggleSidebar }) => {
             {/* Spacer */}
             <div style={{ flex: 1 }}></div>
 
-            {/* User Menu Placeholder */}
-            <div className="user-menu-placeholder" style={{ WebkitAppRegion: 'no-drag' } as any}>
-                {/* User Icon or Button */}
+            {/* User Menu */}
+            <div style={{ WebkitAppRegion: 'no-drag', marginRight: '10px' } as any}>
+                <UserMenu onManageAccount={onManageAccount} />
             </div>
         </div>
     );
