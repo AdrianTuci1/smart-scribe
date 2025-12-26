@@ -4,16 +4,27 @@ import './FloatingWaveform.css';
 export const FloatingWaveform: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [warningVisible, setWarningVisible] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
         // Enable transparency for this window
         document.body.style.backgroundColor = 'transparent';
         document.documentElement.style.backgroundColor = 'transparent';
 
+        // Listen for fullscreen state changes from main process
+        const handleFullscreenChange = (_event: any, fullscreen: boolean) => {
+            setIsFullscreen(fullscreen);
+        };
+
+        const unsubscribe = (window as any).electron.ipcRenderer.on('fullscreen-state-changed', handleFullscreenChange);
+
         return () => {
             // Revert (though typically this window closes, good practice)
             document.body.style.backgroundColor = '';
             document.documentElement.style.backgroundColor = '';
+
+            // Remove listener using cleanup function
+            unsubscribe();
         };
     }, []);
 

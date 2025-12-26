@@ -1,11 +1,13 @@
 .home-container {
     height: 100%;
     width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
     overflow-y: auto;
 }
 
 .home-content {
-    max-width: 900px;
+    max-width: 700px;
     margin: 0 auto;
     padding: 2.5rem 2rem;
     /* px-8 py-10 */
@@ -26,7 +28,7 @@
     font-size: 1.5rem;
     /* text-2xl */
     font-weight: 700;
-    color: #e9eaed;
+    color: #ffffff;
     /* text-gray-900 */
     letter-spacing: -0.025em;
     /* tracking-tight */
@@ -58,10 +60,10 @@
 
 :global(.dark) .stats-pill {
     background-color: #1c1c1e;
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
     /* Slightly increased contrast */
-    color: #d1d5db;
-    /* dark:text-gray-300 */
+    color: white;
+    /* dark:text-white */
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
@@ -112,7 +114,7 @@
     /* text-2xl */
     font-family: 'Georgia', serif;
     font-style: italic;
-    color: #ebeced;
+    color: white;
     margin-bottom: 1.5rem;
     /* mb-6 */
 }
@@ -143,7 +145,15 @@
     /* rounded-xl */
     border: 1px solid #e5e7eb;
     /* border-gray-200 */
-    transition: all 150ms;
+    background-color: rgb(32, 32, 32);
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flow-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
 }
 
 
@@ -200,7 +210,7 @@
     font-size: 0.875rem;
     /* text-sm */
     font-weight: 500;
-    color: #111827;
+    color: white;
     transition: color 150ms;
     display: flex;
     align-items: center;
@@ -208,8 +218,8 @@
 }
 
 :global(.dark) .flow-card-label {
-    color: #e5e7eb;
-    /* dark:text-gray-200 */
+    color: white;
+    /* dark:text-white */
 }
 
 .flow-card:hover .flow-card-label {
@@ -288,6 +298,11 @@
     /* mb-4 */
     padding-left: 0.5rem;
     /* pl-2 */
+}
+
+:global(.dark) .date-header {
+    color: #9ca3af;
+    /* dark:text-gray-400 */
 }
 
 .transcript-group {

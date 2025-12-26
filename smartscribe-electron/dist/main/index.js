@@ -15544,12 +15544,12 @@ var require_source = __commonJS({
         const fileExtension = options.fileExtension ? `.${options.fileExtension}` : "";
         this.path = path.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
         const fileStore = this.store;
-        const store2 = Object.assign(createPlainObject(), options.defaults, fileStore);
-        this._validate(store2);
+        const store3 = Object.assign(createPlainObject(), options.defaults, fileStore);
+        this._validate(store3);
         try {
-          assert.deepEqual(fileStore, store2);
+          assert.deepEqual(fileStore, store3);
         } catch (_b2) {
-          this.store = store2;
+          this.store = store3;
         }
         if (options.watch) {
           this._watch();
@@ -15568,8 +15568,8 @@ var require_source = __commonJS({
         if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
           return this._get(key, defaultValue);
         }
-        const { store: store2 } = this;
-        return key in store2 ? store2[key] : defaultValue;
+        const { store: store3 } = this;
+        return key in store3 ? store3[key] : defaultValue;
       }
       set(key, value) {
         if (typeof key !== "string" && typeof key !== "object") {
@@ -15581,13 +15581,13 @@ var require_source = __commonJS({
         if (this._containsReservedKey(key)) {
           throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
         }
-        const { store: store2 } = this;
+        const { store: store3 } = this;
         const set = (key2, value2) => {
           checkValueType(key2, value2);
           if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
-            dotProp.set(store2, key2, value2);
+            dotProp.set(store3, key2, value2);
           } else {
-            store2[key2] = value2;
+            store3[key2] = value2;
           }
         };
         if (typeof key === "object") {
@@ -15598,7 +15598,7 @@ var require_source = __commonJS({
         } else {
           set(key, value);
         }
-        this.store = store2;
+        this.store = store3;
       }
       /**
           Check if an item exists.
@@ -15631,13 +15631,13 @@ var require_source = __commonJS({
           @param key - The key of the item to delete.
           */
       delete(key) {
-        const { store: store2 } = this;
+        const { store: store3 } = this;
         if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
-          dotProp.delete(store2, key);
+          dotProp.delete(store3, key);
         } else {
-          delete store2[key];
+          delete store3[key];
         }
-        this.store = store2;
+        this.store = store3;
       }
       /**
           Delete all items.
@@ -15866,9 +15866,9 @@ var require_source = __commonJS({
         return dotProp.get(this.store, key, defaultValue);
       }
       _set(key, value) {
-        const { store: store2 } = this;
-        dotProp.set(store2, key, value);
-        this.store = store2;
+        const { store: store3 } = this;
+        dotProp.set(store3, key, value);
+        this.store = store3;
       }
     };
     exports2.default = Conf;
@@ -15882,21 +15882,21 @@ var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
     var path = require("path");
-    var { app: app2, ipcMain: ipcMain2, ipcRenderer, shell } = require("electron");
+    var { app: app4, ipcMain: ipcMain5, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
-      if (!ipcMain2 || !app2) {
+      if (!ipcMain5 || !app4) {
         throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
       }
       const appData = {
-        defaultCwd: app2.getPath("userData"),
-        appVersion: app2.getVersion()
+        defaultCwd: app4.getPath("userData"),
+        appVersion: app4.getVersion()
       };
       if (isInitialized) {
         return appData;
       }
-      ipcMain2.on("electron-store-get-data", (event) => {
+      ipcMain5.on("electron-store-get-data", (event) => {
         event.returnValue = appData;
       });
       isInitialized = true;
@@ -15912,7 +15912,7 @@ var require_electron_store = __commonJS({
             throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
           }
           ({ defaultCwd, appVersion } = appData);
-        } else if (ipcMain2 && app2) {
+        } else if (ipcMain5 && app4) {
           ({ defaultCwd, appVersion } = initDataListener());
         }
         options = {
@@ -15946,72 +15946,28 @@ var require_electron_store = __commonJS({
 });
 
 // src/main/index.ts
+var import_electron9 = require("electron");
+
+// src/main/windows/mainWindow.ts
 var import_electron = require("electron");
 var import_path = require("path");
-var import_electron_store = __toESM(require_electron_store());
-var import_electron2 = require("electron");
-var import_electron3 = require("electron");
-var import_child_process = require("child_process");
-var import_electron4 = require("electron");
-var store = new import_electron_store.default();
-var tray = null;
 var isQuitting = false;
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    import_electron.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path.resolve)(process.argv[1])]);
-  }
-} else {
-  import_electron.app.setAsDefaultProtocolClient("voicescribe");
-}
-var gotTheLock = import_electron.app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  import_electron.app.quit();
-} else {
-  import_electron.app.on("second-instance", (_event, commandLine) => {
-    const mainWindow = import_electron.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow);
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
-    const url = commandLine.find((arg) => arg.startsWith("voicescribe://"));
-    if (url && mainWindow) {
-      mainWindow.webContents.send("deep-link", url);
-    }
-  });
-}
-import_electron.app.on("open-url", (event, url) => {
-  event.preventDefault();
-  const mainWindow = import_electron.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow);
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.webContents.send("deep-link", url);
-  } else {
-  }
-});
-var createWindow = () => {
+var setIsQuitting = (value) => {
+  isQuitting = value;
+};
+var createMainWindow = () => {
   const mainWindow = new import_electron.BrowserWindow({
     width: 900,
-    // Slightly larger starting size
     height: 670,
     minWidth: 800,
-    // Match Swift L93
     minHeight: 600,
-    // Match Swift L93
     show: false,
     frame: false,
     titleBarStyle: "hidden",
-    // Full control
     trafficLightPosition: { x: 20, y: 18 },
-    // Adjust traffic lights
     transparent: true,
-    // Enable transparency for vibrancy
     vibrancy: "under-window",
-    // Match macOS window style
     visualEffectState: "active",
-    // Ensure vibrancy stays active
     autoHideMenuBar: true,
     webPreferences: {
       preload: (0, import_path.join)(__dirname, "../preload/index.js"),
@@ -16036,13 +15992,19 @@ var createWindow = () => {
   });
   return mainWindow;
 };
-import_electron.app.whenReady().then(() => {
-  const mainWindow = createWindow();
-  const icon = import_electron.nativeImage.createFromPath((0, import_path.join)(__dirname, "../../resources/icon.png"));
-  tray = new import_electron.Tray(icon);
+
+// src/main/tray/trayManager.ts
+var import_electron2 = require("electron");
+var import_path2 = require("path");
+var import_electron_store = __toESM(require_electron_store());
+var store = new import_electron_store.default();
+var tray = null;
+var createTray = (mainWindow, onQuit) => {
+  const icon = import_electron2.nativeImage.createFromPath((0, import_path2.join)(__dirname, "../../resources/icon.png"));
+  tray = new import_electron2.Tray(icon);
   const updateTrayMenu = () => {
     const lastTranscript = store.get("lastTranscript");
-    const contextMenu = import_electron.Menu.buildFromTemplate([
+    const contextMenu = import_electron2.Menu.buildFromTemplate([
       {
         label: "Home",
         click: () => {
@@ -16113,19 +16075,13 @@ import_electron.app.whenReady().then(() => {
       {
         label: "Quit SmartScribe",
         accelerator: "Command+Q",
-        click: () => {
-          isQuitting = true;
-          import_electron.app.quit();
-        }
+        click: onQuit
       }
     ]);
     tray?.setContextMenu(contextMenu);
   };
   updateTrayMenu();
   tray.setToolTip("SmartScribe");
-  import_electron2.ipcMain.on("update-tray", () => {
-    updateTrayMenu();
-  });
   tray.on("click", () => {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -16134,91 +16090,66 @@ import_electron.app.whenReady().then(() => {
       mainWindow.focus();
     }
   });
-  import_electron.app.on("activate", () => {
-    if (import_electron.BrowserWindow.getAllWindows().length === 0) createWindow();
-    else mainWindow.show();
-  });
-});
-import_electron.app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    import_electron.app.quit();
-  }
-});
-import_electron2.ipcMain.handle("check-accessibility", () => {
-  if (process.platform === "darwin") {
-    return import_electron2.systemPreferences.isTrustedAccessibilityClient(false);
-  }
-  return true;
-});
-import_electron2.ipcMain.handle("request-accessibility", () => {
-  if (process.platform === "darwin") {
-    return import_electron2.systemPreferences.isTrustedAccessibilityClient(true);
-  }
-  return true;
-});
-import_electron2.ipcMain.handle("check-microphone", () => {
-  if (process.platform === "darwin") {
-    return import_electron2.systemPreferences.getMediaAccessStatus("microphone");
-  }
-  return "granted";
-});
-import_electron2.ipcMain.handle("request-microphone", async () => {
-  if (process.platform === "darwin") {
-    return await import_electron2.systemPreferences.askForMediaAccess("microphone");
-  }
-  return true;
-});
-import_electron2.ipcMain.handle("get-active-app", async () => {
-  try {
-    const activeWin = await import("active-win");
-    const result = await activeWin.default();
-    return {
-      title: result?.title || "",
-      owner: {
-        name: result?.owner?.name || "",
-        bundleId: result?.owner?.bundleId || "",
-        path: result?.owner?.path || ""
-      }
-    };
-  } catch (error) {
-    console.error("Failed to get active window:", error);
-    return null;
-  }
-});
-import_electron2.ipcMain.handle("insert-text", async (_event, text) => {
-  try {
-    import_electron3.clipboard.writeText(text);
-    if (process.platform === "darwin") {
-      const script = `tell application "System Events" to keystroke "v" using command down`;
-      (0, import_child_process.exec)(`osascript -e '${script}'`);
-      return true;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    console.error("Failed to insert text:", error);
-    return false;
-  }
-});
-import_electron2.ipcMain.handle("check-permissions", () => {
-  const micStatus = process.platform === "darwin" ? import_electron2.systemPreferences.getMediaAccessStatus("microphone") : "granted";
-  const accessibilityStatus = process.platform === "darwin" ? import_electron2.systemPreferences.isTrustedAccessibilityClient(false) : true;
-  return {
-    microphone: micStatus,
-    accessibility: accessibilityStatus
-  };
-});
-import_electron2.ipcMain.handle("resize-window", (_event, width, height) => {
-  const window = import_electron.BrowserWindow.getFocusedWindow();
-  if (window) {
-    window.setSize(width, height, true);
-    window.center();
-  }
-});
+  return tray;
+};
+
+// src/main/protocol/deepLinkHandler.ts
+var import_electron4 = require("electron");
+var import_path4 = require("path");
+
+// src/main/windows/waveformWindow.ts
+var import_electron3 = require("electron");
+var import_path3 = require("path");
 var waveformWindow = null;
+var isFullscreen = false;
+var checkFullscreenState = async () => {
+  try {
+    const cursorPoint = import_electron3.screen.getCursorScreenPoint();
+    const display = import_electron3.screen.getDisplayNearestPoint(cursorPoint);
+    const isMenuBarHidden = display.workArea.y === 0;
+    console.log("Fullscreen Check:", {
+      workArea: display.workArea,
+      bounds: display.bounds,
+      isMenuBarHidden,
+      finalFullscreenState: isMenuBarHidden
+    });
+    if (isFullscreen !== isMenuBarHidden) {
+      console.log(`Fullscreen state changed: ${isFullscreen} -> ${isMenuBarHidden}`);
+      isFullscreen = isMenuBarHidden;
+      if (waveformWindow && !waveformWindow.isDestroyed()) {
+        waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
+      }
+      updateWaveformPosition();
+    }
+  } catch (e) {
+    console.error("Error checking fullscreen state:", e);
+    if (isFullscreen !== false) {
+      isFullscreen = false;
+      if (waveformWindow && !waveformWindow.isDestroyed()) {
+        waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
+      }
+    }
+  }
+};
+var updateWaveformPosition = () => {
+  if (!waveformWindow || waveformWindow.isDestroyed()) return;
+  const cursorPoint = import_electron3.screen.getCursorScreenPoint();
+  const display = import_electron3.screen.getDisplayNearestPoint(cursorPoint);
+  const { x, y, width, height } = display.workArea;
+  const winBounds = waveformWindow.getBounds();
+  let targetX = Math.floor(x + width / 2 - winBounds.width / 2);
+  let targetY = Math.floor(y + height - winBounds.height - 8);
+  if (isFullscreen) {
+    const absoluteBottom = display.bounds.y + display.bounds.height;
+    targetY = Math.floor(absoluteBottom - winBounds.height - 8);
+  }
+  if (winBounds.x !== targetX || winBounds.y !== targetY) {
+    waveformWindow.setPosition(targetX, targetY);
+  }
+};
 var createWaveformWindow = () => {
   if (waveformWindow) return;
-  waveformWindow = new import_electron.BrowserWindow({
+  waveformWindow = new import_electron3.BrowserWindow({
     width: 600,
     height: 120,
     frame: false,
@@ -16228,11 +16159,9 @@ var createWaveformWindow = () => {
     resizable: false,
     hasShadow: false,
     focusable: true,
-    // Needs focus for interaction? Maybe false to not steal? User said "chip".
     type: "panel",
-    // macOS: floats above full screen apps
     webPreferences: {
-      preload: (0, import_path.join)(__dirname, "../preload/index.js"),
+      preload: (0, import_path3.join)(__dirname, "../preload/index.js"),
       sandbox: false,
       backgroundThrottling: false
     }
@@ -16252,79 +16181,169 @@ var createWaveformWindow = () => {
     }
     checkFullscreenState();
   }, 1e3);
-  const { screen } = require("electron");
   const handleDisplayChange = () => {
     if (waveformWindow && !waveformWindow.isDestroyed()) {
       updateWaveformPosition();
     }
   };
-  screen.on("display-metrics-changed", handleDisplayChange);
-  screen.on("work-area-changed", handleDisplayChange);
+  import_electron3.screen.on("display-metrics-changed", handleDisplayChange);
   if (process.env["ELECTRON_RENDERER_URL"]) {
     waveformWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/#/waveform`);
   } else {
-    waveformWindow.loadFile((0, import_path.join)(__dirname, "../renderer/index.html"), { hash: "waveform" });
+    waveformWindow.loadFile((0, import_path3.join)(__dirname, "../renderer/index.html"), { hash: "waveform" });
   }
   waveformWindow.on("closed", () => {
     waveformWindow = null;
     clearInterval(positionInterval);
     clearInterval(fullscreenInterval);
-    screen.removeListener("display-metrics-changed", handleDisplayChange);
-    screen.removeListener("work-area-changed", handleDisplayChange);
+    import_electron3.screen.removeListener("display-metrics-changed", handleDisplayChange);
   });
 };
-var isFullscreen = false;
-var checkFullscreenState = async () => {
-  try {
-    const { screen } = require("electron");
-    const activeWin = await import("active-win");
-    const result = await activeWin.default();
-    if (result && result.bounds) {
-      const cursorPoint = screen.getCursorScreenPoint();
-      const display = screen.getDisplayNearestPoint(cursorPoint);
-      const isFull = result.bounds.x === display.bounds.x && result.bounds.y === display.bounds.y && result.bounds.width === display.bounds.width && result.bounds.height === display.bounds.height;
-      isFullscreen = isFull;
-    }
-  } catch (e) {
-    isFullscreen = false;
-  }
-};
-var updateWaveformPosition = () => {
-  if (!waveformWindow || waveformWindow.isDestroyed()) return;
-  const { screen } = require("electron");
-  const cursorPoint = screen.getCursorScreenPoint();
-  const display = screen.getDisplayNearestPoint(cursorPoint);
-  const { x, y, width, height } = display.workArea;
-  const winBounds = waveformWindow.getBounds();
-  let targetX = Math.floor(x + width / 2 - winBounds.width / 2);
-  let targetY = Math.floor(y + height - winBounds.height - 8);
-  if (isFullscreen) {
-    const absoluteBottom = display.bounds.y + display.bounds.height;
-    targetY = Math.floor(absoluteBottom - winBounds.height - 8);
-  }
-  if (winBounds.x !== targetX || winBounds.y !== targetY) {
-    waveformWindow.setPosition(targetX, targetY);
-  }
-};
-import_electron2.ipcMain.handle("open-waveform", () => {
+var showWaveformWindow = () => {
   if (!waveformWindow) {
     createWaveformWindow();
   } else {
     waveformWindow.show();
   }
-});
-import_electron2.ipcMain.handle("get-settings", (_event, key) => {
-  return store.get(key);
-});
+};
+var getWaveformWindow = () => {
+  return waveformWindow;
+};
+
+// src/main/protocol/deepLinkHandler.ts
+var registerProtocol = () => {
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      import_electron4.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path4.resolve)(process.argv[1])]);
+    }
+  } else {
+    import_electron4.app.setAsDefaultProtocolClient("voicescribe");
+  }
+};
+var setupSingleInstanceLock = (onSecondInstance) => {
+  const gotTheLock = import_electron4.app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    import_electron4.app.quit();
+    return false;
+  }
+  import_electron4.app.on("second-instance", (_event, commandLine) => {
+    const url = commandLine.find((arg) => arg.startsWith("voicescribe://"));
+    onSecondInstance(url);
+  });
+  return true;
+};
+var setupMacOSProtocolHandler = (onOpenUrl) => {
+  import_electron4.app.on("open-url", (event, url) => {
+    event.preventDefault();
+    onOpenUrl(url);
+  });
+};
+var getMainWindow = () => {
+  const waveformWindow2 = getWaveformWindow();
+  return import_electron4.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow2);
+};
+
+// src/main/ipc/permissionsHandlers.ts
+var import_electron5 = require("electron");
+var registerPermissionsHandlers = () => {
+  import_electron5.ipcMain.handle("check-accessibility", () => {
+    if (process.platform === "darwin") {
+      return import_electron5.systemPreferences.isTrustedAccessibilityClient(false);
+    }
+    return true;
+  });
+  import_electron5.ipcMain.handle("request-accessibility", () => {
+    if (process.platform === "darwin") {
+      return import_electron5.systemPreferences.isTrustedAccessibilityClient(true);
+    }
+    return true;
+  });
+  import_electron5.ipcMain.handle("check-microphone", () => {
+    if (process.platform === "darwin") {
+      return import_electron5.systemPreferences.getMediaAccessStatus("microphone");
+    }
+    return "granted";
+  });
+  import_electron5.ipcMain.handle("request-microphone", async () => {
+    if (process.platform === "darwin") {
+      return await import_electron5.systemPreferences.askForMediaAccess("microphone");
+    }
+    return true;
+  });
+  import_electron5.ipcMain.handle("check-permissions", () => {
+    const micStatus = process.platform === "darwin" ? import_electron5.systemPreferences.getMediaAccessStatus("microphone") : "granted";
+    const accessibilityStatus = process.platform === "darwin" ? import_electron5.systemPreferences.isTrustedAccessibilityClient(false) : true;
+    return {
+      microphone: micStatus,
+      accessibility: accessibilityStatus
+    };
+  });
+};
+
+// src/main/ipc/nativeHandlers.ts
+var import_electron6 = require("electron");
+var import_child_process = require("child_process");
+var registerNativeHandlers = () => {
+  import_electron6.ipcMain.handle("get-active-app", async () => {
+    try {
+      const activeWin = await import("active-win");
+      const result = await activeWin.default();
+      return {
+        title: result?.title || "",
+        owner: {
+          name: result?.owner?.name || "",
+          bundleId: result?.owner?.bundleId || "",
+          path: result?.owner?.path || ""
+        }
+      };
+    } catch (error) {
+      console.error("Failed to get active window:", error);
+      return null;
+    }
+  });
+  import_electron6.ipcMain.handle("insert-text", async (_event, text) => {
+    try {
+      import_electron6.clipboard.writeText(text);
+      if (process.platform === "darwin") {
+        const script = `tell application "System Events" to keystroke "v" using command down`;
+        (0, import_child_process.exec)(`osascript -e '${script}'`);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error("Failed to insert text:", error);
+      return false;
+    }
+  });
+  import_electron6.ipcMain.handle("resize-window", (_event, width, height) => {
+    const window = import_electron6.BrowserWindow.getFocusedWindow();
+    if (window) {
+      window.setSize(width, height, true);
+      window.center();
+    }
+  });
+  import_electron6.ipcMain.on("set-ignore-mouse-events", (event, ignore, options) => {
+    const window = import_electron6.BrowserWindow.fromWebContents(event.sender);
+    if (window) {
+      window.setIgnoreMouseEvents(ignore, options);
+    }
+  });
+};
+
+// src/main/ipc/settingsHandlers.ts
+var import_electron7 = require("electron");
+var import_electron_store2 = __toESM(require_electron_store());
+var store2 = new import_electron_store2.default();
 var updateGlobalShortcuts = () => {
-  import_electron4.globalShortcut.unregisterAll();
-  const pushToTalkKey = store.get("pushToTalkKey");
-  const handsFreeKey = store.get("handsFreeModeKey");
+  import_electron7.globalShortcut.unregisterAll();
+  const pushToTalkKey = store2.get("pushToTalkKey");
+  const handsFreeKey = store2.get("handsFreeModeKey");
   if (pushToTalkKey) {
     try {
       const accelerator = pushToTalkKey.replace("Cmd", "Command");
-      import_electron4.globalShortcut.register(accelerator, () => {
-        const wins = import_electron.BrowserWindow.getAllWindows();
+      import_electron7.globalShortcut.register(accelerator, () => {
+        const wins = import_electron7.BrowserWindow.getAllWindows();
         wins.forEach((w) => w.webContents.send("shortcut-triggered", "pushToTalk"));
         console.log("Push to Talk Triggered");
       });
@@ -16335,8 +16354,8 @@ var updateGlobalShortcuts = () => {
   if (handsFreeKey) {
     try {
       const accelerator = handsFreeKey.replace("Cmd", "Command");
-      import_electron4.globalShortcut.register(accelerator, () => {
-        const wins = import_electron.BrowserWindow.getAllWindows();
+      import_electron7.globalShortcut.register(accelerator, () => {
+        const wins = import_electron7.BrowserWindow.getAllWindows();
         wins.forEach((w) => w.webContents.send("shortcut-triggered", "handsFree"));
         console.log("Hands Free Triggered");
       });
@@ -16345,21 +16364,80 @@ var updateGlobalShortcuts = () => {
     }
   }
 };
-import_electron.app.on("ready", () => {
+var registerSettingsHandlers = () => {
+  import_electron7.ipcMain.handle("get-settings", (_event, key) => {
+    return store2.get(key);
+  });
+  import_electron7.ipcMain.handle("set-setting", (_event, key, value) => {
+    store2.set(key, value);
+    if (key === "pushToTalkKey" || key === "handsFreeModeKey") {
+      updateGlobalShortcuts();
+    }
+  });
+  import_electron7.ipcMain.handle("get-all-settings", () => {
+    return store2.store;
+  });
+};
+var initializeGlobalShortcuts = () => {
   updateGlobalShortcuts();
-});
-import_electron2.ipcMain.handle("set-setting", (_event, key, value) => {
-  store.set(key, value);
-  if (key === "pushToTalkKey" || key === "handsFreeModeKey") {
-    updateGlobalShortcuts();
+};
+
+// src/main/ipc/windowHandlers.ts
+var import_electron8 = require("electron");
+var registerWindowHandlers = () => {
+  import_electron8.ipcMain.handle("open-waveform", () => {
+    showWaveformWindow();
+  });
+};
+
+// src/main/index.ts
+registerProtocol();
+var hasLock = setupSingleInstanceLock((url) => {
+  const mainWindow = getMainWindow();
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    if (url) {
+      mainWindow.webContents.send("deep-link", url);
+    }
   }
 });
-import_electron2.ipcMain.handle("get-all-settings", () => {
-  return store.store;
+if (!hasLock) {
+}
+setupMacOSProtocolHandler((url) => {
+  const mainWindow = getMainWindow();
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.webContents.send("deep-link", url);
+  }
 });
-import_electron2.ipcMain.on("set-ignore-mouse-events", (event, ignore, options) => {
-  const window = import_electron.BrowserWindow.fromWebContents(event.sender);
-  if (window) {
-    window.setIgnoreMouseEvents(ignore, options);
+import_electron9.app.whenReady().then(() => {
+  const mainWindow = createMainWindow();
+  const handleQuit = () => {
+    setIsQuitting(true);
+    import_electron9.app.quit();
+  };
+  createTray(mainWindow, handleQuit);
+  registerPermissionsHandlers();
+  registerNativeHandlers();
+  registerSettingsHandlers();
+  registerWindowHandlers();
+  import_electron9.app.on("activate", () => {
+    if (import_electron9.BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
+    } else {
+      mainWindow.show();
+    }
+  });
+});
+import_electron9.app.on("ready", () => {
+  initializeGlobalShortcuts();
+});
+import_electron9.app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    import_electron9.app.quit();
   }
 });

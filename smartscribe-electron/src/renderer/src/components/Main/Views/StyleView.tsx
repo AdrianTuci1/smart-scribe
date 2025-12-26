@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageContext, WritingStyle } from '../../../types';
-import { MessageCircle, Mail, Send, MoreHorizontal, Info } from 'lucide-react';
+import { apiService } from '../../../services/api';
+import { MessageCircle, Mail, Send, MoreHorizontal, Info, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import './StyleView.css';
 
@@ -13,15 +14,50 @@ export const StyleView: React.FC = () => {
         [MessageContext.Email]: WritingStyle.Formal,
         [MessageContext.Other]: WritingStyle.Casual
     });
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Load preferences from API
+    useEffect(() => {
+        const loadPreferences = async () => {
+            setIsLoading(true);
+            try {
+                const data = await apiService.getStylePreferences();
+                if (data && data.preferences) {
+                    setPreferences(data.preferences);
+                }
+            } catch (error) {
+                console.error('Failed to load style preferences', error);
+                // Keep default preferences on error
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadPreferences();
+    }, []);
 
     const currentStyle = preferences[selectedContext] || WritingStyle.Casual;
 
-    const handleSelectStyle = (style: WritingStyle) => {
-        setPreferences(prev => ({
-            ...prev,
+    const handleSelectStyle = async (style: WritingStyle) => {
+        const newPreferences = {
+            ...preferences,
             [selectedContext]: style
-        }));
-        // TODO: Sync to backend if needed
+        };
+
+        // Optimistic update
+        setPreferences(newPreferences);
+        setIsSaving(true);
+
+        try {
+            await apiService.updateStylePreferences({ preferences: newPreferences });
+        } catch (error) {
+            console.error('Failed to save style preferences', error);
+            // Revert on error
+            setPreferences(preferences);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -41,6 +77,7 @@ export const StyleView: React.FC = () => {
                                     "style-tab-btn",
                                     selectedContext === context && "active"
                                 )}
+                                disabled={isLoading}
                             >
                                 {context}
                                 {selectedContext === context && (
@@ -68,17 +105,25 @@ export const StyleView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Style Options */}
-                <div className="style-grid">
-                    {Object.values(WritingStyle).map(style => (
-                        <StyleOptionCard
-                            key={style}
-                            style={style}
-                            isSelected={currentStyle === style}
-                            onSelect={() => handleSelectStyle(style)}
-                        />
-                    ))}
-                </div>
+                {/* Loading State */}
+                {isLoading ? (
+                    <div className="loading-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                        <Loader2 className="loading-spinner" size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                    </div>
+                ) : (
+                    /* Style Options */
+                    <div className="style-grid">
+                        {Object.values(WritingStyle).map(style => (
+                            <StyleOptionCard
+                                key={style}
+                                style={style}
+                                isSelected={currentStyle === style}
+                                onSelect={() => handleSelectStyle(style)}
+                                disabled={isSaving}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -88,7 +133,8 @@ const StyleOptionCard: React.FC<{
     style: WritingStyle;
     isSelected: boolean;
     onSelect: () => void;
-}> = ({ style, isSelected, onSelect }) => {
+    disabled?: boolean;
+}> = ({ style, isSelected, onSelect, disabled = false }) => {
 
     const getExample = (s: WritingStyle) => {
         switch (s) {
@@ -108,10 +154,11 @@ const StyleOptionCard: React.FC<{
 
     return (
         <div
-            onClick={onSelect}
+            onClick={disabled ? undefined : onSelect}
             className={clsx(
                 "style-card",
-                isSelected && "selected"
+                isSelected && "selected",
+                disabled && "opacity-50 cursor-not-allowed"
             )}
         >
             <div>

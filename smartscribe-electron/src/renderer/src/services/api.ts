@@ -138,6 +138,42 @@ class ApiService {
     public async getSettings() {
         return this.request('/config/settings');
     }
+
+    // Style Preferences
+    public async getStylePreferences(): Promise<any> {
+        return this.request('/user/style-preferences');
+    }
+
+    public async updateStylePreferences(preferences: any): Promise<void> {
+        return this.request('/user/style-preferences', {
+            method: 'PUT',
+            body: JSON.stringify(preferences)
+        });
+    }
+
+    // User Stats
+    public async getUserStats(): Promise<any> {
+        return this.request('/user/stats');
+    }
+
+    // Audio Download
+    public async downloadAudio(transcriptId: string): Promise<Blob> {
+        const url = `${API_CONFIG.BASE_URL}/transcripts/${transcriptId}/audio`;
+        const token = this.getToken();
+
+        const headers: HeadersInit = {};
+        if (token) {
+            (headers as any)['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+            throw new Error(`Failed to download audio: ${response.status}`);
+        }
+
+        return response.blob();
+    }
 }
 
 export const apiService = ApiService.getInstance();

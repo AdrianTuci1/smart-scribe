@@ -44,7 +44,7 @@
 .sidebar-item.active {
     background-color: #e5e7eb;
     /* gray-200 */
-    color: #111827;
+    color: white;
     /* gray-900 */
     font-weight: 500;
 }
@@ -247,7 +247,7 @@
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0 0 8px 0;
-    color: #111827;
+    color: white;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -293,8 +293,8 @@
 }
 
 .invite-tab.active {
-    color: #111827;
-    border-bottom-color: #111827;
+    color: white;
+    border-bottom-color: white;
     font-weight: 500;
 }
 
@@ -361,7 +361,7 @@
     font-size: 1rem;
     font-weight: 600;
     margin: 0 0 12px 0;
-    color: #111827;
+    color: white;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -432,7 +432,7 @@
     border-radius: 8px;
     font-size: 0.9rem;
     background-color: rgba(0, 0, 0, 0.02);
-    color: #111827;
+    color: white;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -448,7 +448,7 @@
 .copy-button,
 .send-button {
     padding: 10px 20px;
-    background-color: #111827;
+    background-color: white;
     color: white;
     border: none;
     border-radius: 8px;
@@ -468,7 +468,7 @@
     .copy-button,
     .send-button {
         background-color: white;
-        color: #111827;
+        color: white;
     }
 
     .copy-button:hover,

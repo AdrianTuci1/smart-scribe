@@ -28,10 +28,17 @@ export const HomeView: React.FC = () => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            // Fetch transcripts
-            const data = await apiService.getTranscripts();
-            // Ensure data is array
-            const list = Array.isArray(data) ? data : [];
+            // Fetch transcripts and stats in parallel
+            const [transcriptsData, statsData] = await Promise.all([
+                apiService.getTranscripts(),
+                apiService.getUserStats().catch(err => {
+                    console.warn('Failed to load stats, using calculated values', err);
+                    return null;
+                })
+            ]);
+
+            // Process transcripts
+            const list = Array.isArray(transcriptsData) ? transcriptsData : [];
             // Sort by date desc
             list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             setTranscripts(list);
@@ -44,13 +51,22 @@ export const HomeView: React.FC = () => {
                 }
             }
 
-            // Calculate stats
-            const words = list.reduce((acc, t) => acc + (t.text ? t.text.split(' ').length : 0), 0);
-            setStats({
-                streak: 1, // Mock
-                words,
-                wpm: words > 0 ? 65 : 0 // Mock/Simple calc
-            });
+            // Use stats from API if available, otherwise calculate from transcripts
+            if (statsData && statsData.streak !== undefined) {
+                setStats({
+                    streak: statsData.streak || 0,
+                    words: statsData.totalWords || 0,
+                    wpm: statsData.averageWpm || 0
+                });
+            } else {
+                // Fallback: Calculate stats from transcripts
+                const words = list.reduce((acc, t) => acc + (t.text ? t.text.split(' ').length : 0), 0);
+                setStats({
+                    streak: 1, // Mock
+                    words,
+                    wpm: words > 0 ? 65 : 0 // Mock/Simple calc
+                });
+            }
         } catch (error) {
             console.error('Failed to load transcripts', error);
         } finally {
@@ -128,48 +144,6 @@ export const HomeView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Flow Section */}
-                <div className="flow-section">
-                    <h2 className="flow-title">
-                        Get back into your <span>Flow</span>
-                    </h2>
-                    <div className="flow-grid">
-                        {/* Card 1: Apple Notes */}
-                        <button className="flow-card group">
-                            <div className="flow-icon-wrapper notes">
-                                {/* Use an icon or image here. Simple folder icon for now */}
-                                <svg className="flow-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                            </div>
-                            <span className="flow-card-label">
-                                Apple Notes
-                                <span className="flow-arrow">↗</span>
-                            </span>
-                        </button>
-
-                        {/* Card 2: Google Antigravity */}
-                        <button className="flow-card group">
-                            <div className="flow-icon-wrapper antigravity">
-                                <svg className="flow-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                            </div>
-                            <span className="flow-card-label">
-                                Google Antigravity
-                                <span className="flow-arrow">↗</span>
-                            </span>
-                        </button>
-
-                        {/* Card 3: Cursor */}
-                        <button className="flow-card group">
-                            <div className="flow-icon-wrapper cursor">
-                                {/* Cursor logo approx */}
-                                <svg className="flow-icon-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21 13v10h-6v-6h-6v6h-6v-10h4.3c-0.5-1.7-1.3-3.0-2.3-4.1l3-1.8c2 2.3 2.7 5.7 3 10.9h6c0-5.7 1.5-8.5 4.5-9.4l0.4 3.4c-1.3 0.4-2.2 1.5-2.9 3.1h6z"></path></svg>
-                            </div>
-                            <span className="flow-card-label">
-                                Cursor
-                                <span className="flow-arrow">↗</span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
 
                 {/* Timeline Section */}
                 {isLoading ? (
@@ -198,9 +172,32 @@ export const HomeView: React.FC = () => {
                                             onCopy={handleCopy}
                                             onFlag={handleFlag}
                                             onUndoAIEdit={() => console.log('Undo AI edit', t.id)}
-                                            onRetry={() => console.log('Retry transcript', t.id)}
+                                            onRetry={async () => {
+                                                try {
+                                                    await apiService.retryTranscription(t.id);
+                                                    // Reload transcripts after retry
+                                                    loadData();
+                                                } catch (error) {
+                                                    console.error('Failed to retry transcription', error);
+                                                }
+                                            }}
                                             onDelete={handleDelete}
-                                            onDownloadAudio={() => console.log('Download', t.id)}
+                                            onDownloadAudio={async (transcript) => {
+                                                try {
+                                                    const blob = await apiService.downloadAudio(transcript.id);
+                                                    // Create a download link
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `transcript-${transcript.id}.mp3`;
+                                                    document.body.appendChild(a);
+                                                    a.click();
+                                                    window.URL.revokeObjectURL(url);
+                                                    document.body.removeChild(a);
+                                                } catch (error) {
+                                                    console.error('Failed to download audio', error);
+                                                }
+                                            }}
                                         />
                                     ))}
                                 </div>
