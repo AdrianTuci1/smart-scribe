@@ -1,44 +1,72 @@
 import { BrowserWindow, screen } from 'electron'
 import { join } from 'path'
+import { execFile } from 'child_process'
+import path from 'path'
+import fs from 'fs'
 
 let waveformWindow: BrowserWindow | null = null
 let isFullscreen = false
+// Worker removed
+let currentActiveApp: string = 'Unknown'
+
+const getBinaryPath = () => {
+    const binName = 'active-window'
+    // 1. Try dev path (cwd/resources/bin)
+    const devPath = path.resolve(process.cwd(), 'resources/bin', binName)
+    if (fs.existsSync(devPath)) return devPath
+
+    // 2. Try production resources path
+    // In prod, resource path handling might vary, but this covers dev.
+    return devPath
+}
+
+const binaryPath = getBinaryPath()
+
+const checkActiveWindow = () => {
+    execFile(binaryPath, (error, stdout, stderr) => {
+        if (error) {
+            // console.error('ActiveWindow error:', stderr || error.message)
+            return
+        }
+        try {
+            const win = JSON.parse(stdout)
+
+            // Log debug message from Swift helper
+            if (win.debug) console.log(win.debug)
+
+            // Map Swift helper fields: appName, windowTitle
+            currentActiveApp = win ? `${win.appName} (${win.windowTitle})` : 'Unknown'
+
+            // Swift helper provides accurate fullscreen status
+            const newIsFullscreen = win ? win.fullscreen : false
+
+            if (isFullscreen !== newIsFullscreen) {
+                console.log(`Fullscreen state changed: ${isFullscreen} -> ${newIsFullscreen}`)
+                isFullscreen = newIsFullscreen
+                if (waveformWindow && !waveformWindow.isDestroyed()) {
+                    // Update workspace visibility:
+                    // - True: allows floating over fullscreen apps
+                    // - False: restricts to current desktop (fixes movement between monitors)
+                    waveformWindow.setVisibleOnAllWorkspaces(isFullscreen, { visibleOnFullScreen: isFullscreen })
+
+                    // - Low level: floating (standard always on top)
+                    // - High level: screen-saver (above fullscreen apps)
+                    const level = isFullscreen ? 'screen-saver' : 'floating'
+                    waveformWindow.setAlwaysOnTop(true, level)
+
+                    waveformWindow.webContents.send('fullscreen-state-changed', isFullscreen)
+                }
+                updateWaveformPosition()
+            }
+        } catch (e) {
+            console.error('Failed to parse active-window output', e)
+        }
+    })
+}
 
 const checkFullscreenState = async () => {
-    try {
-        const cursorPoint = screen.getCursorScreenPoint()
-        const display = screen.getDisplayNearestPoint(cursorPoint)
-
-        // When any app is in fullscreen on macOS, the menu bar is hidden
-        // This means workArea.y will be 0 (no menu bar offset)
-        // In normal mode, workArea.y > 0 (menu bar takes space at top)
-        const isMenuBarHidden = display.workArea.y === 0
-
-        console.log('Fullscreen Check:', {
-            workArea: display.workArea,
-            bounds: display.bounds,
-            isMenuBarHidden,
-            finalFullscreenState: isMenuBarHidden
-        })
-
-        if (isFullscreen !== isMenuBarHidden) {
-            console.log(`Fullscreen state changed: ${isFullscreen} -> ${isMenuBarHidden}`)
-            isFullscreen = isMenuBarHidden
-            if (waveformWindow && !waveformWindow.isDestroyed()) {
-                waveformWindow.webContents.send('fullscreen-state-changed', isFullscreen)
-            }
-            // Immediately update position when fullscreen state changes
-            updateWaveformPosition()
-        }
-    } catch (e) {
-        console.error('Error checking fullscreen state:', e)
-        if (isFullscreen !== false) {
-            isFullscreen = false
-            if (waveformWindow && !waveformWindow.isDestroyed()) {
-                waveformWindow.webContents.send('fullscreen-state-changed', isFullscreen)
-            }
-        }
-    }
+    // Request update directly
+    checkActiveWindow()
 }
 
 const updateWaveformPosition = () => {
@@ -59,14 +87,6 @@ const updateWaveformPosition = () => {
         console.log('Fullscreen mode: positioning at absolute bottom', { targetY, absoluteBottom })
     }
 
-    console.log('Position update:', {
-        isFullscreen,
-        workArea: display.workArea,
-        displayBounds: display.bounds,
-        currentPos: { x: winBounds.x, y: winBounds.y },
-        targetPos: { x: targetX, y: targetY }
-    })
-
     if (winBounds.x !== targetX || winBounds.y !== targetY) {
         waveformWindow.setPosition(targetX, targetY)
     }
@@ -74,6 +94,8 @@ const updateWaveformPosition = () => {
 
 export const createWaveformWindow = (): void => {
     if (waveformWindow) return
+
+    // Worker start removed
 
     waveformWindow = new BrowserWindow({
         width: 600,
@@ -85,7 +107,7 @@ export const createWaveformWindow = (): void => {
         resizable: false,
         hasShadow: false,
         focusable: true,
-        type: 'panel',
+        // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             sandbox: false,
@@ -113,7 +135,8 @@ export const createWaveformWindow = (): void => {
 
     const handleDisplayChange = () => {
         if (waveformWindow && !waveformWindow.isDestroyed()) {
-            updateWaveformPosition()
+            // Check fullscreen state immediately when display metrics change (like Space transition)
+            checkFullscreenState()
         }
     }
 
@@ -129,9 +152,28 @@ export const createWaveformWindow = (): void => {
 
     waveformWindow.on('closed', () => {
         waveformWindow = null
+        // Worker cleanup removed
         clearInterval(positionInterval)
         clearInterval(fullscreenInterval)
         screen.removeListener('display-metrics-changed', handleDisplayChange)
+    })
+
+    waveformWindow.on('enter-full-screen', () => {
+        // System started moving to a new Space
+        console.log('Window entered full-screen state change start')
+
+        // Wait for the animation to finish (approx 500ms on macOS)
+        setTimeout(() => {
+            // Window is now stable on the new Space
+            console.log("Window is now stable on the new Space.");
+
+            // Check state again
+            const isNowFull = waveformWindow?.isFullScreen();
+            console.log("Confirmation status:", isNowFull);
+
+            // Trigger custom state check
+            checkFullscreenState()
+        }, 600)
     })
 }
 

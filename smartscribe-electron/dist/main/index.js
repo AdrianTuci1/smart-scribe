@@ -47,8 +47,8 @@ var require_dot_prop = __commonJS({
       "constructor"
     ]);
     var isValidPath = (pathSegments) => !pathSegments.some((segment) => disallowedKeys.has(segment));
-    function getPathSegments(path) {
-      const pathArray = path.split(".");
+    function getPathSegments(path2) {
+      const pathArray = path2.split(".");
       const parts = [];
       for (let i = 0; i < pathArray.length; i++) {
         let p = pathArray[i];
@@ -64,11 +64,11 @@ var require_dot_prop = __commonJS({
       return parts;
     }
     module2.exports = {
-      get(object, path, value) {
-        if (!isObj(object) || typeof path !== "string") {
+      get(object, path2, value) {
+        if (!isObj(object) || typeof path2 !== "string") {
           return value === void 0 ? object : value;
         }
-        const pathArray = getPathSegments(path);
+        const pathArray = getPathSegments(path2);
         if (pathArray.length === 0) {
           return;
         }
@@ -83,12 +83,12 @@ var require_dot_prop = __commonJS({
         }
         return object === void 0 ? value : object;
       },
-      set(object, path, value) {
-        if (!isObj(object) || typeof path !== "string") {
+      set(object, path2, value) {
+        if (!isObj(object) || typeof path2 !== "string") {
           return object;
         }
         const root = object;
-        const pathArray = getPathSegments(path);
+        const pathArray = getPathSegments(path2);
         for (let i = 0; i < pathArray.length; i++) {
           const p = pathArray[i];
           if (!isObj(object[p])) {
@@ -101,11 +101,11 @@ var require_dot_prop = __commonJS({
         }
         return root;
       },
-      delete(object, path) {
-        if (!isObj(object) || typeof path !== "string") {
+      delete(object, path2) {
+        if (!isObj(object) || typeof path2 !== "string") {
           return false;
         }
-        const pathArray = getPathSegments(path);
+        const pathArray = getPathSegments(path2);
         for (let i = 0; i < pathArray.length; i++) {
           const p = pathArray[i];
           if (i === pathArray.length - 1) {
@@ -118,11 +118,11 @@ var require_dot_prop = __commonJS({
           }
         }
       },
-      has(object, path) {
-        if (!isObj(object) || typeof path !== "string") {
+      has(object, path2) {
+        if (!isObj(object) || typeof path2 !== "string") {
           return false;
         }
-        const pathArray = getPathSegments(path);
+        const pathArray = getPathSegments(path2);
         if (pathArray.length === 0) {
           return false;
         }
@@ -146,15 +146,15 @@ var require_dot_prop = __commonJS({
 var require_path_exists = __commonJS({
   "node_modules/path-exists/index.js"(exports2, module2) {
     "use strict";
-    var fs = require("fs");
+    var fs2 = require("fs");
     module2.exports = (fp) => new Promise((resolve2) => {
-      fs.access(fp, (err) => {
+      fs2.access(fp, (err) => {
         resolve2(!err);
       });
     });
     module2.exports.sync = (fp) => {
       try {
-        fs.accessSync(fp);
+        fs2.accessSync(fp);
         return true;
       } catch (err) {
         return false;
@@ -257,21 +257,21 @@ var require_p_locate = __commonJS({
 var require_locate_path = __commonJS({
   "node_modules/locate-path/index.js"(exports2, module2) {
     "use strict";
-    var path = require("path");
+    var path2 = require("path");
     var pathExists = require_path_exists();
     var pLocate = require_p_locate();
     module2.exports = (iterable, options) => {
       options = Object.assign({
         cwd: process.cwd()
       }, options);
-      return pLocate(iterable, (el) => pathExists(path.resolve(options.cwd, el)), options);
+      return pLocate(iterable, (el) => pathExists(path2.resolve(options.cwd, el)), options);
     };
     module2.exports.sync = (iterable, options) => {
       options = Object.assign({
         cwd: process.cwd()
       }, options);
       for (const el of iterable) {
-        if (pathExists.sync(path.resolve(options.cwd, el))) {
+        if (pathExists.sync(path2.resolve(options.cwd, el))) {
           return el;
         }
       }
@@ -283,39 +283,39 @@ var require_locate_path = __commonJS({
 var require_find_up = __commonJS({
   "node_modules/find-up/index.js"(exports2, module2) {
     "use strict";
-    var path = require("path");
+    var path2 = require("path");
     var locatePath = require_locate_path();
     module2.exports = (filename, opts = {}) => {
-      const startDir = path.resolve(opts.cwd || "");
-      const { root } = path.parse(startDir);
+      const startDir = path2.resolve(opts.cwd || "");
+      const { root } = path2.parse(startDir);
       const filenames = [].concat(filename);
       return new Promise((resolve2) => {
         (function find(dir) {
           locatePath(filenames, { cwd: dir }).then((file) => {
             if (file) {
-              resolve2(path.join(dir, file));
+              resolve2(path2.join(dir, file));
             } else if (dir === root) {
               resolve2(null);
             } else {
-              find(path.dirname(dir));
+              find(path2.dirname(dir));
             }
           });
         })(startDir);
       });
     };
     module2.exports.sync = (filename, opts = {}) => {
-      let dir = path.resolve(opts.cwd || "");
-      const { root } = path.parse(dir);
+      let dir = path2.resolve(opts.cwd || "");
+      const { root } = path2.parse(dir);
       const filenames = [].concat(filename);
       while (true) {
         const file = locatePath.sync(filenames, { cwd: dir });
         if (file) {
-          return path.join(dir, file);
+          return path2.join(dir, file);
         }
         if (dir === root) {
           return null;
         }
-        dir = path.dirname(dir);
+        dir = path2.dirname(dir);
       }
     };
   }
@@ -335,42 +335,42 @@ var require_pkg_up = __commonJS({
 var require_env_paths = __commonJS({
   "node_modules/env-paths/index.js"(exports2, module2) {
     "use strict";
-    var path = require("path");
+    var path2 = require("path");
     var os = require("os");
     var homedir = os.homedir();
     var tmpdir = os.tmpdir();
     var { env } = process;
     var macos = (name) => {
-      const library = path.join(homedir, "Library");
+      const library = path2.join(homedir, "Library");
       return {
-        data: path.join(library, "Application Support", name),
-        config: path.join(library, "Preferences", name),
-        cache: path.join(library, "Caches", name),
-        log: path.join(library, "Logs", name),
-        temp: path.join(tmpdir, name)
+        data: path2.join(library, "Application Support", name),
+        config: path2.join(library, "Preferences", name),
+        cache: path2.join(library, "Caches", name),
+        log: path2.join(library, "Logs", name),
+        temp: path2.join(tmpdir, name)
       };
     };
     var windows = (name) => {
-      const appData = env.APPDATA || path.join(homedir, "AppData", "Roaming");
-      const localAppData = env.LOCALAPPDATA || path.join(homedir, "AppData", "Local");
+      const appData = env.APPDATA || path2.join(homedir, "AppData", "Roaming");
+      const localAppData = env.LOCALAPPDATA || path2.join(homedir, "AppData", "Local");
       return {
         // Data/config/cache/log are invented by me as Windows isn't opinionated about this
-        data: path.join(localAppData, name, "Data"),
-        config: path.join(appData, name, "Config"),
-        cache: path.join(localAppData, name, "Cache"),
-        log: path.join(localAppData, name, "Log"),
-        temp: path.join(tmpdir, name)
+        data: path2.join(localAppData, name, "Data"),
+        config: path2.join(appData, name, "Config"),
+        cache: path2.join(localAppData, name, "Cache"),
+        log: path2.join(localAppData, name, "Log"),
+        temp: path2.join(tmpdir, name)
       };
     };
     var linux = (name) => {
-      const username = path.basename(homedir);
+      const username = path2.basename(homedir);
       return {
-        data: path.join(env.XDG_DATA_HOME || path.join(homedir, ".local", "share"), name),
-        config: path.join(env.XDG_CONFIG_HOME || path.join(homedir, ".config"), name),
-        cache: path.join(env.XDG_CACHE_HOME || path.join(homedir, ".cache"), name),
+        data: path2.join(env.XDG_DATA_HOME || path2.join(homedir, ".local", "share"), name),
+        config: path2.join(env.XDG_CONFIG_HOME || path2.join(homedir, ".config"), name),
+        cache: path2.join(env.XDG_CACHE_HOME || path2.join(homedir, ".cache"), name),
         // https://wiki.debian.org/XDGBaseDirectorySpecification#state
-        log: path.join(env.XDG_STATE_HOME || path.join(homedir, ".local", "state"), name),
-        temp: path.join(tmpdir, username, name)
+        log: path2.join(env.XDG_STATE_HOME || path2.join(homedir, ".local", "state"), name),
+        temp: path2.join(tmpdir, username, name)
       };
     };
     var envPaths = (name, options) => {
@@ -598,41 +598,41 @@ var require_fs = __commonJS({
   "node_modules/atomically/dist/utils/fs.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var fs = require("fs");
+    var fs2 = require("fs");
     var util_1 = require("util");
     var attemptify_1 = require_attemptify();
     var fs_handlers_1 = require_fs_handlers();
     var retryify_1 = require_retryify();
     var FS = {
-      chmodAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.chmod), fs_handlers_1.default.onChangeError),
-      chownAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.chown), fs_handlers_1.default.onChangeError),
-      closeAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.close)),
-      fsyncAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.fsync)),
-      mkdirAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.mkdir)),
-      realpathAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.realpath)),
-      statAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.stat)),
-      unlinkAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs.unlink)),
-      closeRetry: retryify_1.retryifyAsync(util_1.promisify(fs.close), fs_handlers_1.default.isRetriableError),
-      fsyncRetry: retryify_1.retryifyAsync(util_1.promisify(fs.fsync), fs_handlers_1.default.isRetriableError),
-      openRetry: retryify_1.retryifyAsync(util_1.promisify(fs.open), fs_handlers_1.default.isRetriableError),
-      readFileRetry: retryify_1.retryifyAsync(util_1.promisify(fs.readFile), fs_handlers_1.default.isRetriableError),
-      renameRetry: retryify_1.retryifyAsync(util_1.promisify(fs.rename), fs_handlers_1.default.isRetriableError),
-      statRetry: retryify_1.retryifyAsync(util_1.promisify(fs.stat), fs_handlers_1.default.isRetriableError),
-      writeRetry: retryify_1.retryifyAsync(util_1.promisify(fs.write), fs_handlers_1.default.isRetriableError),
-      chmodSyncAttempt: attemptify_1.attemptifySync(fs.chmodSync, fs_handlers_1.default.onChangeError),
-      chownSyncAttempt: attemptify_1.attemptifySync(fs.chownSync, fs_handlers_1.default.onChangeError),
-      closeSyncAttempt: attemptify_1.attemptifySync(fs.closeSync),
-      mkdirSyncAttempt: attemptify_1.attemptifySync(fs.mkdirSync),
-      realpathSyncAttempt: attemptify_1.attemptifySync(fs.realpathSync),
-      statSyncAttempt: attemptify_1.attemptifySync(fs.statSync),
-      unlinkSyncAttempt: attemptify_1.attemptifySync(fs.unlinkSync),
-      closeSyncRetry: retryify_1.retryifySync(fs.closeSync, fs_handlers_1.default.isRetriableError),
-      fsyncSyncRetry: retryify_1.retryifySync(fs.fsyncSync, fs_handlers_1.default.isRetriableError),
-      openSyncRetry: retryify_1.retryifySync(fs.openSync, fs_handlers_1.default.isRetriableError),
-      readFileSyncRetry: retryify_1.retryifySync(fs.readFileSync, fs_handlers_1.default.isRetriableError),
-      renameSyncRetry: retryify_1.retryifySync(fs.renameSync, fs_handlers_1.default.isRetriableError),
-      statSyncRetry: retryify_1.retryifySync(fs.statSync, fs_handlers_1.default.isRetriableError),
-      writeSyncRetry: retryify_1.retryifySync(fs.writeSync, fs_handlers_1.default.isRetriableError)
+      chmodAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.chmod), fs_handlers_1.default.onChangeError),
+      chownAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.chown), fs_handlers_1.default.onChangeError),
+      closeAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.close)),
+      fsyncAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.fsync)),
+      mkdirAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.mkdir)),
+      realpathAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.realpath)),
+      statAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.stat)),
+      unlinkAttempt: attemptify_1.attemptifyAsync(util_1.promisify(fs2.unlink)),
+      closeRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.close), fs_handlers_1.default.isRetriableError),
+      fsyncRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.fsync), fs_handlers_1.default.isRetriableError),
+      openRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.open), fs_handlers_1.default.isRetriableError),
+      readFileRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.readFile), fs_handlers_1.default.isRetriableError),
+      renameRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.rename), fs_handlers_1.default.isRetriableError),
+      statRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.stat), fs_handlers_1.default.isRetriableError),
+      writeRetry: retryify_1.retryifyAsync(util_1.promisify(fs2.write), fs_handlers_1.default.isRetriableError),
+      chmodSyncAttempt: attemptify_1.attemptifySync(fs2.chmodSync, fs_handlers_1.default.onChangeError),
+      chownSyncAttempt: attemptify_1.attemptifySync(fs2.chownSync, fs_handlers_1.default.onChangeError),
+      closeSyncAttempt: attemptify_1.attemptifySync(fs2.closeSync),
+      mkdirSyncAttempt: attemptify_1.attemptifySync(fs2.mkdirSync),
+      realpathSyncAttempt: attemptify_1.attemptifySync(fs2.realpathSync),
+      statSyncAttempt: attemptify_1.attemptifySync(fs2.statSync),
+      unlinkSyncAttempt: attemptify_1.attemptifySync(fs2.unlinkSync),
+      closeSyncRetry: retryify_1.retryifySync(fs2.closeSync, fs_handlers_1.default.isRetriableError),
+      fsyncSyncRetry: retryify_1.retryifySync(fs2.fsyncSync, fs_handlers_1.default.isRetriableError),
+      openSyncRetry: retryify_1.retryifySync(fs2.openSync, fs_handlers_1.default.isRetriableError),
+      readFileSyncRetry: retryify_1.retryifySync(fs2.readFileSync, fs_handlers_1.default.isRetriableError),
+      renameSyncRetry: retryify_1.retryifySync(fs2.renameSync, fs_handlers_1.default.isRetriableError),
+      statSyncRetry: retryify_1.retryifySync(fs2.statSync, fs_handlers_1.default.isRetriableError),
+      writeSyncRetry: retryify_1.retryifySync(fs2.writeSync, fs_handlers_1.default.isRetriableError)
     };
     exports2.default = FS;
   }
@@ -698,7 +698,7 @@ var require_temp = __commonJS({
   "node_modules/atomically/dist/utils/temp.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path = require("path");
+    var path2 = require("path");
     var consts_1 = require_consts();
     var fs_1 = require_fs();
     var Temp = {
@@ -733,7 +733,7 @@ var require_temp = __commonJS({
         }
       },
       truncate: (filePath) => {
-        const basename = path.basename(filePath);
+        const basename = path2.basename(filePath);
         if (basename.length <= consts_1.LIMIT_BASENAME_LENGTH)
           return filePath;
         const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename);
@@ -754,7 +754,7 @@ var require_dist = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.writeFileSync = exports2.writeFile = exports2.readFileSync = exports2.readFile = void 0;
-    var path = require("path");
+    var path2 = require("path");
     var consts_1 = require_consts();
     var fs_1 = require_fs();
     var lang_1 = require_lang();
@@ -808,7 +808,7 @@ var require_dist = __commonJS({
               options.mode = stat.mode;
           }
         }
-        const parentPath = path.dirname(filePath);
+        const parentPath = path2.dirname(filePath);
         await fs_1.default.mkdirAttempt(parentPath, {
           mode: consts_1.DEFAULT_FOLDER_MODE,
           recursive: true
@@ -874,7 +874,7 @@ var require_dist = __commonJS({
               options.mode = stat.mode;
           }
         }
-        const parentPath = path.dirname(filePath);
+        const parentPath = path2.dirname(filePath);
         fs_1.default.mkdirSyncAttempt(parentPath, {
           mode: consts_1.DEFAULT_FOLDER_MODE,
           recursive: true
@@ -4113,8 +4113,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path) {
-      let input = path;
+    function removeDotSegments(path2) {
+      let input = path2;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -4313,8 +4313,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path && path !== "/" ? path : void 0;
+        const [path2, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -13317,12 +13317,12 @@ var require_dist2 = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs, exportName) {
+    function addFormats(ajv, list, fs2, exportName) {
       var _a;
       var _b;
       (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = codegen_1._`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs[f]);
+        ajv.addFormat(f, fs2[f]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -15434,8 +15434,8 @@ var require_source = __commonJS({
     var _Conf_defaultValues;
     Object.defineProperty(exports2, "__esModule", { value: true });
     var util_1 = require("util");
-    var fs = require("fs");
-    var path = require("path");
+    var fs2 = require("fs");
+    var path2 = require("path");
     var crypto = require("crypto");
     var assert = require("assert");
     var events_1 = require("events");
@@ -15458,7 +15458,7 @@ var require_source = __commonJS({
     var parentDir = "";
     try {
       delete require.cache[__filename];
-      parentDir = path.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+      parentDir = path2.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
     } catch (_c) {
     }
     var checkValueType = (key, value) => {
@@ -15494,7 +15494,7 @@ var require_source = __commonJS({
         };
         const getPackageData = onetime(() => {
           const packagePath = pkgUp.sync({ cwd: parentDir });
-          const packageData = packagePath && JSON.parse(fs.readFileSync(packagePath, "utf8"));
+          const packageData = packagePath && JSON.parse(fs2.readFileSync(packagePath, "utf8"));
           return packageData !== null && packageData !== void 0 ? packageData : {};
         });
         if (!options.cwd) {
@@ -15542,7 +15542,7 @@ var require_source = __commonJS({
         this.events = new events_1.EventEmitter();
         __classPrivateFieldSet(this, _Conf_encryptionKey, options.encryptionKey, "f");
         const fileExtension = options.fileExtension ? `.${options.fileExtension}` : "";
-        this.path = path.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
+        this.path = path2.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
         const fileStore = this.store;
         const store3 = Object.assign(createPlainObject(), options.defaults, fileStore);
         this._validate(store3);
@@ -15683,7 +15683,7 @@ var require_source = __commonJS({
       }
       get store() {
         try {
-          const data = fs.readFileSync(this.path, __classPrivateFieldGet(this, _Conf_encryptionKey, "f") ? null : "utf8");
+          const data = fs2.readFileSync(this.path, __classPrivateFieldGet(this, _Conf_encryptionKey, "f") ? null : "utf8");
           const dataString = this._encryptData(data);
           const deserializedData = this._deserialize(dataString);
           this._validate(deserializedData);
@@ -15759,7 +15759,7 @@ var require_source = __commonJS({
         throw new Error("Config schema violation: " + errors.join("; "));
       }
       _ensureDirectory() {
-        fs.mkdirSync(path.dirname(this.path), { recursive: true });
+        fs2.mkdirSync(path2.dirname(this.path), { recursive: true });
       }
       _write(value) {
         let data = this._serialize(value);
@@ -15770,13 +15770,13 @@ var require_source = __commonJS({
           data = Buffer.concat([initializationVector, Buffer.from(":"), cipher.update(Buffer.from(data)), cipher.final()]);
         }
         if (process.env.SNAP) {
-          fs.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
+          fs2.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
         } else {
           try {
             atomically.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
           } catch (error) {
             if ((error === null || error === void 0 ? void 0 : error.code) === "EXDEV") {
-              fs.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
+              fs2.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
               return;
             }
             throw error;
@@ -15785,15 +15785,15 @@ var require_source = __commonJS({
       }
       _watch() {
         this._ensureDirectory();
-        if (!fs.existsSync(this.path)) {
+        if (!fs2.existsSync(this.path)) {
           this._write(createPlainObject());
         }
         if (process.platform === "win32") {
-          fs.watch(this.path, { persistent: false }, debounceFn(() => {
+          fs2.watch(this.path, { persistent: false }, debounceFn(() => {
             this.events.emit("change");
           }, { wait: 100 }));
         } else {
-          fs.watchFile(this.path, { persistent: false }, debounceFn(() => {
+          fs2.watchFile(this.path, { persistent: false }, debounceFn(() => {
             this.events.emit("change");
           }, { wait: 5e3 }));
         }
@@ -15881,7 +15881,7 @@ var require_source = __commonJS({
 var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
-    var path = require("path");
+    var path2 = require("path");
     var { app: app4, ipcMain: ipcMain5, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
@@ -15923,7 +15923,7 @@ var require_electron_store = __commonJS({
           options.projectVersion = appVersion;
         }
         if (options.cwd) {
-          options.cwd = path.isAbsolute(options.cwd) ? options.cwd : path.join(defaultCwd, options.cwd);
+          options.cwd = path2.isAbsolute(options.cwd) ? options.cwd : path2.join(defaultCwd, options.cwd);
         } else {
           options.cwd = defaultCwd;
         }
@@ -16095,41 +16095,52 @@ var createTray = (mainWindow, onQuit) => {
 
 // src/main/protocol/deepLinkHandler.ts
 var import_electron4 = require("electron");
-var import_path4 = require("path");
+var import_path5 = require("path");
 
 // src/main/windows/waveformWindow.ts
 var import_electron3 = require("electron");
 var import_path3 = require("path");
+var import_child_process = require("child_process");
+var import_path4 = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
 var waveformWindow = null;
 var isFullscreen = false;
+var currentActiveApp = "Unknown";
+var getBinaryPath = () => {
+  const binName = "active-window";
+  const devPath = import_path4.default.resolve(process.cwd(), "resources/bin", binName);
+  if (import_fs.default.existsSync(devPath)) return devPath;
+  return devPath;
+};
+var binaryPath = getBinaryPath();
+var checkActiveWindow = () => {
+  (0, import_child_process.execFile)(binaryPath, (error, stdout, stderr) => {
+    if (error) {
+      return;
+    }
+    try {
+      const win = JSON.parse(stdout);
+      if (win.debug) console.log(win.debug);
+      currentActiveApp = win ? `${win.appName} (${win.windowTitle})` : "Unknown";
+      const newIsFullscreen = win ? win.fullscreen : false;
+      if (isFullscreen !== newIsFullscreen) {
+        console.log(`Fullscreen state changed: ${isFullscreen} -> ${newIsFullscreen}`);
+        isFullscreen = newIsFullscreen;
+        if (waveformWindow && !waveformWindow.isDestroyed()) {
+          waveformWindow.setVisibleOnAllWorkspaces(isFullscreen, { visibleOnFullScreen: isFullscreen });
+          const level = isFullscreen ? "screen-saver" : "floating";
+          waveformWindow.setAlwaysOnTop(true, level);
+          waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
+        }
+        updateWaveformPosition();
+      }
+    } catch (e) {
+      console.error("Failed to parse active-window output", e);
+    }
+  });
+};
 var checkFullscreenState = async () => {
-  try {
-    const cursorPoint = import_electron3.screen.getCursorScreenPoint();
-    const display = import_electron3.screen.getDisplayNearestPoint(cursorPoint);
-    const isMenuBarHidden = display.workArea.y === 0;
-    console.log("Fullscreen Check:", {
-      workArea: display.workArea,
-      bounds: display.bounds,
-      isMenuBarHidden,
-      finalFullscreenState: isMenuBarHidden
-    });
-    if (isFullscreen !== isMenuBarHidden) {
-      console.log(`Fullscreen state changed: ${isFullscreen} -> ${isMenuBarHidden}`);
-      isFullscreen = isMenuBarHidden;
-      if (waveformWindow && !waveformWindow.isDestroyed()) {
-        waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
-      }
-      updateWaveformPosition();
-    }
-  } catch (e) {
-    console.error("Error checking fullscreen state:", e);
-    if (isFullscreen !== false) {
-      isFullscreen = false;
-      if (waveformWindow && !waveformWindow.isDestroyed()) {
-        waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
-      }
-    }
-  }
+  checkActiveWindow();
 };
 var updateWaveformPosition = () => {
   if (!waveformWindow || waveformWindow.isDestroyed()) return;
@@ -16142,6 +16153,7 @@ var updateWaveformPosition = () => {
   if (isFullscreen) {
     const absoluteBottom = display.bounds.y + display.bounds.height;
     targetY = Math.floor(absoluteBottom - winBounds.height - 8);
+    console.log("Fullscreen mode: positioning at absolute bottom", { targetY, absoluteBottom });
   }
   if (winBounds.x !== targetX || winBounds.y !== targetY) {
     waveformWindow.setPosition(targetX, targetY);
@@ -16159,7 +16171,7 @@ var createWaveformWindow = () => {
     resizable: false,
     hasShadow: false,
     focusable: true,
-    type: "panel",
+    // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
     webPreferences: {
       preload: (0, import_path3.join)(__dirname, "../preload/index.js"),
       sandbox: false,
@@ -16183,7 +16195,7 @@ var createWaveformWindow = () => {
   }, 1e3);
   const handleDisplayChange = () => {
     if (waveformWindow && !waveformWindow.isDestroyed()) {
-      updateWaveformPosition();
+      checkFullscreenState();
     }
   };
   import_electron3.screen.on("display-metrics-changed", handleDisplayChange);
@@ -16197,6 +16209,15 @@ var createWaveformWindow = () => {
     clearInterval(positionInterval);
     clearInterval(fullscreenInterval);
     import_electron3.screen.removeListener("display-metrics-changed", handleDisplayChange);
+  });
+  waveformWindow.on("enter-full-screen", () => {
+    console.log("Window entered full-screen state change start");
+    setTimeout(() => {
+      console.log("Window is now stable on the new Space.");
+      const isNowFull = waveformWindow?.isFullScreen();
+      console.log("Confirmation status:", isNowFull);
+      checkFullscreenState();
+    }, 600);
   });
 };
 var showWaveformWindow = () => {
@@ -16214,7 +16235,7 @@ var getWaveformWindow = () => {
 var registerProtocol = () => {
   if (process.defaultApp) {
     if (process.argv.length >= 2) {
-      import_electron4.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path4.resolve)(process.argv[1])]);
+      import_electron4.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path5.resolve)(process.argv[1])]);
     }
   } else {
     import_electron4.app.setAsDefaultProtocolClient("voicescribe");
@@ -16282,7 +16303,7 @@ var registerPermissionsHandlers = () => {
 
 // src/main/ipc/nativeHandlers.ts
 var import_electron6 = require("electron");
-var import_child_process = require("child_process");
+var import_child_process2 = require("child_process");
 var registerNativeHandlers = () => {
   import_electron6.ipcMain.handle("get-active-app", async () => {
     try {
@@ -16306,7 +16327,7 @@ var registerNativeHandlers = () => {
       import_electron6.clipboard.writeText(text);
       if (process.platform === "darwin") {
         const script = `tell application "System Events" to keystroke "v" using command down`;
-        (0, import_child_process.exec)(`osascript -e '${script}'`);
+        (0, import_child_process2.exec)(`osascript -e '${script}'`);
         return true;
       } else {
         return false;
