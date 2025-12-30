@@ -1,0 +1,95 @@
+.data-control-container {
+    display: flex;
+    flex-direction: column;
+    display: flex;
+    flex-direction: column;
+    /* height: 100%; removed to allow clustering */
+    width: 100%;
+    max-width: 480px;
+    padding-top: 2rem;
+}
+
+.data-control-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 32px;
+    letter-spacing: -0.5px;
+}
+
+.data-option-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background-color: white;
+}
+
+.data-option-card:hover {
+    border-color: #d1d5db;
+}
+
+.data-option-card.selected {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}
+
+.data-option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.data-option-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.check-icon {
+    color: #10b981;
+}
+
+.data-option-description {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #4b5563;
+    margin: 0;
+}
+
+.privacy-note {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 12px;
+    line-height: 1.5;
+}
+
+.privacy-note strong {
+    color: #111827;
+    cursor: pointer;
+}
+
+.continue-button-container {
+    margin-top: auto;
+    padding-bottom: 20px;
+}
+
+.continue-button {
+    background-color: #1f2937;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.continue-button:hover {
+    background-color: #111827;
+}

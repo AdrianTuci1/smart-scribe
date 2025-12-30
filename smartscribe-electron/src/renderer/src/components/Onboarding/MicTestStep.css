@@ -1,0 +1,113 @@
+.mic-test-container {
+    display: flex;
+    flex-direction: column;
+    display: flex;
+    flex-direction: column;
+    /* height: 100%; removed */
+    width: 100%;
+    max-width: 480px;
+    padding-top: 2rem;
+}
+
+.mic-test-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+}
+
+.mic-test-subtitle {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #4b5563;
+    margin-bottom: 32px;
+}
+
+/* Right side card styling (visual side in layout, but here we might abuse it or this is the left side content? 
+   Wait, the design shows the question on the LEFT and the visualization on the RIGHT (yellow background). 
+   Actually, looking at image 3:
+   Left: "Speak to test your microphone", "Your computer's built-in mic..."
+   Right: A card "Do you see purple bars moving...?" with bars and buttons.
+   
+   So this component needs to utilize the OnboardingLayout split.
+   The `OnboardingLayout` puts `children` on the left.
+   The `visual` prop is typically an image.
+   
+   To achieve the design where the right side has interactive elements (card with buttons), 
+   I might need to modify `OnboardingLayout` to accept a React Node for the visual side, 
+   OR I implement this step's specific right-side content within the `visualImage` area if I modify the layout 
+   OR (simplest) I render the question on the left and pass a custom component to the right.
+   
+   Let's check `OnboardingLayout.tsx` again.
+   It takes `visualImage` (string).
+   I should modify `OnboardingLayout.tsx` to accept `visualContent` (ReactNode) to be flexible.
+*/
+
+.mic-visual-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.mic-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 24px;
+}
+
+.visualizer-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    height: 60px;
+    margin-bottom: 24px;
+    background-color: #f3f4f6;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.visualizer-bar {
+    width: 8px;
+    background-color: #d1d5db;
+    border-radius: 4px;
+    transition: height 0.1s ease, background-color 0.1s ease;
+    height: 100%;
+}
+
+.visualizer-bar.active {
+    background-color: #a78bfa;
+    /* Purple-ish */
+}
+
+.mic-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.change-mic-button {
+    background-color: #e5e7eb;
+    color: #374151;
+    border: none;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.confirm-mic-button {
+    background-color: #1f2937;
+    color: white;
+    border: none;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}

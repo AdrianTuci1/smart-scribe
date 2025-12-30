@@ -1,0 +1,184 @@
+{
+    "sourceOptions": [
+        {
+            "id": "social",
+            "label": "Social media"
+        },
+        {
+            "id": "youtube",
+            "label": "Youtube"
+        },
+        {
+            "id": "newsletter",
+            "label": "Newsletter"
+        },
+        {
+            "id": "ai_chat",
+            "label": "AI chat"
+        },
+        {
+            "id": "search",
+            "label": "Search engine"
+        },
+        {
+            "id": "event",
+            "label": "Event"
+        },
+        {
+            "id": "friend",
+            "label": "Friend"
+        },
+        {
+            "id": "colleague",
+            "label": "Colleague"
+        },
+        {
+            "id": "podcast",
+            "label": "Podcast"
+        },
+        {
+            "id": "article",
+            "label": "Article"
+        },
+        {
+            "id": "product_hunt",
+            "label": "Product Hunt"
+        },
+        {
+            "id": "techcrunch",
+            "label": "TechCrunch"
+        },
+        {
+            "id": "diary",
+            "label": "Diary of a CEO"
+        },
+        {
+            "id": "ruben",
+            "label": "Ruben Hassid"
+        },
+        {
+            "id": "radio",
+            "label": "Radio"
+        },
+        {
+            "id": "computerworld",
+            "label": "Computerworld"
+        },
+        {
+            "id": "opal",
+            "label": "Opal"
+        },
+        {
+            "id": "billboard",
+            "label": "Billboard"
+        },
+        {
+            "id": "other",
+            "label": "Other"
+        }
+    ],
+    "roleOptions": [
+        {
+            "id": "founder",
+            "label": "Founder/CEO"
+        },
+        {
+            "id": "consultant",
+            "label": "Consultant"
+        },
+        {
+            "id": "operations",
+            "label": "Operations"
+        },
+        {
+            "id": "developer",
+            "label": "Developer"
+        },
+        {
+            "id": "product",
+            "label": "Product"
+        },
+        {
+            "id": "data",
+            "label": "Data Analysis"
+        },
+        {
+            "id": "sales",
+            "label": "Sales"
+        },
+        {
+            "id": "marketing",
+            "label": "Marketing"
+        },
+        {
+            "id": "support",
+            "label": "Customer Support"
+        },
+        {
+            "id": "recruiting",
+            "label": "Recruiting"
+        },
+        {
+            "id": "creator",
+            "label": "Creator"
+        },
+        {
+            "id": "writer",
+            "label": "Writer"
+        },
+        {
+            "id": "educator",
+            "label": "Educator"
+        },
+        {
+            "id": "student",
+            "label": "Student"
+        },
+        {
+            "id": "legal",
+            "label": "Legal"
+        },
+        {
+            "id": "healthcare",
+            "label": "Healthcare"
+        },
+        {
+            "id": "other",
+            "label": "Other"
+        }
+    ],
+    "usageOptions": [
+        {
+            "id": "chatting",
+            "label": "Chatting with AI"
+        },
+        {
+            "id": "messages",
+            "label": "Sending messages"
+        },
+        {
+            "id": "coding",
+            "label": "Coding with AI"
+        },
+        {
+            "id": "emails",
+            "label": "Drafting emails"
+        },
+        {
+            "id": "docs",
+            "label": "Writing documents"
+        },
+        {
+            "id": "notes",
+            "label": "Taking notes"
+        },
+        {
+            "id": "posts",
+            "label": "Writing posts or comments"
+        },
+        {
+            "id": "other",
+            "label": "Something else"
+        }
+    ]
+}

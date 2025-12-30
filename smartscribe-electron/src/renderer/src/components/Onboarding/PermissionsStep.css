@@ -1,0 +1,101 @@
+.permissions-container {
+    display: flex;
+    flex-direction: column;
+    display: flex;
+    flex-direction: column;
+    /* height: 100%; removed */
+    width: 100%;
+    max-width: 480px;
+    padding-top: 2rem;
+}
+
+.permissions-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 32px;
+    letter-spacing: -0.5px;
+}
+
+.permission-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.permission-card.granted {
+    border-color: #e5e7eb;
+    background-color: #fafafa;
+}
+
+.permission-header {
+    margin-bottom: 8px;
+}
+
+.permission-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.permission-description {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #4b5563;
+    margin: 0 0 16px 0;
+}
+
+.permission-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.allow-button {
+    background-color: #1f2937;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 80px;
+}
+
+.allow-button:hover {
+    background-color: #111827;
+}
+
+.allow-button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.granted-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #10b981;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.info-icon {
+    color: #9ca3af;
+    cursor: help;
+    margin-left: 8px;
+}
+
+.skip-text {
+    margin-top: auto;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 10px;
+}

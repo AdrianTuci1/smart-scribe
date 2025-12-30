@@ -9,10 +9,10 @@ export const setIsQuitting = (value: boolean) => {
 
 export const createMainWindow = (): BrowserWindow => {
     const mainWindow = new BrowserWindow({
-        width: 900,
-        height: 670,
-        minWidth: 800,
-        minHeight: 600,
+        width: 1300,
+        height: 780,
+        minWidth: 1300,
+        minHeight: 780,
         show: false,
         frame: false,
         titleBarStyle: 'hidden',
