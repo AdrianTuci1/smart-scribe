@@ -9,8 +9,8 @@ export const FloatingWaveform: React.FC = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const wasRecordingRef = useRef(false);
 
-    const [pushToTalkKey, setPushToTalkKey] = useState<string>('Control');
-    const pushToTalkKeyRef = useRef('Control');
+    const [pushToTalkKey, setPushToTalkKey] = useState<string>('Fn');
+    const pushToTalkKeyRef = useRef('Fn');
 
     useEffect(() => {
         pushToTalkKeyRef.current = pushToTalkKey;

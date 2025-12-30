@@ -7,6 +7,10 @@ import { DataControlStep } from './DataControlStep';
 import { PermissionsStep } from './PermissionsStep';
 import { MicTestStep } from './MicTestStep';
 import { ShortcutTestStep } from './ShortcutTestStep';
+import { LanguageSelectionStep } from './LanguageSelectionStep';
+import { InteractiveLearnStep } from './InteractiveLearnStep';
+import { FreeTrialStep } from './FreeTrialStep';
+import { ReferralStep } from './ReferralStep';
 
 interface OnboardingViewProps {
     onComplete: () => void;
@@ -24,12 +28,27 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
     // 1: Source (Where did you hear)
     // 2: Role (What do you do)
     // 3: Usage (Where do you spend time)
-    // 4: Data Control (Privacy/Share)
-    // 5: Permissions (Accessibility & Mic Request)
-    // 6: Mic Test (Visualizer)
-    // 7: Shortcut Test (Fn key)
-    // 8: Success/Learn
-    const TOTAL_STEPS = 8;
+    // 4: Language Selection
+    // 5: Data Control (Privacy/Share)
+    // 6: Permissions (Accessibility & Mic Request)
+    // 7: Mic Test (Visualizer)
+    // 8: Shortcut Test (Fn key)
+    // 9: Interactive Learn (Simulated Tabs)
+    // 10: Success/Learn
+    // 0: Login
+    // 1: Source (Where did you hear)
+    // 2: Role (What do you do)
+    // 3: Usage (Where do you spend time)
+    // 4: Language Selection
+    // 5: Data Control (Privacy/Share)
+    // 6: Permissions (Accessibility & Mic Request)
+    // 7: Mic Test (Visualizer)
+    // 8: Shortcut Test (Fn key)
+    // 9: Interactive Learn (Simulated Tabs)
+    // 10: Free Trial
+    // 11: Referral
+    // 12: Success/Learn
+    const TOTAL_STEPS = 12;
 
     const nextStep = () => setCurrentStep(prev => prev + 1);
 
@@ -117,7 +136,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 <QuestionStep
                     key="usage"
                     title="Where do you spend time typing?"
-                    subtitle="This helps us personalize Flow where you work. Select all that apply."
+                    subtitle="This helps us personalize Smartscribe where you work. Select all that apply."
                     options={usageOptions}
                     selected={usage}
                     onSelect={handleSelection(setUsage, true)}
@@ -129,13 +148,53 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 />
             );
         case 4:
-            return <DataControlStep key="data" onNext={nextStep} />;
+            return (
+                <LanguageSelectionStep
+                    key="language"
+                    onNext={nextStep}
+                    onBack={() => setCurrentStep(prev => prev - 1)}
+                    currentStep={4}
+                    totalSteps={TOTAL_STEPS}
+                />
+            );
         case 5:
-            return <PermissionsStep key="perms" onNext={nextStep} />;
+            return <DataControlStep key="data" onNext={nextStep} />;
         case 6:
-            return <MicTestStep key="mictest" onNext={nextStep} />;
+            return <PermissionsStep key="perms" onNext={nextStep} />;
         case 7:
-            return <ShortcutTestStep key="shortcut" onNext={onComplete} />; // End of flow for now
+            return <MicTestStep key="mictest" onNext={nextStep} />;
+        case 8:
+            return <ShortcutTestStep key="shortcut" onNext={nextStep} />;
+        case 9:
+            return (
+                <InteractiveLearnStep
+                    key="learn"
+                    onNext={nextStep}
+                    onSkip={nextStep} // For now skip goes to complete
+                    currentStep={9}
+                    totalSteps={TOTAL_STEPS}
+                />
+            );
+        case 10:
+            return (
+                <FreeTrialStep
+                    key="freetrial"
+                    onNext={nextStep}
+                    onBack={() => setCurrentStep(prev => prev - 1)}
+                    currentStep={10}
+                    totalSteps={TOTAL_STEPS}
+                />
+            );
+        case 11:
+            return (
+                <ReferralStep
+                    key="referral"
+                    onComplete={onComplete}
+                    onBack={() => setCurrentStep(prev => prev - 1)}
+                    currentStep={11}
+                    totalSteps={TOTAL_STEPS}
+                />
+            );
 
         default:
             return null;

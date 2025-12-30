@@ -27,14 +27,17 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
     let currentBreadcrumbIndex = 0;
     // 0=SignIn
     // 1-3=Questions (Group with Permissions or Sign In? Let's group with Permissions for flow)
-    // 4=DataControl (Permissions)
-    // 5=Permissions (Permissions)
-    if (currentStep >= 1 && currentStep <= 5) currentBreadcrumbIndex = 1; // Permissions
-    // 6=MicTest (Set Up)
-    // 7=ShortcutTest (Set Up)
-    if (currentStep >= 6 && currentStep <= 7) currentBreadcrumbIndex = 2; // Set Up
-    // 8=Learn
-    if (currentStep >= 8) currentBreadcrumbIndex = 3; // Learn
+    // 4=Language Selection (Permissions)
+    // 5=DataControl (Permissions)
+    // 6=Permissions (Permissions)
+    if (currentStep >= 1 && currentStep <= 6) currentBreadcrumbIndex = 1; // Permissions
+    // 7=MicTest (Set Up)
+    // 8=ShortcutTest (Set Up)
+    // 9=InteractiveLearn (Set Up)
+    if (currentStep >= 7 && currentStep <= 9) currentBreadcrumbIndex = 2; // Set Up
+    // 10=Free Trial (Learn)
+    // 11=Referral (Learn)
+    if (currentStep >= 10) currentBreadcrumbIndex = 3; // Learn
 
     return (
         <div className="onboarding-viewport">

@@ -86,15 +86,15 @@ export const PermissionsStep: React.FC<PermissionsStepProps> = ({ onNext }) => {
                     ← Back
                 </button>
 
-                <h1 className="permissions-title">Set up Flow on your computer</h1>
+                <h1 className="permissions-title">Set up Smartscribe on your computer</h1>
 
                 {/* Accessibility Card */}
                 <div className={`permission-card ${accessibilityGranted ? 'granted' : ''}`}>
                     <div className="permission-header">
-                        <span className="permission-title">Allow Flow to insert spoken words</span>
+                        <span className="permission-title">Allow Smartscribe to insert spoken words</span>
                     </div>
                     <p className="permission-description">
-                        This lets Flow put your spoken words in the right textbox
+                        This lets Smartscribe put your spoken words in the right textbox
                     </p>
                     <div className="permission-action-row">
                         {!accessibilityGranted ? (
@@ -114,12 +114,12 @@ export const PermissionsStep: React.FC<PermissionsStepProps> = ({ onNext }) => {
                 {/* Microphone Card */}
                 <div className={`permission-card ${microphoneGranted ? 'granted' : ''}`}>
                     <div className="permission-header">
-                        <span className="permission-title">Allow Flow to use your microphone</span>
+                        <span className="permission-title">Allow Smartscribe to use your microphone</span>
                     </div>
                     {/* Description wasn't explicitly visible in screenshot for Mic, but good to have */}
                     <div className="permission-action-row" style={{ marginTop: '16px' }}>
                         {!microphoneGranted ? (
-                            <button className="allow-button" onClick={requestMicrophone}>Allow Flow to use your microphone</button>
+                            <button className="allow-button" onClick={requestMicrophone}>Allow Smartscribe to use your microphone</button>
                         ) : (
                             <div className="granted-badge">
                                 <CheckCircle2 size={18} />

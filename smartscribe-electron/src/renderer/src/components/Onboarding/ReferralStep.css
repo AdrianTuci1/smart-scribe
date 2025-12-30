@@ -1,0 +1,214 @@
+.referral-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 2rem 3rem;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+.referral-header {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+
+.referral-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem 0;
+    line-height: 1.2;
+}
+
+.referral-how-it-works-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 1rem;
+}
+
+.referral-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 3rem 0;
+}
+
+.referral-step-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 12px;
+}
+
+.referral-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #374151;
+    /* Icon color */
+}
+
+.referral-text {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.referral-text strong {
+    font-weight: 600;
+    color: #111827;
+}
+
+.referral-link-section-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 0.5rem;
+}
+
+.referral-link-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3rem;
+    max-width: 400px;
+}
+
+.referral-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background-color: white;
+}
+
+.link-icon {
+    color: #9CA3AF;
+    margin-right: 8px;
+}
+
+.referral-input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+    color: #374151;
+    background: transparent;
+}
+
+.copy-button {
+    background-color: #E5E7EB;
+    color: #374151;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+    background-color: #D1D5DB;
+}
+
+.finish-button {
+    background-color: #2D2D35;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 0;
+    /* Removed auto margin to prevent pushing to bottom */
+}
+
+.finish-button:hover {
+    background-color: #1F1F25;
+}
+
+
+/* Right Visual - Gift Card */
+.gift-card-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.gift-card {
+    background-color: #044E44;
+    /* Dark Teal/Green */
+    width: 380px;
+    height: 220px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gift-card-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Simulate the wave with a border or SVG if possible. Simple CSS curve: */
+    background: radial-gradient(circle at 50% -20%, transparent 40%, rgba(255, 255, 255, 0.05) 41%);
+}
+
+.gift-card-content {
+    z-index: 10;
+    text-align: center;
+}
+
+.gift-logo {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.pro-badge {
+    background-color: #FFFFFF;
+    color: #044E44;
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.gift-text {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+}
+
+.gift-pill {
+    background-color: #E9D5FF;
+    color: #581C87;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}

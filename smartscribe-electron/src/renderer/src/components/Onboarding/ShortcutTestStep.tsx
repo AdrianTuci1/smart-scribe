@@ -33,9 +33,14 @@ export const ShortcutTestStep: React.FC<ShortcutTestStepProps> = ({ onNext }) =>
         let unsubscribe: (() => void) | undefined;
 
         if (electron && electron.ipcRenderer) {
-            unsubscribe = electron.ipcRenderer.on('shortcut-pressed', () => {
-                setIsPressed(true);
-                setTimeout(() => setIsPressed(false), 200); // Pulse it
+            unsubscribe = electron.ipcRenderer.on('global-key-event', (data: any) => {
+                console.log('Global Key Event:', data);
+                // Simply light up on any event for the test step, or refine logic
+                if (data.type === 'keydown' || (data.type === 'flagsChanged' && data.modifiers.length > 0)) {
+                    setIsPressed(true);
+                } else if (data.type === 'keyup' || (data.type === 'flagsChanged' && data.modifiers.length === 0)) {
+                    setIsPressed(false);
+                }
             });
         }
 

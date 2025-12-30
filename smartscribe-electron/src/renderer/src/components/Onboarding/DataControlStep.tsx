@@ -51,11 +51,11 @@ export const DataControlStep: React.FC<DataControlStepProps> = ({ onNext }) => {
                     onClick={() => setSelectedMode('improve')}
                 >
                     <div className="data-option-header">
-                        <span className="data-option-title">Help improve Flow</span>
+                        <span className="data-option-title">Help improve Smartscribe</span>
                         {selectedMode === 'improve' && <CheckCircle2 size={20} className="check-icon" fill="#10b981" color="white" />}
                     </div>
                     <p className="data-option-description">
-                        To make Flow better, this option lets us collect your audio, transcript, and edits to evaluate, train and improve Flow's features and AI models
+                        To make Smartscribe better, this option lets us collect your audio, transcript, and edits to evaluate, train and improve Smartscribe's features and AI models
                     </p>
                 </div>
 
