@@ -63,6 +63,15 @@ app.whenReady().then(() => {
     // Start Key Monitor
     new KeyMonitorService();
 
+    // Set Dock Icon (macOS)
+    if (process.platform === 'darwin') {
+        const path = require('path');
+        const logoPath = app.isPackaged
+            ? path.join(process.resourcesPath, 'logo.png')
+            : path.join(__dirname, '../../resources/logo.png');
+        app.dock?.setIcon(logoPath);
+    }
+
     // Register all IPC handlers
     registerPermissionsHandlers()
     registerNativeHandlers()

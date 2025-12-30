@@ -47,8 +47,8 @@ var require_dot_prop = __commonJS({
       "constructor"
     ]);
     var isValidPath = (pathSegments) => !pathSegments.some((segment) => disallowedKeys.has(segment));
-    function getPathSegments(path2) {
-      const pathArray = path2.split(".");
+    function getPathSegments(path3) {
+      const pathArray = path3.split(".");
       const parts = [];
       for (let i = 0; i < pathArray.length; i++) {
         let p = pathArray[i];
@@ -64,11 +64,11 @@ var require_dot_prop = __commonJS({
       return parts;
     }
     module2.exports = {
-      get(object, path2, value) {
-        if (!isObj(object) || typeof path2 !== "string") {
+      get(object, path3, value) {
+        if (!isObj(object) || typeof path3 !== "string") {
           return value === void 0 ? object : value;
         }
-        const pathArray = getPathSegments(path2);
+        const pathArray = getPathSegments(path3);
         if (pathArray.length === 0) {
           return;
         }
@@ -83,12 +83,12 @@ var require_dot_prop = __commonJS({
         }
         return object === void 0 ? value : object;
       },
-      set(object, path2, value) {
-        if (!isObj(object) || typeof path2 !== "string") {
+      set(object, path3, value) {
+        if (!isObj(object) || typeof path3 !== "string") {
           return object;
         }
         const root = object;
-        const pathArray = getPathSegments(path2);
+        const pathArray = getPathSegments(path3);
         for (let i = 0; i < pathArray.length; i++) {
           const p = pathArray[i];
           if (!isObj(object[p])) {
@@ -101,11 +101,11 @@ var require_dot_prop = __commonJS({
         }
         return root;
       },
-      delete(object, path2) {
-        if (!isObj(object) || typeof path2 !== "string") {
+      delete(object, path3) {
+        if (!isObj(object) || typeof path3 !== "string") {
           return false;
         }
-        const pathArray = getPathSegments(path2);
+        const pathArray = getPathSegments(path3);
         for (let i = 0; i < pathArray.length; i++) {
           const p = pathArray[i];
           if (i === pathArray.length - 1) {
@@ -118,11 +118,11 @@ var require_dot_prop = __commonJS({
           }
         }
       },
-      has(object, path2) {
-        if (!isObj(object) || typeof path2 !== "string") {
+      has(object, path3) {
+        if (!isObj(object) || typeof path3 !== "string") {
           return false;
         }
-        const pathArray = getPathSegments(path2);
+        const pathArray = getPathSegments(path3);
         if (pathArray.length === 0) {
           return false;
         }
@@ -257,21 +257,21 @@ var require_p_locate = __commonJS({
 var require_locate_path = __commonJS({
   "node_modules/locate-path/index.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var pathExists = require_path_exists();
     var pLocate = require_p_locate();
     module2.exports = (iterable, options) => {
       options = Object.assign({
         cwd: process.cwd()
       }, options);
-      return pLocate(iterable, (el) => pathExists(path2.resolve(options.cwd, el)), options);
+      return pLocate(iterable, (el) => pathExists(path3.resolve(options.cwd, el)), options);
     };
     module2.exports.sync = (iterable, options) => {
       options = Object.assign({
         cwd: process.cwd()
       }, options);
       for (const el of iterable) {
-        if (pathExists.sync(path2.resolve(options.cwd, el))) {
+        if (pathExists.sync(path3.resolve(options.cwd, el))) {
           return el;
         }
       }
@@ -283,39 +283,39 @@ var require_locate_path = __commonJS({
 var require_find_up = __commonJS({
   "node_modules/find-up/index.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var locatePath = require_locate_path();
     module2.exports = (filename, opts = {}) => {
-      const startDir = path2.resolve(opts.cwd || "");
-      const { root } = path2.parse(startDir);
+      const startDir = path3.resolve(opts.cwd || "");
+      const { root } = path3.parse(startDir);
       const filenames = [].concat(filename);
       return new Promise((resolve2) => {
         (function find(dir) {
           locatePath(filenames, { cwd: dir }).then((file) => {
             if (file) {
-              resolve2(path2.join(dir, file));
+              resolve2(path3.join(dir, file));
             } else if (dir === root) {
               resolve2(null);
             } else {
-              find(path2.dirname(dir));
+              find(path3.dirname(dir));
             }
           });
         })(startDir);
       });
     };
     module2.exports.sync = (filename, opts = {}) => {
-      let dir = path2.resolve(opts.cwd || "");
-      const { root } = path2.parse(dir);
+      let dir = path3.resolve(opts.cwd || "");
+      const { root } = path3.parse(dir);
       const filenames = [].concat(filename);
       while (true) {
         const file = locatePath.sync(filenames, { cwd: dir });
         if (file) {
-          return path2.join(dir, file);
+          return path3.join(dir, file);
         }
         if (dir === root) {
           return null;
         }
-        dir = path2.dirname(dir);
+        dir = path3.dirname(dir);
       }
     };
   }
@@ -335,42 +335,42 @@ var require_pkg_up = __commonJS({
 var require_env_paths = __commonJS({
   "node_modules/env-paths/index.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var os = require("os");
     var homedir = os.homedir();
     var tmpdir = os.tmpdir();
     var { env } = process;
     var macos = (name) => {
-      const library = path2.join(homedir, "Library");
+      const library = path3.join(homedir, "Library");
       return {
-        data: path2.join(library, "Application Support", name),
-        config: path2.join(library, "Preferences", name),
-        cache: path2.join(library, "Caches", name),
-        log: path2.join(library, "Logs", name),
-        temp: path2.join(tmpdir, name)
+        data: path3.join(library, "Application Support", name),
+        config: path3.join(library, "Preferences", name),
+        cache: path3.join(library, "Caches", name),
+        log: path3.join(library, "Logs", name),
+        temp: path3.join(tmpdir, name)
       };
     };
     var windows = (name) => {
-      const appData = env.APPDATA || path2.join(homedir, "AppData", "Roaming");
-      const localAppData = env.LOCALAPPDATA || path2.join(homedir, "AppData", "Local");
+      const appData = env.APPDATA || path3.join(homedir, "AppData", "Roaming");
+      const localAppData = env.LOCALAPPDATA || path3.join(homedir, "AppData", "Local");
       return {
         // Data/config/cache/log are invented by me as Windows isn't opinionated about this
-        data: path2.join(localAppData, name, "Data"),
-        config: path2.join(appData, name, "Config"),
-        cache: path2.join(localAppData, name, "Cache"),
-        log: path2.join(localAppData, name, "Log"),
-        temp: path2.join(tmpdir, name)
+        data: path3.join(localAppData, name, "Data"),
+        config: path3.join(appData, name, "Config"),
+        cache: path3.join(localAppData, name, "Cache"),
+        log: path3.join(localAppData, name, "Log"),
+        temp: path3.join(tmpdir, name)
       };
     };
     var linux = (name) => {
-      const username = path2.basename(homedir);
+      const username = path3.basename(homedir);
       return {
-        data: path2.join(env.XDG_DATA_HOME || path2.join(homedir, ".local", "share"), name),
-        config: path2.join(env.XDG_CONFIG_HOME || path2.join(homedir, ".config"), name),
-        cache: path2.join(env.XDG_CACHE_HOME || path2.join(homedir, ".cache"), name),
+        data: path3.join(env.XDG_DATA_HOME || path3.join(homedir, ".local", "share"), name),
+        config: path3.join(env.XDG_CONFIG_HOME || path3.join(homedir, ".config"), name),
+        cache: path3.join(env.XDG_CACHE_HOME || path3.join(homedir, ".cache"), name),
         // https://wiki.debian.org/XDGBaseDirectorySpecification#state
-        log: path2.join(env.XDG_STATE_HOME || path2.join(homedir, ".local", "state"), name),
-        temp: path2.join(tmpdir, username, name)
+        log: path3.join(env.XDG_STATE_HOME || path3.join(homedir, ".local", "state"), name),
+        temp: path3.join(tmpdir, username, name)
       };
     };
     var envPaths = (name, options) => {
@@ -698,7 +698,7 @@ var require_temp = __commonJS({
   "node_modules/atomically/dist/utils/temp.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path2 = require("path");
+    var path3 = require("path");
     var consts_1 = require_consts();
     var fs_1 = require_fs();
     var Temp = {
@@ -733,7 +733,7 @@ var require_temp = __commonJS({
         }
       },
       truncate: (filePath) => {
-        const basename = path2.basename(filePath);
+        const basename = path3.basename(filePath);
         if (basename.length <= consts_1.LIMIT_BASENAME_LENGTH)
           return filePath;
         const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename);
@@ -754,7 +754,7 @@ var require_dist = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.writeFileSync = exports2.writeFile = exports2.readFileSync = exports2.readFile = void 0;
-    var path2 = require("path");
+    var path3 = require("path");
     var consts_1 = require_consts();
     var fs_1 = require_fs();
     var lang_1 = require_lang();
@@ -808,7 +808,7 @@ var require_dist = __commonJS({
               options.mode = stat.mode;
           }
         }
-        const parentPath = path2.dirname(filePath);
+        const parentPath = path3.dirname(filePath);
         await fs_1.default.mkdirAttempt(parentPath, {
           mode: consts_1.DEFAULT_FOLDER_MODE,
           recursive: true
@@ -874,7 +874,7 @@ var require_dist = __commonJS({
               options.mode = stat.mode;
           }
         }
-        const parentPath = path2.dirname(filePath);
+        const parentPath = path3.dirname(filePath);
         fs_1.default.mkdirSyncAttempt(parentPath, {
           mode: consts_1.DEFAULT_FOLDER_MODE,
           recursive: true
@@ -4113,8 +4113,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path2) {
-      let input = path2;
+    function removeDotSegments(path3) {
+      let input = path3;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -4313,8 +4313,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path2, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
+        const [path3, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path3 && path3 !== "/" ? path3 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -15435,7 +15435,7 @@ var require_source = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var util_1 = require("util");
     var fs2 = require("fs");
-    var path2 = require("path");
+    var path3 = require("path");
     var crypto = require("crypto");
     var assert = require("assert");
     var events_1 = require("events");
@@ -15458,7 +15458,7 @@ var require_source = __commonJS({
     var parentDir = "";
     try {
       delete require.cache[__filename];
-      parentDir = path2.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+      parentDir = path3.dirname((_b = (_a = module2.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
     } catch (_c) {
     }
     var checkValueType = (key, value) => {
@@ -15542,7 +15542,7 @@ var require_source = __commonJS({
         this.events = new events_1.EventEmitter();
         __classPrivateFieldSet(this, _Conf_encryptionKey, options.encryptionKey, "f");
         const fileExtension = options.fileExtension ? `.${options.fileExtension}` : "";
-        this.path = path2.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
+        this.path = path3.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
         const fileStore = this.store;
         const store3 = Object.assign(createPlainObject(), options.defaults, fileStore);
         this._validate(store3);
@@ -15759,7 +15759,7 @@ var require_source = __commonJS({
         throw new Error("Config schema violation: " + errors.join("; "));
       }
       _ensureDirectory() {
-        fs2.mkdirSync(path2.dirname(this.path), { recursive: true });
+        fs2.mkdirSync(path3.dirname(this.path), { recursive: true });
       }
       _write(value) {
         let data = this._serialize(value);
@@ -15881,17 +15881,17 @@ var require_source = __commonJS({
 var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
-    var { app: app4, ipcMain: ipcMain6, ipcRenderer, shell } = require("electron");
+    var path3 = require("path");
+    var { app: app5, ipcMain: ipcMain6, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
-      if (!ipcMain6 || !app4) {
+      if (!ipcMain6 || !app5) {
         throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
       }
       const appData = {
-        defaultCwd: app4.getPath("userData"),
-        appVersion: app4.getVersion()
+        defaultCwd: app5.getPath("userData"),
+        appVersion: app5.getVersion()
       };
       if (isInitialized) {
         return appData;
@@ -15912,7 +15912,7 @@ var require_electron_store = __commonJS({
             throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
           }
           ({ defaultCwd, appVersion } = appData);
-        } else if (ipcMain6 && app4) {
+        } else if (ipcMain6 && app5) {
           ({ defaultCwd, appVersion } = initDataListener());
         }
         options = {
@@ -15923,7 +15923,7 @@ var require_electron_store = __commonJS({
           options.projectVersion = appVersion;
         }
         if (options.cwd) {
-          options.cwd = path2.isAbsolute(options.cwd) ? options.cwd : path2.join(defaultCwd, options.cwd);
+          options.cwd = path3.isAbsolute(options.cwd) ? options.cwd : path3.join(defaultCwd, options.cwd);
         } else {
           options.cwd = defaultCwd;
         }
@@ -15946,7 +15946,7 @@ var require_electron_store = __commonJS({
 });
 
 // src/main/index.ts
-var import_electron9 = require("electron");
+var import_electron10 = require("electron");
 
 // src/main/windows/mainWindow.ts
 var import_electron = require("electron");
@@ -16000,7 +16000,7 @@ var import_electron_store = __toESM(require_electron_store());
 var store = new import_electron_store.default();
 var tray = null;
 var createTray = (mainWindow, onQuit) => {
-  const icon = import_electron2.nativeImage.createFromPath((0, import_path2.join)(__dirname, "../../resources/icon.png"));
+  const icon = import_electron2.nativeImage.createFromPath((0, import_path2.join)(__dirname, "../../resources/tray.png"));
   tray = new import_electron2.Tray(icon);
   const updateTrayMenu = () => {
     const lastTranscript = store.get("lastTranscript");
@@ -16016,7 +16016,7 @@ var createTray = (mainWindow, onQuit) => {
         label: "Check for updates...",
         click: () => {
           const { shell } = require("electron");
-          shell.openExternal("https://smartscribe.getwispr.com/updates");
+          shell.openExternal("https://smartscribe.app/updates");
         }
       },
       {
@@ -16321,6 +16321,20 @@ var registerNativeHandlers = () => {
       return null;
     }
   });
+  import_electron6.ipcMain.handle("check-input-focus", async () => {
+    const path3 = require("path");
+    const binName = "check-input";
+    const binaryPath2 = path3.resolve(process.cwd(), "resources/bin", binName);
+    return new Promise((resolve2) => {
+      (0, import_child_process2.exec)(binaryPath2, (error, stdout) => {
+        if (error) {
+          resolve2(false);
+          return;
+        }
+        resolve2(stdout.trim() === "true");
+      });
+    });
+  });
   import_electron6.ipcMain.handle("insert-text", async (_event, text) => {
     try {
       import_electron6.clipboard.writeText(text);
@@ -16410,6 +16424,68 @@ var registerWindowHandlers = () => {
   });
 };
 
+// src/main/services/KeyMonitorService.ts
+var import_child_process3 = require("child_process");
+var import_electron9 = require("electron");
+var import_path6 = __toESM(require("path"));
+var import_readline = require("readline");
+var KeyMonitorService = class {
+  process = null;
+  isRunning = false;
+  constructor() {
+    this.start();
+    import_electron9.app.on("before-quit", () => this.stop());
+  }
+  start() {
+    if (this.isRunning) return;
+    const executablePath = import_electron9.app.isPackaged ? import_path6.default.join(process.resourcesPath, "bin", "key-monitor") : import_path6.default.join(__dirname, "../../resources/bin/key-monitor");
+    console.log("[KeyMonitor] Starting process:", executablePath);
+    try {
+      this.process = (0, import_child_process3.spawn)(executablePath);
+      this.isRunning = true;
+      if (this.process.stdout) {
+        const rl = (0, import_readline.createInterface)({
+          input: this.process.stdout,
+          crlfDelay: Infinity
+        });
+        rl.on("line", (line) => {
+          try {
+            console.log("[KeyMonitor] Raw:", line);
+            const event = JSON.parse(line);
+            const windows = import_electron9.BrowserWindow.getAllWindows();
+            windows.forEach((win) => {
+              if (!win.isDestroyed()) {
+                win.webContents.send("global-key-event", event);
+              }
+            });
+          } catch (e) {
+            console.error("[KeyMonitor] Parse error:", e, line);
+          }
+        });
+      }
+      if (this.process.stderr) {
+        this.process.stderr.on("data", (data) => {
+          console.error("[KeyMonitor] Error:", data.toString());
+        });
+      }
+      this.process.on("close", (code) => {
+        console.log(`[KeyMonitor] Process exited with code ${code}`);
+        this.isRunning = false;
+      });
+    } catch (error) {
+      console.error("[KeyMonitor] Failed to spawn:", error);
+    }
+  }
+  stop() {
+    if (this.process) {
+      console.log("[KeyMonitor] Stopping process");
+      this.process.kill();
+      this.process = null;
+      this.isRunning = false;
+    }
+  }
+};
+
 // src/main/index.ts
 registerProtocol();
 var hasLock = setupSingleInstanceLock((url) => {
@@ -16434,36 +16510,42 @@ setupMacOSProtocolHandler((url) => {
     mainWindow.webContents.send("deep-link", url);
   }
 });
-import_electron9.ipcMain.on("clipboard-write", (_event, text) => {
+import_electron10.ipcMain.on("clipboard-write", (_event, text) => {
   if (text) {
-    import_electron9.clipboard.writeText(text);
+    import_electron10.clipboard.writeText(text);
     console.log("Main: Copied text to clipboard:", text.substring(0, 50) + "...");
   }
 });
-import_electron9.app.whenReady().then(() => {
+import_electron10.app.whenReady().then(() => {
   const mainWindow = createMainWindow();
   const handleQuit = () => {
     setIsQuitting(true);
-    import_electron9.app.quit();
+    import_electron10.app.quit();
   };
   createTray(mainWindow, handleQuit);
+  new KeyMonitorService();
+  if (process.platform === "darwin") {
+    const path3 = require("path");
+    const logoPath = import_electron10.app.isPackaged ? path3.join(process.resourcesPath, "logo.png") : path3.join(__dirname, "../../resources/logo.png");
+    import_electron10.app.dock?.setIcon(logoPath);
+  }
   registerPermissionsHandlers();
   registerNativeHandlers();
   registerSettingsHandlers();
   registerWindowHandlers();
-  import_electron9.app.on("activate", () => {
-    if (import_electron9.BrowserWindow.getAllWindows().length === 0) {
+  import_electron10.app.on("activate", () => {
+    if (import_electron10.BrowserWindow.getAllWindows().length === 0) {
       createMainWindow();
     } else {
       mainWindow.show();
     }
   });
 });
-import_electron9.app.on("ready", () => {
+import_electron10.app.on("ready", () => {
   initializeGlobalShortcuts();
 });
-import_electron9.app.on("window-all-closed", () => {
+import_electron10.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    import_electron9.app.quit();
+    import_electron10.app.quit();
   }
 });

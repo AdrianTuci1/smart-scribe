@@ -47,11 +47,16 @@ let callback: CGEventTapCallBack = { (proxy, type, event, refcon) in
     let flags = event.flags
     let modifiers = getModifiers(flags: flags)
     
-    // Get characters (if any)
+    // Get characters (only for key events, not flagsChanged)
     var chars = ""
-    if let nsEvent = NSEvent(cgEvent: event) {
-        if let c = nsEvent.charactersIgnoringModifiers {
-            chars = c.uppercased()
+    if type == .keyDown || type == .keyUp {
+        if let nsEvent = NSEvent(cgEvent: event) {
+            // Safety check although type check should suffice
+            if nsEvent.type == .keyDown || nsEvent.type == .keyUp {
+                 if let c = nsEvent.charactersIgnoringModifiers {
+                    chars = c.uppercased()
+                 }
+            }
         }
     }
     

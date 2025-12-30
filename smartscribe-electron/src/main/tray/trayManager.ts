@@ -6,7 +6,7 @@ const store = new Store()
 let tray: Tray | null = null
 
 export const createTray = (mainWindow: BrowserWindow, onQuit: () => void): Tray => {
-    const icon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+    const icon = nativeImage.createFromPath(join(__dirname, '../../resources/tray.png'))
     tray = new Tray(icon)
 
     const updateTrayMenu = () => {
@@ -23,7 +23,7 @@ export const createTray = (mainWindow: BrowserWindow, onQuit: () => void): Tray 
                 label: 'Check for updates...',
                 click: () => {
                     const { shell } = require('electron')
-                    shell.openExternal('https://smartscribe.getwispr.com/updates')
+                    shell.openExternal('https://smartscribe.app/updates')
                 }
             },
             {

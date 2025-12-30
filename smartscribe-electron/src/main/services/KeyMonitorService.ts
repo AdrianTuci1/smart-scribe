@@ -16,8 +16,8 @@ export class KeyMonitorService {
         if (this.isRunning) return;
 
         const executablePath = app.isPackaged
-            ? path.join(process.resourcesPath, 'key-monitor')
-            : path.join(__dirname, '../../resources/key-monitor');
+            ? path.join(process.resourcesPath, 'bin', 'key-monitor')
+            : path.join(__dirname, '../../resources/bin/key-monitor');
 
         console.log('[KeyMonitor] Starting process:', executablePath);
 
@@ -33,6 +33,7 @@ export class KeyMonitorService {
 
                 rl.on('line', (line) => {
                     try {
+                        console.log('[KeyMonitor] Raw:', line); // <--- Added debug log
                         const event = JSON.parse(line);
                         // Broadcast to all renderers
                         const windows = BrowserWindow.getAllWindows();
