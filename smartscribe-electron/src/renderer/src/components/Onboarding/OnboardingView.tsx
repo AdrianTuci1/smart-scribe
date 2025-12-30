@@ -23,18 +23,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
     const [usage, setUsage] = useState<Set<string>>(new Set());
     const [permissionsSkipped, setPermissionsSkipped] = useState(false);
 
-    // Total steps configuration
-    // 0: Login
-    // 1: Source (Where did you hear)
-    // 2: Role (What do you do)
-    // 3: Usage (Where do you spend time)
-    // 4: Language Selection
-    // 5: Data Control (Privacy/Share)
-    // 6: Permissions (Accessibility & Mic Request)
-    // 7: Mic Test (Visualizer)
-    // 8: Shortcut Test (Fn key)
-    // 9: Interactive Learn (Simulated Tabs)
-    // 10: Success/Learn
+
     // 0: Login
     // 1: Source (Where did you hear)
     // 2: Role (What do you do)

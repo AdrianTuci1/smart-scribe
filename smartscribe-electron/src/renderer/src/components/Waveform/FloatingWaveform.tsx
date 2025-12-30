@@ -156,55 +156,96 @@ export const FloatingWaveform: React.FC = () => {
 
     // Keyboard interaction via Global Monitor
     useEffect(() => {
-        const handleGlobalKey = (_event: any, keyData: any) => {
+        const handleGlobalKey = (keyData: any) => {
             const { type, modifiers, keyCode, chars } = keyData;
-            const shortcut = pushToTalkKeyRef.current;
+            const shortcut = pushToTalkKeyRef.current || 'Fn'; // Default to Fn if empty
 
-            // Basic matching logic
-            // 1. Check modifiers
-            const requiredModifiers = shortcut.split('+').filter(p => ['Cmd', 'Ctrl', 'Alt', 'Shift', 'Fn'].includes(p));
-            // Note: Swift sends "Cmd", "Ctrl", "Alt", "Shift", "Fn" as strings in modifiers array
+            // Helper to get normalized parts from the shortcut string
+            const getRequiredParts = (s: string) => {
+                return s.split('+').map(p => p.trim());
+            };
 
-            const hasAllModifiers = requiredModifiers.every(req => modifiers.includes(req));
-            const hasOnlyRequiredModifiers = modifiers.length === requiredModifiers.length;
+            const requiredParts = getRequiredParts(shortcut);
 
-            // 2. Check main key (if any)
-            const mainKey = shortcut.split('+').find(p => !['Cmd', 'Ctrl', 'Alt', 'Shift', 'Fn'].includes(p));
+            // Normalize current event state
+            // We need to construct what is currently pressed based on the event
+            // Note: modifiers from Swift usually include "Fn", "Shift", "Control", "Alt", "Cmd"
+            const currentModifiers = [...modifiers];
 
             let isMatch = false;
 
-            if (mainKey) {
-                // We need to match key code or char
-                // Since we rely on chars from Swift for non-modifier keys
-                if (hasAllModifiers && hasOnlyRequiredModifiers && chars && chars.toUpperCase() === mainKey.toUpperCase()) {
+            // Scenario 1: Modifier-only shortcut (e.g. "Fn", "Cmd+Shift")
+            // If the shortcut parts are ALL present in the current modifiers list
+            // AND the number of modifiers matches (exact match)
+
+            // Check if all required parts are in modifiers (assuming they are modifiers)
+            // But wait, if shortcut is "Cmd+P", "Cmd" is in modifiers, "P" is the char/keycode
+
+            const isModifierOnlyShortcut = requiredParts.every(p => ['Fn', 'Cmd', 'Command', 'Ctrl', 'Control', 'Alt', 'Shift', 'Option'].includes(p));
+
+            if (isModifierOnlyShortcut) {
+                // Must have exact match of modifiers
+                // Normalize "Command" -> "Cmd", etc if needed. 
+                // Swift sends: "Fn", "Shift", "Control", "Alt", "Cmd"
+                // User settings might have: "Fn", "Shift", "Control", "Alt", "Cmd" (from Recorder)
+
+                // Check if every required part is in currentModifiers
+                const allRequiredPresent = requiredParts.every(req => currentModifiers.includes(req));
+                // Check if no extra modifiers are pressed? Usually good for strictness.
+                const noExtras = currentModifiers.length === requiredParts.length;
+
+                if (allRequiredPresent && noExtras) {
                     isMatch = true;
                 }
-                // Fallback for special keys if needed (Space=Space)
-                if (mainKey === 'Space' && keyCode === 49 && hasAllModifiers && hasOnlyRequiredModifiers) isMatch = true;
             } else {
-                // Modifiers only match
-                if (hasAllModifiers && hasOnlyRequiredModifiers) isMatch = true;
-            }
+                // Scenario 2: Modifier + Key (e.g. "Cmd+P")
+                // Separate required modifiers and required main key
+                const reqModifiers = requiredParts.filter(p => ['Fn', 'Cmd', 'Command', 'Ctrl', 'Control', 'Alt', 'Shift'].includes(p));
+                const reqKey = requiredParts.find(p => !['Fn', 'Cmd', 'Command', 'Ctrl', 'Control', 'Alt', 'Shift'].includes(p));
 
-            if (isMatch) {
-                if (type === 'keydown' || (type === 'flagsChanged' && modifiers.length > 0)) { // Ensure flagsChanged is a press, not release
-                    if (!isRecording) {
-                        setIsRecording(true);
+                // Check modifiers
+                const modsMatch = reqModifiers.every(req => currentModifiers.includes(req)) && currentModifiers.length === reqModifiers.length;
+
+                // Check key
+                // For keydown, we check chars. For flagsChanged, we can't match a main key (unless it's a modifier, handled above)
+                if (modsMatch && type === 'keydown' && reqKey) {
+                    if (chars && chars.toUpperCase() === reqKey.toUpperCase()) {
+                        isMatch = true;
                     }
-                } else if (type === 'keyup' || (type === 'flagsChanged' && modifiers.length < requiredModifiers.length)) {
-                    if (isRecording) {
-                        setIsRecording(false);
+                    // Fallback for Space
+                    else if (reqKey === 'Space' && keyCode === 49) {
+                        isMatch = true;
                     }
                 }
+            }
+
+            // ACTION LOGIC
+            // Start recording if match and pressed (keydown or flagsChanged with modifiers presence)
+            // Stop recording if released (keyup or flagsChanged losing modifiers)
+
+            if (isMatch) {
+                // If it's a match, it means keys are DOWN.
+                // For flagsChanged (Fn), it fires when pressed.
+                // For keydown (Cmd+P), it fires when P is pressed.
+                if (!isRecording) {
+                    setIsRecording(true);
+                }
             } else {
-                // If modifiers mismatch during flagsChanged, it might be a release of one modifier
-                // If we were recording and the combo is broken, stop recording
-                if (isRecording && type === 'flagsChanged') {
-                    // Check if the required modifiers are NO LONGER present
-                    const stillHasAll = requiredModifiers.every(req => modifiers.includes(req));
-                    if (!stillHasAll) {
-                        setIsRecording(false);
-                    }
+                // If NOT a match, it could be:
+                // 1. Keys released
+                // 2. Different keys pressed
+                // 3. Just idle
+
+                // We only care if we WERE recording and now we are NOT matching anymore -> Stop.
+                if (isRecording) {
+                    // But wait, if I hold "Fn", distinct events might fire? 
+                    // key-monitor sends repeats? usually not for flags.
+                    // It sends flagsChanged again when released? Yes, with empty modifiers or fewer modifiers.
+
+                    // If we are recording, and we receive an event that makes it NOT a match anymore, STOP.
+                    // Example: Helper sends flagsChanged with [] (empty) -> isMatch will be false -> Stop.
+                    // Example: Cmd+P. keyup P -> isMatch false -> Stop.
+                    setIsRecording(false);
                 }
             }
         };

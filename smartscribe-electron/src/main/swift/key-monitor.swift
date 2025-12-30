@@ -92,7 +92,7 @@ let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.ra
 guard let eventTap = CGEvent.tapCreate(
     tap: .cgSessionEventTap,
     place: .headInsertEventTap,
-    options: .defaultTap,
+    options: .listenOnly,
     eventsOfInterest: CGEventMask(eventMask),
     callback: callback,
     userInfo: nil

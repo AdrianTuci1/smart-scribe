@@ -16374,15 +16374,19 @@ var updateGlobalShortcuts = () => {
   const pushToTalkKey = store2.get("pushToTalkKey");
   const handsFreeKey = store2.get("handsFreeModeKey");
   if (pushToTalkKey) {
-    try {
-      const accelerator = pushToTalkKey.replace("Cmd", "Command");
-      import_electron7.globalShortcut.register(accelerator, () => {
-        const wins = import_electron7.BrowserWindow.getAllWindows();
-        wins.forEach((w) => w.webContents.send("shortcut-triggered", "pushToTalk"));
-        console.log("Push to Talk Triggered");
-      });
-    } catch (e) {
-      console.error(`Failed to register shortcut ${pushToTalkKey}`, e);
+    if (pushToTalkKey === "Fn") {
+      console.log("Skipping standard global registration for Fn key (handled by monitor)");
+    } else {
+      try {
+        const accelerator = pushToTalkKey.replace("Cmd", "Command");
+        import_electron7.globalShortcut.register(accelerator, () => {
+          const wins = import_electron7.BrowserWindow.getAllWindows();
+          wins.forEach((w) => w.webContents.send("shortcut-triggered", "pushToTalk"));
+          console.log("Push to Talk Triggered");
+        });
+      } catch (e) {
+        console.error(`Failed to register shortcut ${pushToTalkKey}`, e);
+      }
     }
   }
   if (handsFreeKey) {

@@ -42,7 +42,7 @@ export interface UserSettings {
 }
 
 export const defaultSettings: UserSettings = {
-    pushToTalkKey: 'Cmd+Shift+P',
+    pushToTalkKey: 'Fn',
     handsFreeModeKey: 'Cmd+Shift+H',
     commandModeEnabled: false,
     pasteLastTranscriptEnabled: true,
