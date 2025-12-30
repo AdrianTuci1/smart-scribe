@@ -15882,11 +15882,11 @@ var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
     var path2 = require("path");
-    var { app: app4, ipcMain: ipcMain5, ipcRenderer, shell } = require("electron");
+    var { app: app4, ipcMain: ipcMain6, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
-      if (!ipcMain5 || !app4) {
+      if (!ipcMain6 || !app4) {
         throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
       }
       const appData = {
@@ -15896,7 +15896,7 @@ var require_electron_store = __commonJS({
       if (isInitialized) {
         return appData;
       }
-      ipcMain5.on("electron-store-get-data", (event) => {
+      ipcMain6.on("electron-store-get-data", (event) => {
         event.returnValue = appData;
       });
       isInitialized = true;
@@ -15912,7 +15912,7 @@ var require_electron_store = __commonJS({
             throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
           }
           ({ defaultCwd, appVersion } = appData);
-        } else if (ipcMain5 && app4) {
+        } else if (ipcMain6 && app4) {
           ({ defaultCwd, appVersion } = initDataListener());
         }
         options = {
@@ -16025,9 +16025,9 @@ var createTray = (mainWindow, onQuit) => {
         enabled: !!lastTranscript,
         click: () => {
           if (lastTranscript) {
-            const { clipboard: clipboard2 } = require("electron");
+            const { clipboard: clipboard3 } = require("electron");
             const { exec: exec2 } = require("child_process");
-            clipboard2.writeText(lastTranscript);
+            clipboard3.writeText(lastTranscript);
             if (process.platform === "darwin") {
               const script = `tell application "System Events" to keystroke "v" using command down`;
               exec2(`osascript -e '${script}'`);
@@ -16153,7 +16153,6 @@ var updateWaveformPosition = () => {
   if (isFullscreen) {
     const absoluteBottom = display.bounds.y + display.bounds.height;
     targetY = Math.floor(absoluteBottom - winBounds.height - 8);
-    console.log("Fullscreen mode: positioning at absolute bottom", { targetY, absoluteBottom });
   }
   if (winBounds.x !== targetX || winBounds.y !== targetY) {
     waveformWindow.setPosition(targetX, targetY);
@@ -16433,6 +16432,12 @@ setupMacOSProtocolHandler((url) => {
     mainWindow.show();
     mainWindow.focus();
     mainWindow.webContents.send("deep-link", url);
+  }
+});
+import_electron9.ipcMain.on("clipboard-write", (_event, text) => {
+  if (text) {
+    import_electron9.clipboard.writeText(text);
+    console.log("Main: Copied text to clipboard:", text.substring(0, 50) + "...");
   }
 });
 import_electron9.app.whenReady().then(() => {

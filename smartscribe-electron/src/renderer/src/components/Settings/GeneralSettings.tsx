@@ -1,36 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { SettingsTabProps } from './types';
 import { ToggleSwitch } from './ToggleSwitch';
+import { X } from 'lucide-react';
 
 export const GeneralSettings: React.FC<SettingsTabProps> = ({ settings, onSettingChange }) => {
     const [capturingTarget, setCapturingTarget] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!capturingTarget) return;
+        const handleGlobalKey = (_event: any, keyData: any) => {
+            if (!capturingTarget) return;
 
-        const handler = (e: KeyboardEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
+            console.log('Global Key:', keyData);
 
-            const modifiers: string[] = [];
-            if (e.metaKey) modifiers.push('Cmd');
-            if (e.ctrlKey) modifiers.push('Ctrl');
-            if (e.altKey) modifiers.push('Alt');
-            if (e.shiftKey) modifiers.push('Shift');
+            const { type, modifiers, keyCode, chars } = keyData;
 
-            if (['Meta', 'Control', 'Alt', 'Shift'].includes(e.key)) return;
+            // We only care about keydown or flagsChanged
+            if (type === 'keyup') return;
 
-            let key = e.key.toUpperCase();
-            if (e.code === 'Space') key = 'Space';
+            // Check for Escape to cancel
+            if (keyCode === 53) { // 53 is Escape
+                setCapturingTarget(null);
+                return;
+            }
 
-            const shortcut = [...modifiers, key].join('+');
+            let parts = [...modifiers];
 
-            onSettingChange(capturingTarget as any, shortcut);
-            setCapturingTarget(null);
+            // Handle modifiers-only (Fn, Cmd, etc.)
+            if (type === 'flagsChanged') {
+                if (parts.length > 0) {
+                    const shortcut = parts.join('+');
+                    onSettingChange(capturingTarget as any, shortcut);
+                    setCapturingTarget(null);
+                }
+                return;
+            }
+
+            // Handle KeyDown with chars
+            if (type === 'keydown') {
+                let keyName = chars;
+                // Fallback or specific overrides if needed
+                if (!keyName && keyCode === 49) keyName = 'Space';
+
+                if (keyName) {
+                    // Combine modifiers + key
+                    const shortcut = [...parts, keyName].join('+');
+                    onSettingChange(capturingTarget as any, shortcut);
+                    setCapturingTarget(null);
+                }
+            }
         };
 
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        if ((window as any).electron && (window as any).electron.ipcRenderer) {
+            const removeListener = (window as any).electron.ipcRenderer.on('global-key-event', handleGlobalKey);
+            return () => {
+                if (removeListener) removeListener();
+            };
+        }
     }, [capturingTarget, onSettingChange]);
 
     return (
@@ -44,7 +69,13 @@ export const GeneralSettings: React.FC<SettingsTabProps> = ({ settings, onSettin
                             className={`shortcut-button ${capturingTarget === 'pushToTalkKey' ? 'recording' : ''}`}
                             onClick={() => setCapturingTarget('pushToTalkKey')}
                         >
-                            {capturingTarget === 'pushToTalkKey' ? 'Recording...' : settings.pushToTalkKey}
+                            {capturingTarget === 'pushToTalkKey' ? (
+                                <span className="recording-text">
+                                    Press keys... (Esc to cancel) <X className="inline-icon" size={14} onClick={(e: React.MouseEvent) => { e.stopPropagation(); setCapturingTarget(null); }} />
+                                </span>
+                            ) : (
+                                <span className="key-combo">{settings.pushToTalkKey}</span>
+                            )}
                         </button>
                     </div>
                     <div className="settings-row">
@@ -53,7 +84,13 @@ export const GeneralSettings: React.FC<SettingsTabProps> = ({ settings, onSettin
                             className={`shortcut-button ${capturingTarget === 'handsFreeModeKey' ? 'recording' : ''}`}
                             onClick={() => setCapturingTarget('handsFreeModeKey')}
                         >
-                            {capturingTarget === 'handsFreeModeKey' ? 'Recording...' : settings.handsFreeModeKey}
+                            {capturingTarget === 'handsFreeModeKey' ? (
+                                <span className="recording-text">
+                                    Press keys... (Esc to cancel) <X className="inline-icon" size={14} onClick={(e: React.MouseEvent) => { e.stopPropagation(); setCapturingTarget(null); }} />
+                                </span>
+                            ) : (
+                                <span className="key-combo">{settings.handsFreeModeKey}</span>
+                            )}
                         </button>
                     </div>
                     <div className="settings-row">

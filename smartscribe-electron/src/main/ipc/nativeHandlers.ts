@@ -21,6 +21,24 @@ export const registerNativeHandlers = (): void => {
         }
     })
 
+    // Check Input Focus
+    ipcMain.handle('check-input-focus', async () => {
+        const path = require('path')
+        const binName = 'check-input'
+        const binaryPath = path.resolve(process.cwd(), 'resources/bin', binName)
+
+        return new Promise((resolve) => {
+            exec(binaryPath, (error, stdout) => {
+                if (error) {
+                    // console.error('Check Input error:', error)
+                    resolve(false)
+                    return
+                }
+                resolve(stdout.trim() === 'true')
+            })
+        })
+    })
+
     // Text Insertion (Clipboard + Cmd-V)
     ipcMain.handle('insert-text', async (_event, text: string) => {
         try {

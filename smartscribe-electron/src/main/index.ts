@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard } from 'electron'
 import { createMainWindow, setIsQuitting } from './windows/mainWindow'
 import { createTray } from './tray/trayManager'
 import { registerProtocol, setupSingleInstanceLock, setupMacOSProtocolHandler, getMainWindow } from './protocol/deepLinkHandler'
@@ -6,6 +6,7 @@ import { registerPermissionsHandlers } from './ipc/permissionsHandlers'
 import { registerNativeHandlers } from './ipc/nativeHandlers'
 import { registerSettingsHandlers, initializeGlobalShortcuts } from './ipc/settingsHandlers'
 import { registerWindowHandlers } from './ipc/windowHandlers'
+import { KeyMonitorService } from './services/KeyMonitorService'
 
 // Register protocol for deep linking
 registerProtocol()
@@ -40,6 +41,14 @@ setupMacOSProtocolHandler((url) => {
     }
 })
 
+// Clipboard IPC
+ipcMain.on('clipboard-write', (_event, text) => {
+    if (text) {
+        clipboard.writeText(text);
+        console.log('Main: Copied text to clipboard:', text.substring(0, 50) + '...');
+    }
+});
+
 // App ready
 app.whenReady().then(() => {
     const mainWindow = createMainWindow()
@@ -50,6 +59,9 @@ app.whenReady().then(() => {
         app.quit()
     }
     createTray(mainWindow, handleQuit)
+
+    // Start Key Monitor
+    new KeyMonitorService();
 
     // Register all IPC handlers
     registerPermissionsHandlers()

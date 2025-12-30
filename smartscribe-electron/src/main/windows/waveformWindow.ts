@@ -84,7 +84,6 @@ const updateWaveformPosition = () => {
     if (isFullscreen) {
         const absoluteBottom = display.bounds.y + display.bounds.height
         targetY = Math.floor(absoluteBottom - winBounds.height - 8)
-        console.log('Fullscreen mode: positioning at absolute bottom', { targetY, absoluteBottom })
     }
 
     if (winBounds.x !== targetX || winBounds.y !== targetY) {
