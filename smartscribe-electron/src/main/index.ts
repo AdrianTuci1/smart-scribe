@@ -32,12 +32,21 @@ if (!hasLock) {
 
 // macOS Protocol Handler
 setupMacOSProtocolHandler((url) => {
+    console.log('Main: setupMacOSProtocolHandler triggered with:', url)
     const mainWindow = getMainWindow()
     if (mainWindow) {
+        console.log('Main: mainWindow found, ID:', mainWindow.id)
         if (mainWindow.isMinimized()) mainWindow.restore()
         mainWindow.show()
         mainWindow.focus()
-        mainWindow.webContents.send('deep-link', url)
+
+        // Slight delay to ensure renderer is ready after focus
+        setTimeout(() => {
+            mainWindow.webContents.send('deep-link', url)
+            console.log('Main: deep-link IPC sent to mainWindow (delayed)')
+        }, 500)
+    } else {
+        console.error('Main: No mainWindow found to send deep-link!')
     }
 })
 

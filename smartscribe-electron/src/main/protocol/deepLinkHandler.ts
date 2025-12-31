@@ -31,6 +31,7 @@ export const setupSingleInstanceLock = (onSecondInstance: (url?: string) => void
 export const setupMacOSProtocolHandler = (onOpenUrl: (url: string) => void): void => {
     app.on('open-url', (event, url) => {
         event.preventDefault()
+        console.log('Main: Received open-url event:', url)
         onOpenUrl(url)
     })
 }

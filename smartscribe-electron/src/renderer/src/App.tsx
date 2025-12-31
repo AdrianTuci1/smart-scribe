@@ -32,14 +32,17 @@ const MainAppContent = () => {
 
         if ((window as any).electron) {
             removeListener = (window as any).electron.ipcRenderer.on('deep-link', (url: string) => {
-                console.log('Received deep link:', url);
+                console.log('App.tsx: Received deep link:', url);
                 authService.handleAuthCallback(url).then((success) => {
+                    console.log('App.tsx: handleAuthCallback result:', success);
                     if (success) {
-                        // Ideally we should reload or update context. 
-                        // Since authService updates internal state, and we reload on logout...
-                        // We might want to trigger a refresh.
+                        console.log('App.tsx: Authentication successful, reloading...');
                         window.location.reload();
+                    } else {
+                        console.error('App.tsx: Authentication failed or URL invalid');
                     }
+                }).catch(err => {
+                    console.error('App.tsx: handleAuthCallback error:', err);
                 });
             });
         }

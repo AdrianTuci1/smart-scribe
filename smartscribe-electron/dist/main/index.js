@@ -16236,10 +16236,10 @@ var getWaveformWindow = () => {
 var registerProtocol = () => {
   if (process.defaultApp) {
     if (process.argv.length >= 2) {
-      import_electron4.app.setAsDefaultProtocolClient("voicescribe", process.execPath, [(0, import_path5.resolve)(process.argv[1])]);
+      import_electron4.app.setAsDefaultProtocolClient("smartscribe", process.execPath, [(0, import_path5.resolve)(process.argv[1])]);
     }
   } else {
-    import_electron4.app.setAsDefaultProtocolClient("voicescribe");
+    import_electron4.app.setAsDefaultProtocolClient("smartscribe");
   }
 };
 var setupSingleInstanceLock = (onSecondInstance) => {
@@ -16249,7 +16249,7 @@ var setupSingleInstanceLock = (onSecondInstance) => {
     return false;
   }
   import_electron4.app.on("second-instance", (_event, commandLine) => {
-    const url = commandLine.find((arg) => arg.startsWith("voicescribe://"));
+    const url = commandLine.find((arg) => arg.startsWith("smartscribe://"));
     onSecondInstance(url);
   });
   return true;
@@ -16257,6 +16257,7 @@ var setupSingleInstanceLock = (onSecondInstance) => {
 var setupMacOSProtocolHandler = (onOpenUrl) => {
   import_electron4.app.on("open-url", (event, url) => {
     event.preventDefault();
+    console.log("Main: Received open-url event:", url);
     onOpenUrl(url);
   });
 };
@@ -16433,6 +16434,10 @@ var registerNativeHandlers = () => {
       console.log(`[Renderer] ${message}`);
     }
   });
+  import_electron6.ipcMain.handle("open-external", async (_event, url) => {
+    const { shell } = await import("electron");
+    await shell.openExternal(url);
+  });
 };
 
 // src/main/ipc/settingsHandlers.ts
@@ -16575,12 +16580,19 @@ var hasLock = setupSingleInstanceLock((url) => {
 if (!hasLock) {
 }
 setupMacOSProtocolHandler((url) => {
+  console.log("Main: setupMacOSProtocolHandler triggered with:", url);
   const mainWindow = getMainWindow();
   if (mainWindow) {
+    console.log("Main: mainWindow found, ID:", mainWindow.id);
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.show();
     mainWindow.focus();
-    mainWindow.webContents.send("deep-link", url);
+    setTimeout(() => {
+      mainWindow.webContents.send("deep-link", url);
+      console.log("Main: deep-link IPC sent to mainWindow (delayed)");
+    }, 500);
+  } else {
+    console.error("Main: No mainWindow found to send deep-link!");
   }
 });
 import_electron10.ipcMain.on("clipboard-write", (_event, text) => {

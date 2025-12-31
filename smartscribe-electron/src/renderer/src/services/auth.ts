@@ -53,6 +53,38 @@ class AuthService {
                     this.handleSession(session, cognitoUser);
                 }
             });
+        } else {
+            // Fallback for Hosted UI / Social Login
+            const token = localStorage.getItem('auth_token');
+            const idToken = localStorage.getItem('id_token');
+            if (token && idToken) {
+                try {
+                    const payload = JSON.parse(atob(idToken.split('.')[1]));
+                    // Check exp
+                    const now = Math.floor(Date.now() / 1000);
+                    if (payload.exp && payload.exp < now) {
+                        console.log('Token expired');
+                        this.logout();
+                        return;
+                    }
+
+                    console.log('Restored payload:', payload);
+                    const name = payload.name || payload.given_name || payload['cognito:username'] || payload.email;
+
+                    apiService.setToken(token);
+                    this.isAuthenticated = true;
+                    this.user = {
+                        id: payload.sub,
+                        email: payload.email,
+                        username: name
+                    };
+
+                    console.log('Restored manual session from localStorage');
+                } catch (e) {
+                    console.error('Failed to restore manual session', e);
+                    this.logout();
+                }
+            }
         }
     }
 
@@ -106,13 +138,19 @@ class AuthService {
                 return;
             }
 
+            console.log('User Attributes:', attributes);
             const emailAttr = attributes?.find(attr => attr.getName() === 'email');
             const subAttr = attributes?.find(attr => attr.getName() === 'sub');
+            const nameAttr = attributes?.find(attr => attr.getName() === 'name');
+            const givenNameAttr = attributes?.find(attr => attr.getName() === 'name');
+
+            const displayName = nameAttr?.getValue() || givenNameAttr?.getValue() || cognitoUser.getUsername();
+            const finalName = (!nameAttr && !givenNameAttr && emailAttr) ? emailAttr.getValue().split('@')[0] : displayName;
 
             this.user = {
                 id: subAttr ? subAttr.getValue() : 'unknown',
                 email: emailAttr ? emailAttr.getValue() : cognitoUser.getUsername(),
-                username: cognitoUser.getUsername()
+                username: finalName
             };
 
             // Persist manually if needed, though sdk does it in localStorage by default.
@@ -162,7 +200,7 @@ class AuthService {
         // We use the specific identity_provider=Google param to skip the Cognito selection screen if desired, 
         // or just point to /login/
         const clientId = POOL_DATA.ClientId;
-        const authUrl = `${COGNITO_DOMAIN}/oauth2/authorize?identity_provider=Google&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=email+openid+phone`;
+        const authUrl = `${COGNITO_DOMAIN}/oauth2/authorize?identity_provider=Google&response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=email+openid+profile`;
 
         if ((window as any).electron) {
             await (window as any).electron.ipcRenderer.invoke('open-external', authUrl);
@@ -215,12 +253,21 @@ class AuthService {
                     // Simple path:
                     apiService.setToken(data.access_token);
                     this.isAuthenticated = true;
+                    console.log('Auth Callback Data:', data);
                     // We need to parse the ID token for user info
                     const payload = JSON.parse(atob(data.id_token.split('.')[1]));
+                    console.log('Auth Token Payload:', payload);
+
+                    let name = payload.name || payload.given_name || payload['cognito:name'];
+
+                    if (!payload.name && !payload.given_name && payload.email) {
+                        name = payload.email.split('@')[0];
+                    }
+
                     this.user = {
                         id: payload.sub,
                         email: payload.email,
-                        username: payload['cognito:username'] || payload.email
+                        username: name
                     };
 
                     // For refresh, we'd need to manually handle the refresh_token if we aren't using the SDK's internal storage
@@ -230,6 +277,7 @@ class AuthService {
 
                     // Let's store in localStorage for manual hydration fallback in constructor if SDK fails
                     localStorage.setItem('auth_token', data.access_token);
+                    localStorage.setItem('id_token', data.id_token);
                     // localStorage.setItem('refresh_token', data.refresh_token); // If needed
 
                     return true;

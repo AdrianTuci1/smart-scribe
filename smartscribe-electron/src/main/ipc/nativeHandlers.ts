@@ -155,4 +155,10 @@ export const registerNativeHandlers = (): void => {
             console.log(`[Renderer] ${message}`)
         }
     })
+
+    // Open External URL
+    ipcMain.handle('open-external', async (_event, url: string) => {
+        const { shell } = await import('electron');
+        await shell.openExternal(url);
+    });
 }

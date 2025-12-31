@@ -7,6 +7,7 @@ export default defineConfig({
     plugins: [react()],
     base: './',
     root: resolve(__dirname, 'src/renderer'),
+    envDir: resolve(__dirname),
     publicDir: resolve(__dirname, 'resources'),
     resolve: {
         alias: {
@@ -20,5 +21,8 @@ export default defineConfig({
     server: {
         port: 5174,
         strictPort: true,
-    }
+    },
+    define: {
+        global: 'globalThis',
+    },
 })

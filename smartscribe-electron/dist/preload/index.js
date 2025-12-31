@@ -6,7 +6,10 @@ import_electron.contextBridge.exposeInMainWorld("electron", {
   ipcRenderer: {
     send: (channel, ...args) => import_electron.ipcRenderer.send(channel, ...args),
     on: (channel, func) => {
-      const subscription = (_event, ...args) => func(...args);
+      const subscription = (_event, ...args) => {
+        console.log(`Preload: Received event on channel '${channel}'`, args);
+        func(...args);
+      };
       import_electron.ipcRenderer.on(channel, subscription);
       return () => import_electron.ipcRenderer.removeListener(channel, subscription);
     },
