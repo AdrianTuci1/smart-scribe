@@ -26,6 +26,8 @@ defmodule VoiceScribeAPIServer.Router do
   scope "/api/v1", VoiceScribeAPIServer do
     pipe_through([:api, :auth, :rate_limit])
 
+    delete("/auth/me", AuthController, :delete_account)
+
     get("/notes", NotesController, :list)
     post("/notes", NotesController, :create)
     delete("/notes/:id", NotesController, :delete)

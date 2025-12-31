@@ -1,26 +1,37 @@
 import React, { useState } from 'react';
-import { authService } from '../../services/auth';
+import { useAuth } from '../../contexts/AuthContext';
 import { ChevronRight, Search, Home, Inbox, ListTodo, Users, Map, Globe, HelpCircle } from 'lucide-react';
 import loginBg from '../../assets/login-bg.png';
 import './LoginView.css';
 
 export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
+    const { login, loginWithGoogle, isLoading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [password, setPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        // Simulate login for email flow
-        setTimeout(() => {
-            setIsLoading(false);
+        setError(null);
+        setIsSubmitting(true);
+        try {
+            // Hardcoded password for now if UI doesn't have password field yet, 
+            // OR add password field. User request said "email/parola direct in login".
+            // The existing UI only had Email. I must add a Password field.
+            await login(email, password);
             onLoginSuccess();
-        }, 1000);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || 'Login failed');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleSSO = async () => {
         try {
-            await authService.signInWithWebBrowser();
+            await loginWithGoogle();
         } catch (error) {
             console.error("SSO Error:", error);
         }
@@ -77,6 +88,9 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                         </button>
                     </div>
 
+                    {/* Error Message */}
+                    {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>{error}</div>}
+
                     <div className="divider-wrapper">
                         <div className="divider-line"></div>
                         <span className="divider-text">OR</span>
@@ -92,15 +106,24 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
+                        <input
+                            type="password"
+                            placeholder="Enter your password"
+                            className="email-input"
+                            style={{ marginTop: '10px' }}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
                         <p className="form-hint">
                             Use your school or work email to access team features
                         </p>
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isSubmitting || authLoading}
                             className="submit-button"
                         >
-                            {isLoading ? 'Wait...' : 'Continue with Email'}
+                            {isSubmitting || authLoading ? 'Wait...' : 'Continue with Email'}
                         </button>
                     </form>
 

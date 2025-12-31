@@ -6,19 +6,27 @@ import { MainView } from './components/Main/MainView';
 import { FloatingWaveform } from './components/Waveform/FloatingWaveform';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import './App.css';
 
-const MainApp = () => {
+const MainAppContent = () => {
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const { isAuthenticated, loginWithGoogle, user } = useAuth(); // Use context
+
+    useEffect(() => {
+        if (user?.onboarding) {
+            setHasCompletedOnboarding(true);
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.resizeWindow(900, 670);
+                // Open the Floating Waveform automatically? Maybe not on every reload, but specific flow.
+                // Keeping existing behavior for "Complete" flow, but for reload we might just want to set state.
+            }
+        }
+    }, [user]);
 
     // Simple check on mount
     useEffect(() => {
-        // Here we would check persistence for onboarding
-        // And auth service for token
-        setIsAuthenticated(authService.isLoggedIn());
-
         // Listen for deep links
         let removeListener: (() => void) | undefined;
 
@@ -27,13 +35,14 @@ const MainApp = () => {
                 console.log('Received deep link:', url);
                 authService.handleAuthCallback(url).then((success) => {
                     if (success) {
-                        setIsAuthenticated(true);
-                        // Force window focus or UI update if needed
+                        // Ideally we should reload or update context. 
+                        // Since authService updates internal state, and we reload on logout...
+                        // We might want to trigger a refresh.
+                        window.location.reload();
                     }
                 });
             });
         }
-
 
         return () => {
             if (removeListener) removeListener();
@@ -49,22 +58,22 @@ const MainApp = () => {
         }
     };
 
-    const handleLoginSuccess = () => {
-        setIsAuthenticated(true);
-    };
-
     if (!hasCompletedOnboarding) {
         return <OnboardingView onComplete={handleOnboardingComplete} />;
     }
-
-    // Allow guest access (skip login) - we don't block on !isAuthenticated anymore
-    // Authentication can happen during onboarding or via Settings later
-
 
     return (
         <div className="app-container">
             <MainView />
         </div>
+    );
+};
+
+const MainApp = () => {
+    return (
+        <AuthProvider>
+            <MainAppContent />
+        </AuthProvider>
     );
 };
 

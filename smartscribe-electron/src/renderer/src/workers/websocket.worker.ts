@@ -7,7 +7,7 @@ let isConnected = false;
 let sessionId: string | null = null;
 let heartbeatTimer: NodeJS.Timeout | null = null;
 let hasStartedStream = false; // Track if we've already started the stream
-const websocketUrl = 'ws://localhost:4000/socket/websocket'; // Note: This might need to be dynamic or passed in
+const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:4000/socket/websocket'; // Default fallback
 const heartbeatInterval = 30000; // 30 seconds
 
 // Types for messages

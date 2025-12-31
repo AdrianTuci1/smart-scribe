@@ -75,15 +75,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
         { id: 'search', label: 'Search engine' }, { id: 'event', label: 'Event' },
         { id: 'friend', label: 'Friend' }, { id: 'colleague', label: 'Colleague' },
         { id: 'podcast', label: 'Podcast' }, { id: 'article', label: 'Article' },
-        { id: 'product_hunt', label: 'Product Hunt' }, { id: 'techcrunch', label: 'TechCrunch' },
-        { id: 'diary', label: 'Diary of a CEO' }, { id: 'ruben', label: 'Ruben Hassid' },
         { id: 'radio', label: 'Radio' }, { id: 'computerworld', label: 'Computerworld' },
-        { id: 'opal', label: 'Opal' }, { id: 'billboard', label: 'Billboard' }, { id: 'other', label: 'Other' }
+        { id: 'other', label: 'Other' }
     ];
 
     const roleOptions = [
-        { id: 'founder', label: 'Founder/CEO' }, { id: 'consultant', label: 'Consultant' },
-        { id: 'operations', label: 'Operations' }, { id: 'developer', label: 'Developer' },
+        { id: 'developer', label: 'Developer' },
         { id: 'product', label: 'Product' }, { id: 'data', label: 'Data Analysis' },
         { id: 'sales', label: 'Sales' }, { id: 'marketing', label: 'Marketing' },
         { id: 'support', label: 'Customer Support' }, { id: 'recruiting', label: 'Recruiting' },
@@ -93,7 +90,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
     ];
 
     const usageOptions = [
-        { id: 'chatting', label: 'Chatting with AI' }, { id: 'messages', label: 'Sending messages' },
+        { id: 'messages', label: 'Sending messages' },
         { id: 'coding', label: 'Coding with AI' }, { id: 'emails', label: 'Drafting emails' },
         { id: 'docs', label: 'Writing documents' }, { id: 'notes', label: 'Taking notes' },
         { id: 'posts', label: 'Writing posts or comments' }, { id: 'other', label: 'Something else' }

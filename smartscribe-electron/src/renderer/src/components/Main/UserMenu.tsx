@@ -1,28 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Bell, Smartphone, QrCode } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import './UserMenu.css';
 
 interface UserMenuProps {
-    userName?: string;
-    userEmail?: string;
-    userAvatar?: string;
-    planName?: string;
-    wordsUsed?: number;
-    wordsLimit?: number;
     onManageAccount?: () => void;
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({
-    userName = 'Tucicovenco Adrian',
-    userEmail = 'adrian.tucicovenco@gmail.com',
-    userAvatar,
-    planName = 'Flow Basic',
-    wordsUsed = 1903,
-    wordsLimit = 2000,
     onManageAccount
 }) => {
+    const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Derived values
+    const userName = user?.username || 'Guest';
+    const userEmail = user?.email || 'guest@example.com';
+    const userAvatar = undefined; // We don't have avatar in Cognito yet
+    const planName = 'Flow Basic'; // Hardcoded for now
+    const wordsUsed = 0;
+    const wordsLimit = 2000;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

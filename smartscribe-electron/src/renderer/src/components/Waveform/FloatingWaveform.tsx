@@ -26,7 +26,7 @@ export const FloatingWaveform: React.FC = () => {
         pushToTalkKeyRef.current = pushToTalkKey;
     }, [pushToTalkKey]);
 
-    // Load Settings
+    // Load Settings & Check Permissions
     useEffect(() => {
         const loadSettings = async () => {
             try {
@@ -40,7 +40,24 @@ export const FloatingWaveform: React.FC = () => {
                 console.error("Failed to load settings in Waveform:", err);
             }
         };
+
+        const checkPermissions = async () => {
+            try {
+                if ((window as any).electron && (window as any).electron.ipcRenderer) {
+                    const acc = await (window as any).electron.ipcRenderer.checkAccessibility();
+                    console.log('Accessibility Permission Status:', acc);
+                    if (!acc) {
+                        console.log('Requesting accessibility permissions...');
+                        await (window as any).electron.ipcRenderer.requestAccessibility();
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to check permissions:", err);
+            }
+        };
+
         loadSettings();
+        checkPermissions();
     }, []);
 
     // Helper: Screen transparency & Fullscreen listener

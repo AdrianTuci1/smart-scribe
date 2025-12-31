@@ -20,8 +20,10 @@ defmodule VoiceScribeAPIServer.AuthController do
           user_id: claims["sub"],
           message: "Token is valid"
         })
+
       {:error, reason} ->
         Logger.error("Token validation failed: #{inspect(reason)}")
+
         conn
         |> put_status(:unauthorized)
         |> json(%{
@@ -40,12 +42,12 @@ defmodule VoiceScribeAPIServer.AuthController do
     # For now, we'll just return a mock response
     if refresh_token do
       conn
-        |> put_status(:bad_request)
-        |> json(%{message: "Token refresh not implemented yet"})
+      |> put_status(:bad_request)
+      |> json(%{message: "Token refresh not implemented yet"})
     else
       conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Refresh token is required"})
+      |> put_status(:bad_request)
+      |> json(%{error: "Refresh token is required"})
     end
   end
 
@@ -58,12 +60,32 @@ defmodule VoiceScribeAPIServer.AuthController do
     # For now, we'll just return a success response
     if true do
       conn
-        |> put_status(:ok)
-        |> json(%{message: "Logged out successfully"})
-      else
+      |> put_status(:ok)
+      |> json(%{message: "Logged out successfully"})
+    else
       conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid request"})
-      end
+      |> put_status(:bad_request)
+      |> json(%{error: "Invalid request"})
     end
+  end
+
+  @doc """
+  Deletes all user data from backend
+  """
+  def delete_account(conn, _params) do
+    # AuthenticationPlug assigns 'sub' (user_id) to :current_user
+    user_id = conn.assigns[:current_user]
+
+    if user_id do
+      VoiceScribeAPI.DynamoDBRepo.delete_user_data(user_id)
+
+      conn
+      |> put_status(:ok)
+      |> json(%{success: true, message: "Account data deleted successfully"})
+    else
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "User not authenticated"})
+    end
+  end
 end

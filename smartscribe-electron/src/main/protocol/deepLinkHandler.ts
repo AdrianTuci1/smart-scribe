@@ -5,10 +5,10 @@ import { getWaveformWindow } from '../windows/waveformWindow'
 export const registerProtocol = (): void => {
     if (process.defaultApp) {
         if (process.argv.length >= 2) {
-            app.setAsDefaultProtocolClient('voicescribe', process.execPath, [resolve(process.argv[1])])
+            app.setAsDefaultProtocolClient('smartscribe', process.execPath, [resolve(process.argv[1])])
         }
     } else {
-        app.setAsDefaultProtocolClient('voicescribe')
+        app.setAsDefaultProtocolClient('smartscribe')
     }
 }
 
@@ -21,7 +21,7 @@ export const setupSingleInstanceLock = (onSecondInstance: (url?: string) => void
     }
 
     app.on('second-instance', (_event, commandLine) => {
-        const url = commandLine.find((arg) => arg.startsWith('voicescribe://'))
+        const url = commandLine.find((arg) => arg.startsWith('smartscribe://'))
         onSecondInstance(url)
     })
 

@@ -10,6 +10,21 @@
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --outfile=dist/preload/index.js --external:electron",
     "build": "tsc && vite build && npm run build:main && npm run build:preload"
   },
+  "build": {
+    "appId": "com.smartscribe.app",
+    "productName": "SmartScribe",
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "protocols": [
+      {
+        "name": "SmartScribe Protocol",
+        "schemes": [
+          "smartscribe"
+        ]
+      }
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -29,6 +44,7 @@
   },
   "dependencies": {
     "active-win": "^8.2.1",
+    "amazon-cognito-identity-js": "^6.3.16",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "electron-store": "^8.2.0",

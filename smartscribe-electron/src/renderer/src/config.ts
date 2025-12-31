@@ -3,10 +3,7 @@
 const config = {
     // WebSocket server configuration
     websocket: {
-        url: 'wss://api.smartscribe.app/socket/websocket', // Electron app always points to prod or specific dev env, using prod URL for now or localhost if overridden
-        // For development default to localhost if needed, but typically electron app might want real server
-        // Let's keep logic similar to frontend but maybe simpler since we don't have import.meta.env.PROD the same way always
-        // leveraging a simple check or defaulting to localhost for dev
+        url: import.meta.env.VITE_WEBSOCKET_URL || 'wss://api.smartscribe.app/socket/websocket',
         reconnectInterval: 5000, // ms
         heartbeatInterval: 30000, // ms (30 seconds, matching Swift implementation)
     },
@@ -21,14 +18,15 @@ const config = {
 };
 
 // Override URL for development
-if (process.env.NODE_ENV === 'development') {
-    config.websocket.url = 'ws://localhost:4000/socket/websocket';
-}
+// Consolidating logic: if VITE_WEBSOCKET_URL is provided, it's used above.
+// If explicitly needed to override based on NODE_ENV separately from .env (rare if using .env), we can keep it,
+// but usually .env dictates. 
+// Removing the manual override block since we expect .env to handle it.
 
 export const API_CONFIG = {
-    BASE_URL: process.env.NODE_ENV === 'production'
+    BASE_URL: import.meta.env.VITE_API_BASE_URL || (process.env.NODE_ENV === 'production'
         ? 'https://api.smartscribe.app'
-        : 'http://localhost:4000/api'
+        : 'http://localhost:4000/api')
 };
 
 export default config;

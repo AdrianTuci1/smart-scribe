@@ -5,6 +5,7 @@ import { apiService } from '../../../services/api';
 import { TranscriptRow } from './TranscriptRow';
 import { Flame, PenTool, ThumbsUp, Loader2 } from 'lucide-react';
 import { format, isSameMinute, isSameHour } from 'date-fns';
+import { useAuth } from '../../../contexts/AuthContext';
 import './HomeView.css';
 
 // Helper to group transcripts by date string (e.g. "Today", "Yesterday")
@@ -21,6 +22,7 @@ const groupTranscripts = (transcripts: Transcript[]) => {
 };
 
 export const HomeView: React.FC = () => {
+    const { user } = useAuth();
     const [transcripts, setTranscripts] = useState<Transcript[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({ streak: 1, words: 0, wpm: 0 }); // Mock stats for now
@@ -123,7 +125,7 @@ export const HomeView: React.FC = () => {
             <div className="home-content">
                 {/* Header Row */}
                 <div className="home-header">
-                    <h1 className="home-title">Welcome back, Tucicovenco</h1>
+                    <h1 className="home-title">Welcome back, {user?.username || 'User'}</h1>
 
                     {/* Stats Pill */}
                     <div className="stats-pill">
