@@ -22,5 +22,6 @@ defmodule VoiceScribeAPIServer.Endpoint do
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
+  plug(CORSPlug, origin: ["http://localhost:5174", "http://localhost:4000"])
   plug(VoiceScribeAPIServer.Router)
 end

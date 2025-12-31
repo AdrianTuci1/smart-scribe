@@ -98,7 +98,7 @@ export const createWaveformWindow = (): void => {
 
     waveformWindow = new BrowserWindow({
         width: 600,
-        height: 120,
+        height: 400, // Increased height to fit warning toast
         frame: false,
         transparent: true,
         alwaysOnTop: true,

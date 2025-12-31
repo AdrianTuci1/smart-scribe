@@ -110,5 +110,5 @@ output(json: Output(
     windowTitle: windowTitle,
     fullscreen: isFullscreen,
     bounds: Bounds(x: x, y: y, w: w, h: h),
-    debug: "Swift Helper: Operational (PID Strategy)"
+    debug: ""
 ))

@@ -24,17 +24,49 @@ export const registerNativeHandlers = (): void => {
     // Check Input Focus
     ipcMain.handle('check-input-focus', async () => {
         const path = require('path')
-        const binName = 'check-input'
-        const binaryPath = path.resolve(process.cwd(), 'resources/bin', binName)
+        const fs = require('fs')
+
+        // Use compiled binary
+        let binaryPath: string;
+
+        if (require('electron').app.isPackaged) {
+            binaryPath = path.join(process.resourcesPath, 'bin', 'check-input')
+        } else {
+            binaryPath = path.join(__dirname, '../../resources/bin/check-input')
+        }
+
+        console.log('Main: checking input focus using binary at:', binaryPath);
+
+        // Fallback to script if binary missing (legacy/dev fallback)
+        if (!fs.existsSync(binaryPath)) {
+            console.warn('Binary check-input not found at:', binaryPath, '- falling back to script')
+            const scriptPath = require('electron').app.isPackaged
+                ? path.join(process.resourcesPath, 'swift', 'check-input.swift')
+                : path.join(__dirname, '../../src/main/swift/check-input.swift')
+
+            return new Promise((resolve) => {
+                exec(`swift "${scriptPath}"`, (error, stdout) => {
+                    if (error) {
+                        console.error('Check Input error (script fallback):', error)
+                        resolve(false)
+                        return
+                    }
+                    console.log('Main: script fallback check input result:', stdout.trim());
+                    resolve(stdout.trim() === 'true')
+                })
+            })
+        }
 
         return new Promise((resolve) => {
-            exec(binaryPath, (error, stdout) => {
+            exec(`"${binaryPath}"`, (error, stdout) => {
                 if (error) {
-                    // console.error('Check Input error:', error)
+                    console.error('Check Input error (binary):', error)
                     resolve(false)
                     return
                 }
-                resolve(stdout.trim() === 'true')
+                const result = stdout.trim() === 'true'
+                console.log('Main: binary check input result:', result, 'stdout:', stdout)
+                resolve(result)
             })
         })
     })
@@ -71,6 +103,15 @@ export const registerNativeHandlers = (): void => {
         const window = BrowserWindow.fromWebContents(event.sender)
         if (window) {
             window.setIgnoreMouseEvents(ignore, options)
+        }
+    })
+
+    // Debug Logging from Renderer
+    ipcMain.on('log', (_event, message, data) => {
+        if (data) {
+            console.log(`[Renderer] ${message}`, data)
+        } else {
+            console.log(`[Renderer] ${message}`)
         }
     })
 }

@@ -17,6 +17,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Removed position: relative to allow toast to position relative to viewport */
 }
 
 /* Record Button: Gradient Pill/Orb */
@@ -169,7 +170,8 @@
 /* 2. Warning Toast */
 .warning-toast {
     position: absolute;
-    bottom: 90px;
+    bottom: 70px;
+    /* Moved lower to avoid cutoff */
     background: #0a0a0a;
     color: white;
     padding: 16px;

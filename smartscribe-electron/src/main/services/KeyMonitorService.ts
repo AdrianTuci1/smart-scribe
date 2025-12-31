@@ -33,7 +33,7 @@ export class KeyMonitorService {
 
                 rl.on('line', (line) => {
                     try {
-                        console.log('[KeyMonitor] Raw:', line); // <--- Added debug log
+
                         const event = JSON.parse(line);
                         // Broadcast to all renderers
                         const windows = BrowserWindow.getAllWindows();

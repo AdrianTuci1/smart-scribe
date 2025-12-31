@@ -16162,7 +16162,8 @@ var createWaveformWindow = () => {
   if (waveformWindow) return;
   waveformWindow = new import_electron3.BrowserWindow({
     width: 600,
-    height: 120,
+    height: 400,
+    // Increased height to fit warning toast
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -16323,15 +16324,39 @@ var registerNativeHandlers = () => {
   });
   import_electron6.ipcMain.handle("check-input-focus", async () => {
     const path3 = require("path");
-    const binName = "check-input";
-    const binaryPath2 = path3.resolve(process.cwd(), "resources/bin", binName);
+    const fs2 = require("fs");
+    let binaryPath2;
+    if (require("electron").app.isPackaged) {
+      binaryPath2 = path3.join(process.resourcesPath, "bin", "check-input");
+    } else {
+      binaryPath2 = path3.join(__dirname, "../../resources/bin/check-input");
+    }
+    console.log("Main: checking input focus using binary at:", binaryPath2);
+    if (!fs2.existsSync(binaryPath2)) {
+      console.warn("Binary check-input not found at:", binaryPath2, "- falling back to script");
+      const scriptPath = require("electron").app.isPackaged ? path3.join(process.resourcesPath, "swift", "check-input.swift") : path3.join(__dirname, "../../src/main/swift/check-input.swift");
+      return new Promise((resolve2) => {
+        (0, import_child_process2.exec)(`swift "${scriptPath}"`, (error, stdout) => {
+          if (error) {
+            console.error("Check Input error (script fallback):", error);
+            resolve2(false);
+            return;
+          }
+          console.log("Main: script fallback check input result:", stdout.trim());
+          resolve2(stdout.trim() === "true");
+        });
+      });
+    }
     return new Promise((resolve2) => {
-      (0, import_child_process2.exec)(binaryPath2, (error, stdout) => {
+      (0, import_child_process2.exec)(`"${binaryPath2}"`, (error, stdout) => {
         if (error) {
+          console.error("Check Input error (binary):", error);
           resolve2(false);
           return;
         }
-        resolve2(stdout.trim() === "true");
+        const result = stdout.trim() === "true";
+        console.log("Main: binary check input result:", result, "stdout:", stdout);
+        resolve2(result);
       });
     });
   });
@@ -16361,6 +16386,13 @@ var registerNativeHandlers = () => {
     const window = import_electron6.BrowserWindow.fromWebContents(event.sender);
     if (window) {
       window.setIgnoreMouseEvents(ignore, options);
+    }
+  });
+  import_electron6.ipcMain.on("log", (_event, message, data) => {
+    if (data) {
+      console.log(`[Renderer] ${message}`, data);
+    } else {
+      console.log(`[Renderer] ${message}`);
     }
   });
 };
@@ -16454,7 +16486,6 @@ var KeyMonitorService = class {
         });
         rl.on("line", (line) => {
           try {
-            console.log("[KeyMonitor] Raw:", line);
             const event = JSON.parse(line);
             const windows = import_electron9.BrowserWindow.getAllWindows();
             windows.forEach((win) => {

@@ -31,8 +31,19 @@ func output(event: KeyEvent) {
     }
 }
 
+var eventTap: CFMachPort?
+
 // Event Tap Callback
 let callback: CGEventTapCallBack = { (proxy, type, event, refcon) in
+    
+    // Auto-enable if disabled
+    if type == .tapDisabledByTimeout {
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false) // Reset
+            CGEvent.tapEnable(tap: tap, enable: true)
+        }
+        return Unmanaged.passUnretained(event)
+    }
     
     // We only care about key events
     var eventType = ""
@@ -83,27 +94,40 @@ let callback: CGEventTapCallBack = { (proxy, type, event, refcon) in
     
     output(event: keyEvent)
     
+    // BLOCKING LOGIC:
+    // If Fn key (63), swallow the event to prevent system Emoji picker.
+    // Note: We still outputted the event above so our app sees it.
+    if keyCode == 63 {
+        return nil
+    }
+    
     return Unmanaged.passUnretained(event)
 }
 
 // Create Event Tap
 let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
 
-guard let eventTap = CGEvent.tapCreate(
+// Assign to global variable
+// Note: We used guard let logic before, but now we assign to var.
+let tap = CGEvent.tapCreate(
     tap: .cgSessionEventTap,
     place: .headInsertEventTap,
-    options: .listenOnly,
+    options: .defaultTap, // Active blocking tap
     eventsOfInterest: CGEventMask(eventMask),
     callback: callback,
     userInfo: nil
-) else {
+)
+
+if tap == nil {
     print("{\"error\": \"failed to create event tap\"}")
     exit(1)
 }
 
-let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+eventTap = tap
+
+let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap!, 0)
 CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-CGEvent.tapEnable(tap: eventTap, enable: true)
+CGEvent.tapEnable(tap: eventTap!, enable: true)
 
 // Keep running
 CFRunLoopRun()
