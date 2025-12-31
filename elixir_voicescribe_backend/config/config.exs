@@ -10,6 +10,11 @@ import Config
 config :voicescribe_api,
   generators: [timestamp_type: :utc_datetime]
 
+config :voicescribe_api, VoiceScribeAPI.Mailer, adapter: Swoosh.Adapters.SMTP
+
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_SECRET_KEY")
+
 # Configure endpoint
 config :voicescribe_api, VoiceScribeAPIServer.Endpoint,
   url: [host: "localhost"],
@@ -21,8 +26,6 @@ config :voicescribe_api, VoiceScribeAPIServer.Endpoint,
     layout: false
   ],
   pubsub_server: VoiceScribeAPI.PubSub
-
-
 
 # Configure Elixir's Logger
 config :logger, :default_formatter,

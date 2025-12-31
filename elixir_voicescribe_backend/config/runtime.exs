@@ -37,6 +37,20 @@ if config_env() in [:dev, :prod] do
       host: "dynamodb.#{aws_region}.amazonaws.com",
       port: 443
   end
+
+  config :voicescribe_api, VoiceScribeAPI.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_RELAY") || "smtp.gmail.com",
+    username: System.get_env("SMTP_USERNAME"),
+    password: System.get_env("SMTP_PASSWORD"),
+    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+    tls: :if_available,
+    auth: :if_available,
+    ssl: false,
+    retries: 2
+
+  config :stripity_stripe,
+    api_key: System.get_env("STRIPE_SECRET_KEY")
 end
 
 # ## Using releases

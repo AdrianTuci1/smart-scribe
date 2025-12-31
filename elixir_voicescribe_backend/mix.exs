@@ -58,7 +58,10 @@ defmodule VoiceScribeAPI.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:httpoison, "~> 2.2"},
-      {:ex_aws_s3, "~> 2.4"}
+      {:ex_aws_s3, "~> 2.4"},
+      {:swoosh, "~> 1.10"},
+      {:gen_smtp, "~> 1.1"},
+      {:stripity_stripe, "~> 3.2"}
     ]
   end
 

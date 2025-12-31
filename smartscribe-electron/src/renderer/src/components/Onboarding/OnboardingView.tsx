@@ -11,6 +11,7 @@ import { LanguageSelectionStep } from './LanguageSelectionStep';
 import { InteractiveLearnStep } from './InteractiveLearnStep';
 import { FreeTrialStep } from './FreeTrialStep';
 import { ReferralStep } from './ReferralStep';
+import { configService } from '../../services/api';
 
 interface OnboardingViewProps {
     onComplete: () => void;
@@ -38,6 +39,20 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
     // 11: Referral
     // 12: Success/Learn
     const TOTAL_STEPS = 12;
+
+    const handleComplete = async () => {
+        try {
+            await configService.updateOnboarding({
+                source: Array.from(source),
+                role: Array.from(role),
+                usage: Array.from(usage)
+            });
+        } catch (error) {
+            console.error('Failed to save onboarding data:', error);
+            // We initiate completion anyway so we don't block the user
+        }
+        onComplete();
+    };
 
     const nextStep = () => setCurrentStep(prev => prev + 1);
 
@@ -178,7 +193,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
             return (
                 <ReferralStep
                     key="referral"
-                    onComplete={onComplete}
+                    onComplete={handleComplete}
                     onBack={() => setCurrentStep(prev => prev - 1)}
                     currentStep={11}
                     totalSteps={TOTAL_STEPS}

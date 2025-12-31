@@ -1,0 +1,42 @@
+:root {
+    /* Colors - Backgrounds */
+    --bg-deep: #050510;
+    --bg-panel: rgba(20, 20, 35, 0.6);
+    --bg-panel-hover: rgba(30, 30, 50, 0.7);
+    --bg-glass: rgba(10, 10, 25, 0.3);
+
+    /* Colors - Accents (Neon) */
+    --neon-cyan: #00f3ff;
+    --neon-purple: #bc13fe;
+    --neon-green: #0aff60;
+    --neon-red: #ff0055;
+
+    /* Colors - Text */
+    --text-primary: #ffffff;
+    --text-secondary: #8b9bb4;
+    --text-dim: #4a5568;
+
+    /* Borders */
+    --border-glass: rgba(255, 255, 255, 0.05);
+    --border-neon-cyan: rgba(0, 243, 255, 0.3);
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    /* Typography */
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Shadow */
+    --shadow-glow-cyan: 0 0 15px rgba(0, 243, 255, 0.15);
+    --shadow-glow-purple: 0 0 15px rgba(188, 19, 254, 0.15);
+}

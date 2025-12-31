@@ -59,5 +59,24 @@ defmodule VoiceScribeAPIServer.Router do
     delete("/transcripts/:id", TranscriptsController, :delete)
     post("/transcripts/:id/retry", TranscriptsController, :retry)
     get("/transcripts/:id/audio", TranscriptsController, :audio_url)
+
+    # Invitations
+    post("/invitations", InvitationController, :create)
+
+    # Tickets
+    get("/tickets", TicketController, :index)
+    post("/tickets", TicketController, :create)
+
+    # Subscriptions
+    post("/subscriptions/checkout", SubscriptionController, :create_checkout_session)
+    post("/subscriptions/portal", SubscriptionController, :create_portal_session)
+  end
+
+  # Public routes
+  scope "/api/v1", VoiceScribeAPIServer do
+    pipe_through([:api])
+
+    post("/invitations/accept", InvitationController, :accept)
+    post("/webhooks/stripe", SubscriptionController, :webhook)
   end
 end
