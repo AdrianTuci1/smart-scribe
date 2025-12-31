@@ -231,9 +231,20 @@ function handleMessage(data: string) {
 function handlePhxReply(message: any) {
     if (message.payload && message.payload.status === 'error') {
         console.error('WebSocketWorker: Phoenix error:', message.payload);
+        const response = message.payload.response;
+        // Parse the error reason whether it's an object or string
+        let msg = 'Unknown error';
+        if (typeof response === 'string') {
+            msg = response;
+        } else if (response && typeof response === 'object' && response.reason) {
+            msg = response.reason;
+        } else if (response && typeof response === 'object' && response.message) {
+            msg = response.message;
+        }
+
         postMessage({
             type: 'ERROR',
-            payload: { message: message.payload.response || 'Unknown error' }
+            payload: { message: msg }
         });
     } else if (message.payload && message.payload.status === 'ok') {
         console.log('WebSocketWorker: Phoenix reply OK for ref:', message.ref);

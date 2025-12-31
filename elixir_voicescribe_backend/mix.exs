@@ -61,7 +61,8 @@ defmodule VoiceScribeAPI.MixProject do
       {:ex_aws_s3, "~> 2.4"},
       {:swoosh, "~> 1.10"},
       {:gen_smtp, "~> 1.1"},
-      {:stripity_stripe, "~> 3.2"}
+      {:stripity_stripe, "~> 3.2"},
+      {:hammer, "~> 6.1"}
     ]
   end
 

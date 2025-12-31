@@ -63,23 +63,68 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
   def create(conn, params) do
     transcript_id = Map.get(params, "id")
     user_id = conn.assigns.current_user
+    content = Map.get(params, "content", "")
 
-    transcript_data =
-      Map.merge(params, %{
-        "transcriptId" => transcript_id,
-        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
-        "isFlagged" => false
-      })
+    # 1. Validation: Check for empty content
+    if String.trim(content) == "" do
+      conn
+      |> put_status(:bad_request)
+      |> json(%{error: "Transcript content cannot be empty"})
+    else
+      # 2. Check Subscription and Usage
+      can_save? =
+        case DynamoDBRepo.get_subscription_config(user_id) do
+          %{"plan" => "pro"} ->
+            true
 
-    case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
-      {:ok, _} ->
-        json(conn, %{status: "ok", transcriptId: transcript_id})
+          _ ->
+            # Free tier (or unknown) - Check usage
+            usage = DynamoDBRepo.get_usage(user_id)
+            current_count = Map.get(usage, "wordCount", 0)
+            new_words = count_words(content)
 
-      {:error, reason} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: inspect(reason)})
+            # Limit: 2000 words
+            if current_count + new_words > 2000 do
+              {:error, :limit_exceeded}
+            else
+              true
+            end
+        end
+
+      case can_save? do
+        {:error, :limit_exceeded} ->
+          conn
+          # 402 Payment Required
+          |> put_status(:payment_required)
+          |> json(%{error: "Free tier limit exceeded (2000 words/month). Please upgrade to Pro."})
+
+        true ->
+          transcript_data =
+            Map.merge(params, %{
+              "transcriptId" => transcript_id,
+              "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+              "isFlagged" => false
+            })
+
+          case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
+            {:ok, _} ->
+              # 3. Update Usage (Increment logic handles monthly reset)
+              DynamoDBRepo.update_usage(user_id, count_words(content))
+              json(conn, %{status: "ok", transcriptId: transcript_id})
+
+            {:error, reason} ->
+              conn
+              |> put_status(:bad_request)
+              |> json(%{error: inspect(reason)})
+          end
+      end
     end
+  end
+
+  defp count_words(text) do
+    text
+    |> String.split(~r/\s+/, trim: true)
+    |> length()
   end
 
   def update(conn, %{"id" => transcript_id} = params) do

@@ -85,8 +85,11 @@ class WebSocketService {
                 break;
 
             case 'TRANSCRIPT_CONTENT':
+                console.log('WebSocketService: Received TRANSCRIPT_CONTENT from worker. Handler exists?', !!this.onTranscriptContent);
                 if (this.onTranscriptContent) {
                     this.onTranscriptContent(payload.content);
+                } else {
+                    console.warn('WebSocketService: No onTranscriptContent handler assigned!');
                 }
                 break;
 

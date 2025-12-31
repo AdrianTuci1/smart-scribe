@@ -20,10 +20,7 @@ export const TeamSettings: React.FC<SettingsTabProps> = () => {
                         <span className="row-label" style={{ width: '80px' }}>Email 3</span>
                         <input type="email" className="settings-input" placeholder="Enter email address" />
                     </div>
-                    <div className="settings-row">
-                        <div style={{ flex: 1 }}></div>
-                        <button className="settings-button primary">Send Invitations</button>
-                    </div>
+
                 </div>
             </div>
 

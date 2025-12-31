@@ -1,5 +1,7 @@
 import { ipcMain, clipboard, BrowserWindow } from 'electron'
 import { exec } from 'child_process'
+import * as path from 'path'
+import * as fs from 'fs'
 
 export const registerNativeHandlers = (): void => {
     // Active Window Detection
@@ -23,29 +25,48 @@ export const registerNativeHandlers = (): void => {
 
     // Check Input Focus
     ipcMain.handle('check-input-focus', async () => {
-        const path = require('path')
-        const fs = require('fs')
-
         // Use compiled binary
         let binaryPath: string;
 
-        if (require('electron').app.isPackaged) {
-            binaryPath = path.join(process.resourcesPath, 'bin', 'check-input')
-        } else {
-            binaryPath = path.join(__dirname, '../../resources/bin/check-input')
-        }
+        // Robust path resolution logic
+        const possiblePaths = [
+            path.join(process.resourcesPath, 'bin', 'check-input'),
+            path.join(process.resourcesPath, 'check-input'),
+            path.join(__dirname, '../../resources/bin/check-input'),
+            path.join(__dirname, '../../../resources/bin/check-input'),
+            // Dev environment fallback (from main/ipc/...)
+            path.join(__dirname, '../../../../resources/bin/check-input'),
+            path.join(process.cwd(), 'resources/bin/check-input')
+        ];
 
-        console.log('Main: checking input focus using binary at:', binaryPath);
+        binaryPath = possiblePaths.find(p => fs.existsSync(p)) || '';
 
-        // Fallback to script if binary missing (legacy/dev fallback)
-        if (!fs.existsSync(binaryPath)) {
-            console.warn('Binary check-input not found at:', binaryPath, '- falling back to script')
-            const scriptPath = require('electron').app.isPackaged
-                ? path.join(process.resourcesPath, 'swift', 'check-input.swift')
-                : path.join(__dirname, '../../src/main/swift/check-input.swift')
+        console.log('Main: checking input focus. Binary path found:', binaryPath || 'NONE');
+
+        if (!binaryPath) {
+            console.warn('Binary check-input not found. Trying script fallback.');
+            // Fallback to script
+            const scriptPossiblePaths = [
+                path.join(process.resourcesPath, 'swift', 'check-input.swift'),
+                path.join(__dirname, '../../resources/swift/check-input.swift'),
+                path.join(__dirname, '../../src/main/swift/check-input.swift'),
+                path.join(process.cwd(), 'resources/swift/check-input.swift')
+            ];
+            const scriptPath = scriptPossiblePaths.find(p => fs.existsSync(p));
+
+            if (!scriptPath) {
+                console.error('Check Input error: No binary or script found');
+                return false;
+            }
 
             return new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    console.log('Main: check-input-focus script timed out');
+                    resolve(false);
+                }, 1000);
+
                 exec(`swift "${scriptPath}"`, (error, stdout) => {
+                    clearTimeout(timeout);
                     if (error) {
                         console.error('Check Input error (script fallback):', error)
                         resolve(false)
@@ -58,7 +79,13 @@ export const registerNativeHandlers = (): void => {
         }
 
         return new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                console.log('Main: check-input-focus binary timed out');
+                resolve(false);
+            }, 1000);
+
             exec(`"${binaryPath}"`, (error, stdout) => {
+                clearTimeout(timeout);
                 if (error) {
                     console.error('Check Input error (binary):', error)
                     resolve(false)
@@ -74,12 +101,26 @@ export const registerNativeHandlers = (): void => {
     // Text Insertion (Clipboard + Cmd-V)
     ipcMain.handle('insert-text', async (_event, text: string) => {
         try {
-            clipboard.writeText(text)
+            console.log('Main: insert-text called with text length:', text.length);
+            clipboard.writeText(text);
+            console.log('Main: Text written to clipboard');
 
             if (process.platform === 'darwin') {
+                console.log('Main: Simulating Cmd+V via AppleScript');
                 const script = `tell application "System Events" to keystroke "v" using command down`
-                exec(`osascript -e '${script}'`)
-                return true
+
+                return new Promise((resolve) => {
+                    exec(`osascript -e '${script}'`, (error) => {
+                        if (error) {
+                            console.error('Main: Failed to execute paste script:', error);
+                            // Even if paste fails, clipboard has it.
+                            resolve(false);
+                        } else {
+                            console.log('Main: Paste script executed successfully');
+                            resolve(true);
+                        }
+                    })
+                });
             } else {
                 return false
             }

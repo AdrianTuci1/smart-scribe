@@ -149,6 +149,65 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
     end
   end
 
+  # Usage / Free Tier
+  def get_usage(user_id) do
+    get_config(user_id, "usage")
+  end
+
+  def update_usage(user_id, word_count) do
+    current_time = DateTime.utc_now()
+
+    current_month_start =
+      Date.beginning_of_month(current_time)
+      |> DateTime.new!(~T[00:00:00])
+      |> DateTime.to_iso8601()
+
+    case get_usage(user_id) do
+      usage when usage == %{} ->
+        # Initialize usage
+        new_usage = %{
+          "wordCount" => word_count,
+          "periodStart" => current_month_start
+        }
+
+        put_config(user_id, "usage", new_usage)
+
+      %{"periodStart" => period_start} = usage ->
+        # Check if we need to reset (new month)
+        saved_start =
+          case DateTime.from_iso8601(period_start) do
+            {:ok, dt, _} -> dt
+            # Fallback
+            _ -> DateTime.utc_now()
+          end
+
+        # Compare months (simplistic approach: if saved month < current month)
+        if saved_start.month != current_time.month or saved_start.year != current_time.year do
+          # Reset
+          new_usage = %{
+            "wordCount" => word_count,
+            "periodStart" => current_month_start
+          }
+
+          put_config(user_id, "usage", new_usage)
+        else
+          # Increment
+          current_count = Map.get(usage, "wordCount", 0)
+          new_usage = Map.put(usage, "wordCount", current_count + word_count)
+          put_config(user_id, "usage", new_usage)
+        end
+
+      _ ->
+        # Fallback for weird state
+        new_usage = %{
+          "wordCount" => word_count,
+          "periodStart" => current_month_start
+        }
+
+        put_config(user_id, "usage", new_usage)
+    end
+  end
+
   # Transcripts
   # Transcripts
   def create_transcript(user_id, transcript_id, transcript_data) do

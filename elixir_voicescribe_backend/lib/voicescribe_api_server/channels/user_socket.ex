@@ -3,6 +3,7 @@ defmodule VoiceScribeAPIServer.UserSocket do
 
   ## Channels
   channel("audio:*", VoiceScribeAPIServer.AudioChannel)
+  channel("public_audio:*", VoiceScribeAPIServer.PublicAudioChannel)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -18,9 +19,14 @@ defmodule VoiceScribeAPIServer.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   @impl true
-  def connect(params, socket, _connect_info) do
-    # Simple auth for now, or trust the token passed in params
-    # ideally we implement verify_token(params["token"])
+  def connect(params, socket, connect_info) do
+    # Extract IP address if available
+    peer_data = Map.get(connect_info, :peer_data, %{})
+    remote_ip = Map.get(peer_data, :address)
+
+    socket = assign(socket, :remote_ip, remote_ip)
+
+    # Simple auth check (expand as needed)
     {:ok, socket}
   end
 

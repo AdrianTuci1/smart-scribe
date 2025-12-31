@@ -28,10 +28,6 @@ export const AccountSettings: React.FC<SettingsTabProps> = () => {
                         <span className="row-label" style={{ width: '120px' }}>Email</span>
                         <input type="email" className="settings-input" defaultValue="adrian.tucicovenco@gmail.com" />
                     </div>
-                    <div className="settings-row">
-                        <span className="row-label" style={{ width: '120px' }}>Profile Picture</span>
-                        <button className="settings-button">Upload</button>
-                    </div>
                 </div>
             </div>
 

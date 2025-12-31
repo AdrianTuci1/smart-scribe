@@ -31,16 +31,6 @@ export const PlansBillingSettings: React.FC<SettingsTabProps> = () => {
                                     </div>
                                 ))}
                             </div>
-                            {selectedPlan === plan.id ? (
-                                <div className="current-plan-badge">
-                                    <CheckCircle size={16} />
-                                    <span>Current Plan</span>
-                                </div>
-                            ) : (
-                                <button className="settings-button" onClick={() => setSelectedPlan(plan.id)}>
-                                    Select Plan
-                                </button>
-                            )}
                         </div>
                     ))}
                 </div>

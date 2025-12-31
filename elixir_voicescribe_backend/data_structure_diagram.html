@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceScribe Data Structure Diagram</title>
+    <!-- Using a stable, recent version of Mermaid -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .mermaid {
+            margin: 0 auto;
+            text-align: left;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>VoiceScribe Entity Relationships</h1>
+    <p>This diagram shows the relationships between users and DynamoDB tables.<br>
+        <strong>PK</strong> = Partition Key, <strong>SK</strong> = Sort Key
+    </p>
+    <div class="mermaid">
+        erDiagram
+        User ||--o{ Note : "owns"
+        User ||--o{ Transcript : "owns"
+        User ||--o{ UserConfig : "has"
+        User ||--o{ Ticket : "creates"
+        User ||--o{ Invitation : "sends"
+
+        Note {
+        string userId PK
+        string noteId "SK"
+        string timestamp
+        string content "map"
+        }
+
+        UserConfig {
+        string userId PK
+        string configType "SK - dictionary subscription etc"
+        string data "map"
+        }
+
+        Transcript {
+        string userId PK
+        string transcriptId "SK"
+        string timestamp
+        boolean isFlagged
+        string audioUrl
+        }
+
+        Invitation {
+        string inviteCode PK
+        string senderId "refers to userId"
+        string recipientEmail
+        string status "pending or accepted"
+        string createdAt
+        }
+
+        Ticket {
+        string ticketId PK
+        string userId FK "indexed via UserIdIndex"
+        string subject
+        string message
+        string status "open or closed"
+        string createdAt
+        }
+    </div>
+</body>
+
+</html>

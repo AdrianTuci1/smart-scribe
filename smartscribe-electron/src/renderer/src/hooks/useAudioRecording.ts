@@ -5,6 +5,7 @@ import audioRecordingService from '../services/AudioRecordingService';
 export const useAudioRecording = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [warningVisible, setWarningVisible] = useState(false);
+    const [limitReached, setLimitReached] = useState(false);
     const wasRecordingRef = useRef(false);
 
     // Timer ref to delay actual recording start
@@ -17,50 +18,7 @@ export const useAudioRecording = () => {
     useEffect(() => {
         // WebSocket callbacks
         webSocketService.onTranscriptionComplete = async (transcript) => {
-            console.log('Transcription complete:', transcript);
-            (window as any).electron.ipcRenderer.send('log', 'Transcription complete received', transcript);
-
-            if (!transcript) {
-                console.error('Empty transcript received');
-                (window as any).electron.ipcRenderer.send('log', 'Empty transcript received');
-                return;
-            }
-
-            // Check if user has a text input focused
-            try {
-                console.log('Checking input focus...');
-                (window as any).electron.ipcRenderer.send('log', 'Checking input focus via IPC...');
-                const isFocused = await (window as any).electron.ipcRenderer.invoke('check-input-focus');
-                console.log('Input focus check result:', isFocused);
-                (window as any).electron.ipcRenderer.send('log', 'Input focus result:', isFocused);
-
-                if (isFocused) {
-                    // Simulate paste
-                    console.log('Attempting to insert text...');
-                    (window as any).electron.ipcRenderer.send('log', 'Attempting insert text');
-                    const success = await (window as any).electron.ipcRenderer.invoke('insert-text', transcript);
-                    console.log('Insert text result:', success);
-                    (window as any).electron.ipcRenderer.send('log', 'Insert text success:', success);
-
-                    if (!success) {
-                        // Fallback
-                        console.log('Insert failed, falling back to clipboard...');
-                        (window as any).electron.ipcRenderer.send('log', 'Insert failed, fallback to clipboard');
-                        (window as any).electron.ipcRenderer.send('clipboard-write', transcript);
-                    }
-                } else {
-                    // Just copy to clipboard
-                    console.log('Input not focused, copying to clipboard...');
-                    (window as any).electron.ipcRenderer.send('log', 'Not focused, copying to clipboard');
-                    (window as any).electron.ipcRenderer.send('clipboard-write', transcript);
-                }
-            } catch (e) {
-                console.error('Error checking input focus:', e);
-                // Fallback
-                console.log('Exception caught, falling back to clipboard...');
-                (window as any).electron.ipcRenderer.send('log', 'Exception in focus check:', e);
-                (window as any).electron.ipcRenderer.send('clipboard-write', transcript);
-            }
+            console.log('Transcription complete event received (legacy/unused). Content:', transcript);
         };
 
         webSocketService.onConnected = () => {
@@ -70,11 +28,62 @@ export const useAudioRecording = () => {
         webSocketService.onError = (errorMsg) => {
             console.error('WebSocket error:', errorMsg);
             (window as any).electron.ipcRenderer.send('log', 'WebSocket error:', errorMsg);
+
+            if (errorMsg === 'limit_exceeded') {
+                setLimitReached(true);
+                setTimeout(() => setLimitReached(false), 5000);
+            }
+
             // If real recording was active, we should behave like a stop
             if (realRecordingStartedRef.current) {
                 // UI update will trigger stopRecording logic if needed, 
                 // but direct error -> force reset
                 setIsRecording(false);
+            }
+        };
+
+        webSocketService.onTranscriptContent = async (content) => {
+            // Debug log to confirm hook is receiving data
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'HOOK: Transcript content received', content);
+            }
+
+            if (!content) {
+                console.error('Empty content received');
+                return;
+            }
+
+            // 1. ALWAYS Try to write to clipboard first as a safe fallback
+            try {
+                if ((window as any).electron) {
+                    (window as any).electron.ipcRenderer.send('clipboard-write', content);
+                }
+            } catch (err) {
+                console.error('Failed to write to clipboard:', err);
+            }
+
+            // 2. Try to intelligently paste if focused
+            try {
+                if ((window as any).electron) {
+                    console.log('Checking input focus...');
+
+                    // Add a timeout to the invoke via Promise.race
+                    const focusCheckPromise = (window as any).electron.ipcRenderer.invoke('check-input-focus');
+                    const isFocused = await Promise.race([
+                        focusCheckPromise,
+                        new Promise(resolve => setTimeout(() => resolve(false), 1000))
+                    ]);
+
+                    console.log('Input focus check result:', isFocused);
+
+                    if (isFocused) {
+                        console.log('Attempting to insert text...');
+                        const success = await (window as any).electron.ipcRenderer.invoke('insert-text', content);
+                        console.log('Insert text result:', success);
+                    }
+                }
+            } catch (e) {
+                console.error('Error in smart paste logic:', e);
             }
         };
 
@@ -190,6 +199,8 @@ export const useAudioRecording = () => {
         setIsRecording,
         warningVisible,
         setWarningVisible,
-        toggleRecording
+        toggleRecording,
+        limitReached,
+        setLimitReached
     };
 };

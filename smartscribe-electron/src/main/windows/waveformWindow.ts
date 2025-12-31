@@ -106,6 +106,7 @@ export const createWaveformWindow = (): void => {
         resizable: false,
         hasShadow: false,
         focusable: true,
+        title: 'Recording orb',
         // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),

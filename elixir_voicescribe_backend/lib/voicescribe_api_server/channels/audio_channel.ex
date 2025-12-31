@@ -2,6 +2,7 @@ defmodule VoiceScribeAPIServer.AudioChannel do
   use Phoenix.Channel
   require Logger
   alias VoiceScribeAPI.AI.TranscribeStreamer
+  alias VoiceScribeAPI.DynamoDBRepo
 
   @impl true
   def join("audio:" <> _session_id, _payload, socket) do
@@ -12,24 +13,39 @@ defmodule VoiceScribeAPIServer.AudioChannel do
   def handle_in("start_stream", %{"user_id" => user_id}, socket) do
     Logger.info("Starting audio stream for user: #{user_id}")
 
-    # Start the Transcribe Streamer
-    # We pass self() as caller_pid so the streamer can send results back to this channel process
-    case TranscribeStreamer.start_link(user_id: user_id, caller_pid: self()) do
-      {:ok, pid} ->
-        # Generate session_id for persistence
-        session_id = UUID.uuid4()
+    # Check Usage Limits
+    can_stream? =
+      case DynamoDBRepo.get_subscription_config(user_id) do
+        %{"plan" => "pro"} ->
+          true
 
-        socket =
-          socket
-          |> assign(:streamer_pid, pid)
-          |> assign(:session_id, session_id)
-          |> assign(:user_id, user_id)
+        _ ->
+          usage = DynamoDBRepo.get_usage(user_id)
+          current_count = Map.get(usage, "wordCount", 0)
+          if current_count >= 2000, do: false, else: true
+      end
 
-        {:reply, :ok, socket}
+    if can_stream? do
+      # Start the Transcribe Streamer
+      case TranscribeStreamer.start_link(user_id: user_id, caller_pid: self()) do
+        {:ok, pid} ->
+          session_id = UUID.uuid4()
 
-      {:error, reason} ->
-        Logger.error("Failed to start TranscribeStreamer: #{inspect(reason)}")
-        {:reply, {:error, %{reason: "Failed to connect to AWS Transcribe"}}, socket}
+          socket =
+            socket
+            |> assign(:streamer_pid, pid)
+            |> assign(:session_id, session_id)
+            |> assign(:user_id, user_id)
+
+          {:reply, :ok, socket}
+
+        {:error, reason} ->
+          Logger.error("Failed to start TranscribeStreamer: #{inspect(reason)}")
+          {:reply, {:error, %{reason: "Failed to connect to AWS Transcribe"}}, socket}
+      end
+    else
+      Logger.warn("User #{user_id} exceeded free tier limit")
+      {:reply, {:error, %{reason: "limit_exceeded"}}, socket}
     end
   end
 
@@ -51,7 +67,6 @@ defmodule VoiceScribeAPIServer.AudioChannel do
   # but standard Phoenix channels are text-based JSON usually unless configured otherwise.
   # For simplicity, we might stick to base64 in JSON first, or raw binary if supported).
   # Assuming Base64 for now for compatibility with standard Phoenix clients.
-
   defp forward_audio(socket, binary_data) do
     if pid = socket.assigns[:streamer_pid] do
       TranscribeStreamer.send_audio_chunk(pid, binary_data)
@@ -83,34 +98,50 @@ defmodule VoiceScribeAPIServer.AudioChannel do
     session_id = socket.assigns[:session_id]
 
     Task.start(fn ->
-      Logger.info("Processing complete transcription for session #{session_id}")
-      Logger.info("AudioChannel received transcript length: #{String.length(transcript)}")
-      Logger.info("AudioChannel received transcript content: '#{transcript}'")
+      if String.trim(transcript) != "" do
+        Logger.info("Processing complete transcription for session #{session_id}")
+        Logger.info("AudioChannel received transcript length: #{String.length(transcript)}")
 
-      # 1. Correct
-      final_text =
-        case VoiceScribeAPI.AI.BedrockClient.correct_text(user_id, transcript) do
-          {:ok, corrected} -> corrected
-          _ -> transcript
+        # 1. Correct
+        final_text =
+          case VoiceScribeAPI.AI.BedrockClient.correct_text(user_id, transcript) do
+            {:ok, corrected} -> corrected
+            _ -> transcript
+          end
+
+        # Check again if result isn't empty after correction (though unlikely to become empty if input wasn't)
+        if String.trim(final_text) != "" do
+          # 2. Save
+          transcript_record = %{
+            "userId" => user_id,
+            "transcriptId" => session_id,
+            "originalText" => transcript,
+            "enhancedText" => final_text,
+            "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
+          }
+
+          VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
+
+          # 2.1 Update Usage (Count words of final text)
+          word_count =
+            final_text
+            |> String.split(~r/\s+/, trim: true)
+            |> length()
+
+          DynamoDBRepo.update_usage(user_id, word_count)
+
+          # 3. Push to Client
+          VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
+            content: final_text
+          })
+
+          Logger.info("Session #{session_id} completed. Saved #{word_count} words.")
+        else
+          Logger.info("Session #{session_id} yielded empty text after correction. Ignoring.")
         end
-
-      # 2. Save
-      transcript_record = %{
-        "userId" => user_id,
-        "transcriptId" => session_id,
-        "originalText" => transcript,
-        "enhancedText" => final_text,
-        "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
-      }
-
-      VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
-
-      # 3. Push to Client
-      VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
-        content: final_text
-      })
-
-      Logger.info("Session #{session_id} completed and saved.")
+      else
+        Logger.info("Session #{session_id} received empty transcript. Ignoring.")
+      end
     end)
 
     {:noreply, socket}

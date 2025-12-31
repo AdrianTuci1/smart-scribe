@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './FloatingWaveform.css';
 import { useAudioRecording } from '../../hooks/useAudioRecording';
 import { WarningToast } from './WarningToast';
+import { LimitToast } from './LimitToast';
 import { RecordOrb } from './RecordOrb';
 import { HoverHint } from './HoverHint';
 
@@ -11,7 +12,9 @@ export const FloatingWaveform: React.FC = () => {
         setIsRecording,
         warningVisible,
         setWarningVisible,
-        toggleRecording
+        toggleRecording,
+        limitReached,
+        setLimitReached
     } = useAudioRecording();
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -157,6 +160,11 @@ export const FloatingWaveform: React.FC = () => {
                 <WarningToast
                     visible={warningVisible}
                     onClose={() => setWarningVisible(false)}
+                />
+
+                <LimitToast
+                    visible={limitReached}
+                    onClose={() => setLimitReached(false)}
                 />
 
                 <RecordOrb
