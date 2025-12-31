@@ -1,32 +1,48 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChevronRight, Search, Home, Inbox, ListTodo, Users, Map, Globe, HelpCircle } from 'lucide-react';
+import { ChevronRight, Search, Home, Inbox, ListTodo, Users, Map, Globe, HelpCircle, ArrowLeft } from 'lucide-react';
 import loginBg from '../../assets/login-bg.png';
+import { TicketModal } from '../Shared/TicketModal';
 import './LoginView.css';
 
 export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     const { login, loginWithGoogle, isLoading: authLoading } = useAuth();
+    const [loginStep, setLoginStep] = useState<'email' | 'password'>('email');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showTicketModal, setShowTicketModal] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleEmailSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        if (!email.trim()) {
+            setError('Please enter your email.');
+            return;
+        }
+        // Ideally check if email exists here, but for now just move to password step
+        setLoginStep('password');
+    };
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setIsSubmitting(true);
         try {
-            // Hardcoded password for now if UI doesn't have password field yet, 
-            // OR add password field. User request said "email/parola direct in login".
-            // The existing UI only had Email. I must add a Password field.
             await login(email, password);
             onLoginSuccess();
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'Login failed');
-        } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleBackToEmail = () => {
+        setLoginStep('email');
+        setError(null);
+        setPassword('');
     };
 
     const handleSSO = async () => {
@@ -72,73 +88,114 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                     <h1 className="section-title">Get started with Flow</h1>
                     <p className="section-subtitle">Write faster in every app using your voice.</p>
 
-                    {/* SSO Buttons */}
-                    <div className="sso-grid">
-                        <button onClick={handleSSO} className="sso-button">
-                            <span className="sso-icon">G</span> Google
-                        </button>
-                        <button onClick={handleSSO} className="sso-button">
-                            <span className="sso-icon">M</span> Microsoft
-                        </button>
-                        <button onClick={handleSSO} className="sso-button">
-                            <span className="sso-icon"></span> Apple
-                        </button>
-                        <button onClick={handleSSO} className="sso-button">
-                            <div className="sso-icon"><Globe size={16} /></div> SSO
-                        </button>
-                    </div>
+                    {/* SSO Buttons - Only show on Email step? Usually yes. */}
+                    {loginStep === 'email' && (
+                        <div className="sso-grid">
+                            <button onClick={handleSSO} className="sso-button">
+                                <span className="sso-icon">G</span> Google
+                            </button>
+                            <button onClick={handleSSO} className="sso-button">
+                                <span className="sso-icon">M</span> Microsoft
+                            </button>
+                            <button onClick={handleSSO} className="sso-button">
+                                <span className="sso-icon"></span> Apple
+                            </button>
+                            <button onClick={handleSSO} className="sso-button">
+                                <div className="sso-icon"><Globe size={16} /></div> SSO
+                            </button>
+                        </div>
+                    )}
 
                     {/* Error Message */}
                     {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>{error}</div>}
 
-                    <div className="divider-wrapper">
-                        <div className="divider-line"></div>
-                        <span className="divider-text">OR</span>
-                    </div>
+                    {loginStep === 'email' && (
+                        <div className="divider-wrapper">
+                            <div className="divider-line"></div>
+                            <span className="divider-text">OR</span>
+                        </div>
+                    )}
 
                     {/* Email Form */}
-                    <form onSubmit={handleSubmit} className="email-form">
-                        <input
-                            type="email"
-                            placeholder="Enter an email address"
-                            className="email-input"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                        <input
-                            type="password"
-                            placeholder="Enter your password"
-                            className="email-input"
-                            style={{ marginTop: '10px' }}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <p className="form-hint">
-                            Use your school or work email to access team features
-                        </p>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting || authLoading}
-                            className="submit-button"
-                        >
-                            {isSubmitting || authLoading ? 'Wait...' : 'Continue with Email'}
-                        </button>
-                    </form>
+                    {loginStep === 'email' ? (
+                        <form onSubmit={handleEmailSubmit} className="email-form">
+                            <input
+                                type="email"
+                                placeholder="Enter an email address"
+                                className="email-input"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                autoFocus
+                            />
+                            <p className="form-hint">
+                                Use your school or work email to access team features
+                            </p>
+                            <button
+                                type="submit"
+                                className="submit-button"
+                            >
+                                Continue with Email
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handlePasswordSubmit} className="email-form">
+                            <div className="email-display-group" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button type="button" onClick={handleBackToEmail} className="back-to-email-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                                    <ArrowLeft size={16} color="#6b7280" />
+                                </button>
+                                <span style={{ fontSize: '14px', color: '#374151', fontWeight: 500 }}>{email}</span>
+                            </div>
 
-                    <p className="legal-text">
-                        By signing up, you agree to our <a href="#" className="legal-link">Terms of Service</a> and <a href="#" className="legal-link">Privacy Policy</a>.
-                    </p>
+                            <input
+                                type="password"
+                                placeholder="Enter your password"
+                                className="email-input"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                autoFocus
+                            />
+
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || authLoading}
+                                className="submit-button"
+                                style={{ marginTop: '16px' }}
+                            >
+                                {isSubmitting || authLoading ? 'Logging in...' : 'Log in'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleBackToEmail}
+                                style={{
+                                    marginTop: '12px',
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#6b7280',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    width: '100%'
+                                }}
+                            >
+                                Use a different email
+                            </button>
+                        </form>
+                    )}
+
+                    {loginStep === 'email' && (
+                        <p className="legal-text">
+                            By signing up, you agree to our <a href="#" className="legal-link">Terms of Service</a> and <a href="#" className="legal-link">Privacy Policy</a>.
+                        </p>
+                    )}
                 </div>
 
                 <div className="help-container">
-                    <button className="help-button">
+                    <button className="help-button" onClick={() => setShowTicketModal(true)}>
                         <HelpCircle size={14} /> Help
                     </button>
-                    <button onClick={onLoginSuccess} style={{ marginLeft: '10px', background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '12px' }}>
-                        Skip (Dev)
-                    </button>
+                    {/* Removed Skip (Dev) button */}
                 </div>
             </div>
 
@@ -234,6 +291,13 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                     <div className="scroll-progress"></div>
                 </div>
             </div>
+
+            {/* Ticket Modal */}
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => setShowTicketModal(false)}
+                prefillEmail={email}
+            />
         </div>
     );
 };

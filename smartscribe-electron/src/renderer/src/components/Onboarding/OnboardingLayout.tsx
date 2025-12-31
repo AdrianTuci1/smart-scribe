@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './OnboardingLayout.css';
 import { motion } from 'framer-motion';
 import { HelpCircle, ChevronRight } from 'lucide-react';
+import { TicketModal } from '../Shared/TicketModal';
 
 interface OnboardingLayoutProps {
     children: React.ReactNode;
     showVisual?: boolean;
     visualImage?: string;
     visualContent?: React.ReactNode;
-    onSkip?: () => void;
+    onSkip?: () => void; // Keep prop if used by QuestionStep for functional skip, but remove the Dev button
     currentStep?: number;
     totalSteps?: number;
 }
@@ -22,6 +23,8 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
     currentStep = 1,
     totalSteps = 6
 }) => {
+    const [showTicketModal, setShowTicketModal] = useState(false);
+
     // Map currentStep (1-6) to Breadcrumb Setup
     const steps = ['SIGN IN', 'PERMISSIONS', 'SET UP', 'LEARN'];
     let currentBreadcrumbIndex = 0;
@@ -77,7 +80,9 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                     </motion.div>
 
                     <div className="help-button-wrapper">
-                        <button className="help-btn"><HelpCircle size={14} /> Help</button>
+                        <button className="help-btn" onClick={() => setShowTicketModal(true)}>
+                            <HelpCircle size={14} /> Help
+                        </button>
                     </div>
                 </div>
 
@@ -92,13 +97,15 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                             <div className="visual-placeholder" />
                         )}
 
-                        {/* Dev Skip Button */}
-                        <button onClick={onSkip} className="dev-skip-button">
-                            Skip (Dev)
-                        </button>
+                        {/* Dev Skip Button Removed */}
                     </div>
                 )}
             </div>
+
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => setShowTicketModal(false)}
+            />
         </div>
     );
 };

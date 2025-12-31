@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LayoutGrid, Book, Scissors, Type, StickyNote, Settings, HelpCircle, UserPlus, Gift, Info, Smartphone, Command, Mic, Globe, LifeBuoy, MessageSquare, Briefcase } from 'lucide-react';
 import clsx from 'clsx';
 import { SettingsCategory } from '../../Settings/types';
+import { TicketModal } from '../../Shared/TicketModal';
 import './Sidebar.css';
 
 export type ViewType = 'home' | 'dictionary' | 'snippets' | 'style' | 'notes';
@@ -47,11 +48,16 @@ const HELP_MENU_ITEMS = [
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isCollapsed, onOpenSettings }) => {
     const [showHelpMenu, setShowHelpMenu] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [showTicketModal, setShowTicketModal] = useState(false);
 
     const handleHelpItemClick = (itemId: string) => {
         console.log('Help item clicked:', itemId);
         setShowHelpMenu(false);
-        // TODO: Implement actual navigation/actions for help items
+
+        if (itemId === 'support') {
+            setShowTicketModal(true);
+        }
+        // TODO: Implement other help items
     };
 
     const handleInviteTeam = () => {
@@ -221,6 +227,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
                     </div>
                 </>
             )}
+
+            {/* Ticket Modal */}
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => setShowTicketModal(false)}
+            />
         </>
     );
 };

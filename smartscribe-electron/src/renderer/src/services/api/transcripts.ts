@@ -3,25 +3,33 @@ import { Transcript } from '../../types';
 
 export const transcriptService = {
     getAll: async (): Promise<Transcript[]> => {
-        return apiClient.request<Transcript[]>('/transcripts');
+        const res = await apiClient.request<{ data: Transcript[] }>('/transcripts');
+        const list = res.data || [];
+        return list.map(t => ({
+            ...t,
+            text: t.text || '' // Ensure text is at least empty string if missing
+        }));
     },
 
     getById: async (id: string): Promise<Transcript> => {
-        return apiClient.request<Transcript>(`/transcripts/${id}`);
+        const res = await apiClient.request<{ data: Transcript }>(`/transcripts/${id}`);
+        return res.data;
     },
 
     create: async (data: Partial<Transcript>): Promise<Transcript> => {
-        return apiClient.request<Transcript>('/transcripts', {
+        const res = await apiClient.request<{ data: Transcript }>('/transcripts', {
             method: 'POST',
             body: JSON.stringify(data)
         });
+        return res.data;
     },
 
     update: async (transcript: Partial<Transcript> & { id: string }): Promise<Transcript> => {
-        return apiClient.request<Transcript>(`/transcripts/${transcript.id}`, {
+        const res = await apiClient.request<{ data: Transcript }>(`/transcripts/${transcript.id}`, {
             method: 'PUT',
             body: JSON.stringify(transcript)
         });
+        return res.data;
     },
 
     delete: async (id: string): Promise<void> => {

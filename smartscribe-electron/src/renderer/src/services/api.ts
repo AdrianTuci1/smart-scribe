@@ -2,9 +2,10 @@ import { apiClient } from './api/core';
 import { transcriptService } from './api/transcripts';
 import { notesService } from './api/notes';
 import { configService } from './api/config';
+import { supportService } from './api/support';
 
 // Re-export services
-export { apiClient, transcriptService, notesService, configService };
+export { apiClient, transcriptService, notesService, configService, supportService };
 
 // Maintain partial Backward Compatibility if needed, or better, 
 // expose a unified object that mimics the old ApiService if extensive refactoring of callsites 
@@ -128,6 +129,11 @@ class ApiServiceFacade {
     // Audio Download
     public async downloadAudio(transcriptId: string): Promise<Blob> {
         return transcriptService.downloadAudioBlob(transcriptId);
+    }
+
+    // Support
+    public async sendTicket(message: string, email?: string) {
+        return supportService.sendTicket({ message, email });
     }
 }
 

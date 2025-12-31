@@ -26,7 +26,7 @@ export interface UserStatsResponse extends ApiResponse<UserStatsData> { }
 // Transcripts
 export interface TranscriptData {
     id: string;
-    text: string;
+    text?: string;
     timestamp: string;
     isFlagged: boolean;
     canUndoAIEdit: boolean;

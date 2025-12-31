@@ -38,6 +38,7 @@ export const NotesView: React.FC = () => {
         const newNote: Note = {
             id: crypto.randomUUID(),
             content: textInput,
+            timestamp: new Date().toISOString(),
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -137,7 +138,7 @@ export const NotesView: React.FC = () => {
                                     className="note-item group"
                                 >
                                     <p className="note-content">
-                                        {note.content}
+                                        {typeof note.content === 'string' ? note.content : JSON.stringify(note.content)}
                                     </p>
                                     <span className="note-date">
                                         {format(new Date(note.updatedAt), 'MMM d')}
@@ -148,6 +149,6 @@ export const NotesView: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

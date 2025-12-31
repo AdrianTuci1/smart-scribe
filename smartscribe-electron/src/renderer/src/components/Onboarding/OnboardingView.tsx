@@ -22,6 +22,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
     const [source, setSource] = useState<Set<string>>(new Set());
     const [role, setRole] = useState<Set<string>>(new Set());
     const [usage, setUsage] = useState<Set<string>>(new Set());
+    const [languages, setLanguages] = useState<Set<string>>(new Set(['en'])); // Default English
     const [permissionsSkipped, setPermissionsSkipped] = useState(false);
 
 
@@ -47,6 +48,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 role: Array.from(role),
                 usage: Array.from(usage)
             });
+            // Update User Config with languages
+            await configService.updateSettings({
+                languages: Array.from(languages)
+            });
         } catch (error) {
             console.error('Failed to save onboarding data:', error);
             // We initiate completion anyway so we don't block the user
@@ -62,6 +67,18 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
             const next = new Set(multi ? prev : []);
             if (next.has(id)) {
                 if (multi) next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleLanguageToggle = (id: string) => {
+        setLanguages(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
             } else {
                 next.add(id);
             }
@@ -110,7 +127,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     onSelect={handleSelection(setSource, true)}
                     multiSelect={true}
                     onNext={nextStep}
-                    onSkip={nextStep} // Allow skip
+                    // onSkip - Optional, if we want strict validation. Requirement: "Trebuie sa completam... sau putem apasa pe skip"
+                    // If we provide onSkip, a Skip button appears. If we don't, user MUST answer to continue.
+                    // Let's provide onSkip to allow skipping if user really wants to.
+                    onSkip={nextStep}
                     currentStep={1}
                     totalSteps={TOTAL_STEPS}
                 // visualImage / placeholder handled by component defaults
@@ -152,10 +172,24 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
             return (
                 <LanguageSelectionStep
                     key="language"
-                    onNext={nextStep}
+                    onNext={async () => {
+                        // We can also save here incrementally if desired, but handleComplete does it at the end.
+                        // Requirement says: "Language selection trebuie trimis prin api pentru UserConfig."
+                        // Can do it here to be safe.
+                        try {
+                            await configService.updateSettings({
+                                languages: Array.from(languages)
+                            });
+                        } catch (e) {
+                            console.error("Failed to save languages", e);
+                        }
+                        nextStep();
+                    }}
                     onBack={() => setCurrentStep(prev => prev - 1)}
                     currentStep={4}
                     totalSteps={TOTAL_STEPS}
+                    selectedIds={languages}
+                    onToggle={handleLanguageToggle}
                 />
             );
         case 5:

@@ -3,7 +3,13 @@ import { apiClient } from './core';
 export const configService = {
     // Dictionary
     getDictionary: async (): Promise<any[]> => {
-        return apiClient.request<any[]>('/config/dictionary');
+        const res = await apiClient.request<{ data: any[] }>('/config/dictionary');
+        const list = res.data || [];
+        return list.map(item => ({
+            id: item.id || crypto.randomUUID(),
+            incorrectWord: item.incorrectWord || item.incorrect_word || '',
+            correctWord: item.correctWord || item.correct_word || ''
+        }));
     },
 
     saveDictionary: async (entries: any[]): Promise<void> => {
@@ -15,7 +21,13 @@ export const configService = {
 
     // Snippets
     getSnippets: async (): Promise<any[]> => {
-        return apiClient.request<any[]>('/config/snippets');
+        const res = await apiClient.request<{ data: any[] }>('/config/snippets');
+        const list = res.data || [];
+        return list.map(item => ({
+            id: item.id || crypto.randomUUID(),
+            title: item.title || '',
+            content: item.content || ''
+        }));
     },
 
     saveSnippets: async (snippets: any[]): Promise<void> => {
@@ -27,7 +39,8 @@ export const configService = {
 
     // Style Preferences
     getStylePreferences: async (): Promise<any> => {
-        return apiClient.request<any>('/config/style_preferences');
+        const res = await apiClient.request<{ data: any }>('/config/style_preferences');
+        return res.data || {};
     },
 
     saveStylePreferences: async (preferences: any): Promise<void> => {
@@ -39,7 +52,8 @@ export const configService = {
 
     // Settings
     getSettings: async (): Promise<any> => {
-        return apiClient.request<any>('/config/settings');
+        const res = await apiClient.request<{ data: any }>('/config/settings');
+        return res.data || {};
     },
 
     updateSettings: async (settings: any): Promise<void> => {
@@ -52,7 +66,8 @@ export const configService = {
     // Onboarding (also in router.ex)
     getOnboarding: async (): Promise<any> => {
         // defaults: %{"type" => "onboarding"}
-        return apiClient.request<any>('/config/onboarding');
+        const res = await apiClient.request<{ data: any }>('/config/onboarding');
+        return res.data || {};
     },
 
     updateOnboarding: async (data: any): Promise<void> => {

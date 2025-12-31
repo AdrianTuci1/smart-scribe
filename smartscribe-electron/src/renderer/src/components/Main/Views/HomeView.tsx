@@ -84,7 +84,7 @@ export const HomeView: React.FC = () => {
 
     // Handlers
     const handleCopy = (t: Transcript) => {
-        navigator.clipboard.writeText(t.text);
+        navigator.clipboard.writeText(t.text || '');
     };
 
     const handleFlag = async (t: Transcript) => {

@@ -8,6 +8,8 @@ interface LanguageSelectionStepProps {
     onBack?: () => void;
     currentStep?: number;
     totalSteps?: number;
+    selectedIds: Set<string>;
+    onToggle: (id: string) => void;
 }
 
 const LANGUAGES = [
@@ -107,28 +109,15 @@ export const LanguageSelectionStep: React.FC<LanguageSelectionStepProps> = ({
     onNext,
     onBack,
     currentStep,
-    totalSteps
+    totalSteps,
+    selectedIds,
+    onToggle
 }) => {
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['en']));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [autoDetect, setAutoDetect] = useState(false);
 
-    const toggleLanguage = (id: string) => {
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                // Prevent removing if it's the only one? Or allow empty?
-                // Usually allow removing unless it's the last one, but requirement says "English selected implicit".
-                // Let's allow removing if user wants, but maybe prompt if empty.
-                // For now, allow simple toggle.
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
-    };
+
 
     const selectedLanguages = useMemo(() => {
         return LANGUAGES.filter(l => selectedIds.has(l.id));
@@ -246,7 +235,7 @@ export const LanguageSelectionStep: React.FC<LanguageSelectionStepProps> = ({
                                         <button
                                             key={lang.id}
                                             className={`language-option-btn ${selectedIds.has(lang.id) ? 'selected' : ''}`}
-                                            onClick={() => toggleLanguage(lang.id)}
+                                            onClick={() => onToggle(lang.id)}
                                         >
                                             <span className="lang-flag">{lang.flag}</span>
                                             <span className="lang-name">{lang.label}</span>
@@ -267,7 +256,7 @@ export const LanguageSelectionStep: React.FC<LanguageSelectionStepProps> = ({
                                             </div>
                                             <button
                                                 className="remove-lang-btn"
-                                                onClick={() => toggleLanguage(lang.id)}
+                                                onClick={() => onToggle(lang.id)}
                                             >
                                                 <Minus size={14} />
                                             </button>

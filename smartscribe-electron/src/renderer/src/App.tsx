@@ -19,8 +19,8 @@ const MainAppContent = () => {
             setHasCompletedOnboarding(true);
             if ((window as any).electron) {
                 (window as any).electron.ipcRenderer.resizeWindow(900, 670);
-                // Open the Floating Waveform automatically? Maybe not on every reload, but specific flow.
-                // Keeping existing behavior for "Complete" flow, but for reload we might just want to set state.
+                // Open the Floating Waveform automatically for authenticated users
+                (window as any).electron.ipcRenderer.openWaveform();
             }
         }
     }, [user]);

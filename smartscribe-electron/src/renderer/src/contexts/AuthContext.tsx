@@ -37,8 +37,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     if (currentUser) {
                         try {
                             const response = await configService.getOnboarding();
-                            if (response && response.data) {
-                                currentUser.onboarding = response.data;
+                            if (response) {
+                                currentUser.onboarding = response;
                             }
                         } catch (error) {
                             console.error('Failed to fetch onboarding status:', error);
@@ -61,8 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Fetch onboarding status
             try {
                 const response = await configService.getOnboarding();
-                if (response && response.data) {
-                    user.onboarding = response.data;
+                if (response) {
+                    user.onboarding = response;
                 }
             } catch (error) {
                 console.error('Failed to fetch onboarding status:', error);
