@@ -108,14 +108,20 @@ class WebSocketService {
     /**
      * Connect to WebSocket server
      */
-    public connect() {
+    /**
+     * Connect to WebSocket server
+     */
+    public connect(userId?: string) {
         if (this.isConnected) {
             console.log('WebSocketService: Already connected');
             return;
         }
 
         if (this.worker) {
-            this.worker.postMessage({ type: 'CONNECT' });
+            this.worker.postMessage({
+                type: 'CONNECT',
+                payload: { userId }
+            });
         }
     }
 

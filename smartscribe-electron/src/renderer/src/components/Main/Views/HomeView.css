@@ -306,8 +306,8 @@
 }
 
 .transcript-group {
-    background-color: white;
-    border: 1px solid #e5e7eb;
+    background-color: #000000;
+    border: 1px solid #374151;
     border-radius: 0.75rem;
     /* rounded-xl */
     overflow: hidden;

@@ -67,7 +67,10 @@ export const TranscriptRow: React.FC<TranscriptRowProps> = ({
                     "timestamp",
                     !showTime && "hidden"
                 )}>
-                    {format(new Date(transcript.timestamp), 'hh:mm a')}
+                    {(() => {
+                        const d = new Date(transcript.timestamp);
+                        return isNaN(d.getTime()) ? '--:--' : format(d, 'hh:mm a');
+                    })()}
                 </span>
             </div>
 

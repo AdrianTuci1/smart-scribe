@@ -282,37 +282,10 @@
     color: #9ca3af;
 }
 
-.note-item {
-    display: flex;
-    padding: 1rem 0.5rem;
-    /* py-4 px-2 */
-    margin: 0 -0.5rem;
-    /* -mx-2 */
-    border-bottom: 1px solid #f3f4f6;
-    /* border-gray-100 */
-    cursor: pointer;
-    border-radius: 0.5rem;
-    /* rounded-lg */
-    transition: background-color 150ms;
-}
 
-:global(.dark) .note-item {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-}
-
-.note-item:hover {
-    background-color: #f9fafb;
-    /* hover:bg-gray-50 */
-}
-
-:global(.dark) .note-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    /* dark:hover:bg-white/5 */
-}
 
 .note-content {
-    flex: 1;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     /* text-sm */
     color: white;
     /* text-gray-900 */
@@ -321,8 +294,8 @@
     -webkit-line-clamp: 1;
     line-clamp: 1;
     -webkit-box-orient: vertical;
-    padding-right: 1rem;
-    /* pr-4 */
+    white-space: normal;
+    /* Override potential defaults */
 }
 
 :global(.dark) .note-content {

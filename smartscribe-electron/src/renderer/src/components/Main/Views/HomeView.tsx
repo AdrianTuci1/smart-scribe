@@ -13,7 +13,11 @@ const groupTranscripts = (transcripts: Transcript[]) => {
     // Simplified grouping for now
     const groups: { [key: string]: Transcript[] } = {};
     transcripts.forEach(t => {
-        const date = new Date(t.timestamp);
+        let date = new Date(t.timestamp);
+        if (isNaN(date.getTime())) {
+            // Fallback for invalid dates
+            date = new Date();
+        }
         const day = format(date, 'EEEE, MMMM d'); // "Monday, December 25"
         if (!groups[day]) groups[day] = [];
         groups[day].push(t);
@@ -40,9 +44,18 @@ export const HomeView: React.FC = () => {
             ]);
 
             // Process transcripts
+            console.log('HomeView: received transcriptsData:', transcriptsData);
             const list = Array.isArray(transcriptsData) ? transcriptsData : [];
+            console.log('HomeView: processed list:', list);
             // Sort by date desc
-            list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            list.sort((a, b) => {
+                const dateA = new Date(a.timestamp).getTime();
+                const dateB = new Date(b.timestamp).getTime();
+                // Handle invalid dates (NaN) by pushing them to the end or treating as 0
+                const tA = isNaN(dateA) ? 0 : dateA;
+                const tB = isNaN(dateB) ? 0 : dateB;
+                return tB - tA;
+            });
             setTranscripts(list);
 
             if (list.length > 0 && (window as any).electron) {
@@ -78,6 +91,20 @@ export const HomeView: React.FC = () => {
 
     useEffect(() => {
         loadData();
+
+        // Listen for new transcripts
+        const handleNewTranscript = () => {
+            loadData();
+        };
+
+        let removeListener: (() => void) | undefined;
+        if ((window as any).electron) {
+            removeListener = (window as any).electron.ipcRenderer.on('transcript-created', handleNewTranscript);
+        }
+
+        return () => {
+            if (removeListener) removeListener();
+        };
     }, []);
 
     const groupedTranscripts = useMemo(() => groupTranscripts(transcripts), [transcripts]);
@@ -117,6 +144,7 @@ export const HomeView: React.FC = () => {
         const prev = list[index - 1];
         const d1 = new Date(t.timestamp);
         const d2 = new Date(prev.timestamp);
+        if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
         return !isSameMinute(d1, d2) || !isSameHour(d1, d2);
     };
 
@@ -208,6 +236,7 @@ export const HomeView: React.FC = () => {
                     </div>
                 )}
             </div>
+
         </div>
     );
 };

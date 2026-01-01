@@ -24,7 +24,7 @@ self.addEventListener('message', (event: MessageEvent) => {
     switch (type) {
         case 'CONNECT':
             // Allow passing URL in payload if needed, currently hardcoded fallback/default
-            connect(payload?.url);
+            connect(payload?.url, payload?.userId);
             break;
         case 'DISCONNECT':
             disconnect();
@@ -43,15 +43,19 @@ self.addEventListener('message', (event: MessageEvent) => {
     }
 });
 
-function connect(url?: string) {
+function connect(url?: string, userId?: string) {
     if (isConnected || ws) {
         console.log('WebSocketWorker: Already connected or connecting');
         postMessage({ type: 'ERROR', payload: { message: 'Already connected' } });
         return;
     }
 
-    // Only generate sessionId if we don't have one
-    if (!sessionId) {
+    // Use passed userId as sessionId if available (for authenticated persistence)
+    // Otherwise generate random sessionId (for anonymous/testing)
+    if (userId) {
+        sessionId = userId;
+        console.log(`WebSocketWorker: Using provided User ID as session: ${sessionId}`);
+    } else if (!sessionId) {
         sessionId = generateUUID();
         console.log(`WebSocketWorker: Generated new session ID: ${sessionId}`);
     } else {

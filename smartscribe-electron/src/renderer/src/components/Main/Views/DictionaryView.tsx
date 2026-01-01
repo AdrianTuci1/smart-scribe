@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { DataEntryItem } from '../../Shared/DataEntryItem';
+import { Modal } from '../../Shared/Modal';
 import { DictionaryEntry } from '../../../types';
 import { apiService } from '../../../services/api';
 import { Search, Plus, XCircle, MoreHorizontal, RotateCcw, ArrowRight, ArrowUpDown, Trash2, Edit2 } from 'lucide-react';
@@ -10,6 +12,7 @@ export const DictionaryView: React.FC = () => {
     const [entries, setEntries] = useState<DictionaryEntry[]>([]);
     const [searchText, setSearchText] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingEntry, setEditingEntry] = useState<DictionaryEntry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     // Filtered entries
@@ -36,12 +39,26 @@ export const DictionaryView: React.FC = () => {
         loadEntries();
     }, []);
 
-    const handleAdd = async (incorrect: string, correct: string) => {
-        const newEntry = { id: crypto.randomUUID(), incorrectWord: incorrect, correctWord: correct };
-        // Optimistic
-        setEntries(prev => [...prev, newEntry]);
+    const handleSave = async (incorrect: string, correct: string, id?: string) => {
+        let newEntries = [...entries];
+
+        if (id) {
+            // Update existing
+            newEntries = newEntries.map(e => e.id === id ? { ...e, incorrectWord: incorrect, correctWord: correct } : e);
+        } else {
+            // Add new
+            const newEntry = { id: crypto.randomUUID(), incorrectWord: incorrect, correctWord: correct };
+            newEntries.push(newEntry);
+        }
+
+        setEntries(newEntries);
+
+        // Reset states
+        setIsAddModalOpen(false);
+        setEditingEntry(null);
+
         try {
-            await apiService.syncDictionary([...entries, newEntry]);
+            await apiService.syncDictionary(newEntries);
         } catch (e) {
             console.error(e);
             loadEntries(); // Revert
@@ -141,52 +158,72 @@ export const DictionaryView: React.FC = () => {
                         </div>
                     ) : (
                         filteredEntries.map((entry, index) => (
-                            <div key={entry.id} className="entry-item group">
+                            <DataEntryItem
+                                key={entry.id}
+                                actions={
+                                    <>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingEntry(entry);
+                                            }}
+                                            className="entry-action-btn edit"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button onClick={() => handleDelete(entry.id)} className="entry-action-btn delete">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </>
+                                }
+                            >
                                 <div className="entry-content">
                                     <span className="incorrect-word">{entry.incorrectWord}</span>
                                     <span className="arrow-separator">→</span>
                                     <span className="correct-word">{entry.correctWord}</span>
                                 </div>
-
-                                <div className="entry-actions">
-                                    <button className="entry-action-btn edit">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button onClick={() => handleDelete(entry.id)} className="entry-action-btn delete">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
+                            </DataEntryItem>
                         ))
                     )}
                 </div>
 
-                {/* Simple Add Modal Overlay */}
-                {isAddModalOpen && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h3 className="modal-title">Add Dictionary Entry</h3>
-                                <button onClick={() => setIsAddModalOpen(false)} className="modal-close-btn"><XCircle size={20} /></button>
-                            </div>
-                            <AddEntryForm
-                                onCancel={() => setIsAddModalOpen(false)}
-                                onAdd={(inc, cor) => {
-                                    handleAdd(inc, cor);
-                                    setIsAddModalOpen(false);
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
+                {/* Valid Add/Edit Modal */}
+                <Modal
+                    isOpen={isAddModalOpen || !!editingEntry}
+                    onClose={() => {
+                        setIsAddModalOpen(false);
+                        setEditingEntry(null);
+                    }}
+                    title={editingEntry ? 'Edit Entry' : 'Add Dictionary Entry'}
+                >
+                    <EntryForm
+                        initialIncorrect={editingEntry?.incorrectWord || ''}
+                        initialCorrect={editingEntry?.correctWord || ''}
+                        onCancel={() => {
+                            setIsAddModalOpen(false);
+                            setEditingEntry(null);
+                        }}
+                        onSave={(inc, cor) => handleSave(inc, cor, editingEntry?.id)}
+                    />
+                </Modal>
             </div>
         </div>
     );
 };
 
-const AddEntryForm: React.FC<{ onCancel: () => void, onAdd: (incorrect: string, correct: string) => void }> = ({ onCancel, onAdd }) => {
-    const [incorrect, setIncorrect] = useState('');
-    const [correct, setCorrect] = useState('');
+const EntryForm: React.FC<{
+    initialIncorrect: string;
+    initialCorrect: string;
+    onCancel: () => void;
+    onSave: (incorrect: string, correct: string) => void;
+}> = ({ initialIncorrect, initialCorrect, onCancel, onSave }) => {
+    const [incorrect, setIncorrect] = useState(initialIncorrect);
+    const [correct, setCorrect] = useState(initialCorrect);
+
+    useEffect(() => {
+        setIncorrect(initialIncorrect);
+        setCorrect(initialCorrect);
+    }, [initialIncorrect, initialCorrect]);
 
     return (
         <div className="space-y-4">
@@ -215,11 +252,11 @@ const AddEntryForm: React.FC<{ onCancel: () => void, onAdd: (incorrect: string, 
                     Cancel
                 </button>
                 <button
-                    onClick={() => onAdd(incorrect, correct)}
+                    onClick={() => onSave(incorrect, correct)}
                     disabled={!incorrect || !correct}
                     className="submit-btn"
                 >
-                    Add
+                    Save
                 </button>
             </div>
         </div>

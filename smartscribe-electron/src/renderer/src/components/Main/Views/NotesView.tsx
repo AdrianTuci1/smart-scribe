@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { DataEntryItem } from '../../Shared/DataEntryItem';
 import { Note } from '../../../types';
 import { apiService } from '../../../services/api';
 import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle } from 'lucide-react';
@@ -132,10 +133,9 @@ export const NotesView: React.FC = () => {
                             </div>
                         ) : (
                             notes.map(note => (
-                                <div
+                                <DataEntryItem
                                     key={note.id}
                                     onClick={() => setTextInput(prev => prev ? prev + ' ' + note.content : note.content)}
-                                    className="note-item group"
                                 >
                                     <p className="note-content">
                                         {typeof note.content === 'string' ? note.content : JSON.stringify(note.content)}
@@ -143,7 +143,7 @@ export const NotesView: React.FC = () => {
                                     <span className="note-date">
                                         {format(new Date(note.updatedAt), 'MMM d')}
                                     </span>
-                                </div>
+                                </DataEntryItem>
                             ))
                         )}
                     </div>

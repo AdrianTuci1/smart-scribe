@@ -3,11 +3,15 @@ import { Transcript } from '../../types';
 
 export const transcriptService = {
     getAll: async (): Promise<Transcript[]> => {
-        const res = await apiClient.request<{ data: Transcript[] }>('/transcripts');
+        const res = await apiClient.request<{ data: any[] }>('/transcripts');
+        console.log('API /transcripts response:', res);
         const list = res.data || [];
+        console.log('Parsed transcripts list:', list);
         return list.map(t => ({
             ...t,
-            text: t.text || '' // Ensure text is at least empty string if missing
+            id: t.transcriptId || t.id,
+            timestamp: t.createdAt || t.timestamp,
+            text: t.text || t.enhancedText || t.originalText || ''
         }));
     },
 

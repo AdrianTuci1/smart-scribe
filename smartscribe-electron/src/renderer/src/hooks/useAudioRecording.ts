@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import webSocketService from '../services/WebSocketService';
 import audioRecordingService from '../services/AudioRecordingService';
+import { authService } from '../services/auth';
 
 export const useAudioRecording = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -57,6 +58,8 @@ export const useAudioRecording = () => {
             try {
                 if ((window as any).electron) {
                     (window as any).electron.ipcRenderer.send('clipboard-write', content);
+                    // Notify main window to refresh
+                    (window as any).electron.ipcRenderer.send('transcript-created', { content });
                 }
             } catch (err) {
                 console.error('Failed to write to clipboard:', err);
@@ -131,7 +134,8 @@ export const useAudioRecording = () => {
             startTimerRef.current = null;
 
             // 1. Connect WS
-            webSocketService.connect();
+            const user = authService.getUser();
+            webSocketService.connect(user?.id);
 
             // 2. Start Mic
             const success = await audioRecordingService.startRecording();

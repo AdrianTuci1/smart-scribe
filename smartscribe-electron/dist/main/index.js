@@ -5,8 +5,15 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -24,6 +31,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/is-obj/index.js
 var require_is_obj = __commonJS({
@@ -15945,6 +15953,197 @@ var require_electron_store = __commonJS({
   }
 });
 
+// src/main/windows/waveformWindow.ts
+var import_electron3, import_path3, import_child_process, import_path4, import_fs, waveformWindow, isFullscreen, currentActiveApp, getBinaryPath, binaryPath, checkActiveWindow, checkFullscreenState, updateWaveformPosition, createWaveformWindow, showWaveformWindow, getWaveformWindow;
+var init_waveformWindow = __esm({
+  "src/main/windows/waveformWindow.ts"() {
+    "use strict";
+    import_electron3 = require("electron");
+    import_path3 = require("path");
+    import_child_process = require("child_process");
+    import_path4 = __toESM(require("path"));
+    import_fs = __toESM(require("fs"));
+    waveformWindow = null;
+    isFullscreen = false;
+    currentActiveApp = "Unknown";
+    getBinaryPath = () => {
+      const binName = "active-window";
+      const devPath = import_path4.default.resolve(process.cwd(), "resources/bin", binName);
+      if (import_fs.default.existsSync(devPath)) return devPath;
+      return devPath;
+    };
+    binaryPath = getBinaryPath();
+    checkActiveWindow = () => {
+      (0, import_child_process.execFile)(binaryPath, (error, stdout, stderr) => {
+        if (error) {
+          return;
+        }
+        try {
+          const win = JSON.parse(stdout);
+          if (win.debug) console.log(win.debug);
+          currentActiveApp = win ? `${win.appName} (${win.windowTitle})` : "Unknown";
+          const newIsFullscreen = win ? win.fullscreen : false;
+          if (isFullscreen !== newIsFullscreen) {
+            console.log(`Fullscreen state changed: ${isFullscreen} -> ${newIsFullscreen}`);
+            isFullscreen = newIsFullscreen;
+            if (waveformWindow && !waveformWindow.isDestroyed()) {
+              waveformWindow.setVisibleOnAllWorkspaces(isFullscreen, { visibleOnFullScreen: isFullscreen });
+              const level = isFullscreen ? "screen-saver" : "floating";
+              waveformWindow.setAlwaysOnTop(true, level);
+              waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
+            }
+            updateWaveformPosition();
+          }
+        } catch (e) {
+          console.error("Failed to parse active-window output", e);
+        }
+      });
+    };
+    checkFullscreenState = async () => {
+      checkActiveWindow();
+    };
+    updateWaveformPosition = () => {
+      if (!waveformWindow || waveformWindow.isDestroyed()) return;
+      const cursorPoint = import_electron3.screen.getCursorScreenPoint();
+      const display = import_electron3.screen.getDisplayNearestPoint(cursorPoint);
+      const { x, y, width, height } = display.workArea;
+      const winBounds = waveformWindow.getBounds();
+      let targetX = Math.floor(x + width / 2 - winBounds.width / 2);
+      let targetY = Math.floor(y + height - winBounds.height - 8);
+      if (isFullscreen) {
+        const absoluteBottom = display.bounds.y + display.bounds.height;
+        targetY = Math.floor(absoluteBottom - winBounds.height - 8);
+      }
+      if (winBounds.x !== targetX || winBounds.y !== targetY) {
+        waveformWindow.setPosition(targetX, targetY);
+      }
+    };
+    createWaveformWindow = () => {
+      if (waveformWindow) return;
+      waveformWindow = new import_electron3.BrowserWindow({
+        width: 600,
+        height: 400,
+        // Increased height to fit warning toast
+        frame: false,
+        transparent: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        resizable: false,
+        hasShadow: false,
+        focusable: true,
+        title: "Recording orb",
+        // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
+        webPreferences: {
+          preload: (0, import_path3.join)(__dirname, "../preload/index.js"),
+          sandbox: false,
+          backgroundThrottling: false
+        }
+      });
+      updateWaveformPosition();
+      const positionInterval = setInterval(() => {
+        if (!waveformWindow || waveformWindow.isDestroyed()) {
+          clearInterval(positionInterval);
+          return;
+        }
+        updateWaveformPosition();
+      }, 50);
+      const fullscreenInterval = setInterval(() => {
+        if (!waveformWindow || waveformWindow.isDestroyed()) {
+          clearInterval(fullscreenInterval);
+          return;
+        }
+        checkFullscreenState();
+      }, 1e3);
+      const handleDisplayChange = () => {
+        if (waveformWindow && !waveformWindow.isDestroyed()) {
+          checkFullscreenState();
+        }
+      };
+      import_electron3.screen.on("display-metrics-changed", handleDisplayChange);
+      if (process.env["ELECTRON_RENDERER_URL"]) {
+        waveformWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/#/waveform`);
+      } else {
+        waveformWindow.loadFile((0, import_path3.join)(__dirname, "../renderer/index.html"), { hash: "waveform" });
+      }
+      waveformWindow.on("closed", () => {
+        waveformWindow = null;
+        clearInterval(positionInterval);
+        clearInterval(fullscreenInterval);
+        import_electron3.screen.removeListener("display-metrics-changed", handleDisplayChange);
+      });
+      waveformWindow.on("enter-full-screen", () => {
+        console.log("Window entered full-screen state change start");
+        setTimeout(() => {
+          console.log("Window is now stable on the new Space.");
+          const isNowFull = waveformWindow?.isFullScreen();
+          console.log("Confirmation status:", isNowFull);
+          checkFullscreenState();
+        }, 600);
+      });
+    };
+    showWaveformWindow = () => {
+      if (!waveformWindow) {
+        createWaveformWindow();
+      } else {
+        waveformWindow.show();
+      }
+    };
+    getWaveformWindow = () => {
+      return waveformWindow;
+    };
+  }
+});
+
+// src/main/protocol/deepLinkHandler.ts
+var deepLinkHandler_exports = {};
+__export(deepLinkHandler_exports, {
+  getMainWindow: () => getMainWindow,
+  registerProtocol: () => registerProtocol,
+  setupMacOSProtocolHandler: () => setupMacOSProtocolHandler,
+  setupSingleInstanceLock: () => setupSingleInstanceLock
+});
+var import_electron4, import_path5, registerProtocol, setupSingleInstanceLock, setupMacOSProtocolHandler, getMainWindow;
+var init_deepLinkHandler = __esm({
+  "src/main/protocol/deepLinkHandler.ts"() {
+    "use strict";
+    import_electron4 = require("electron");
+    import_path5 = require("path");
+    init_waveformWindow();
+    registerProtocol = () => {
+      if (process.defaultApp) {
+        if (process.argv.length >= 2) {
+          import_electron4.app.setAsDefaultProtocolClient("smartscribe", process.execPath, [(0, import_path5.resolve)(process.argv[1])]);
+        }
+      } else {
+        import_electron4.app.setAsDefaultProtocolClient("smartscribe");
+      }
+    };
+    setupSingleInstanceLock = (onSecondInstance) => {
+      const gotTheLock = import_electron4.app.requestSingleInstanceLock();
+      if (!gotTheLock) {
+        import_electron4.app.quit();
+        return false;
+      }
+      import_electron4.app.on("second-instance", (_event, commandLine) => {
+        const url = commandLine.find((arg) => arg.startsWith("smartscribe://"));
+        onSecondInstance(url);
+      });
+      return true;
+    };
+    setupMacOSProtocolHandler = (onOpenUrl) => {
+      import_electron4.app.on("open-url", (event, url) => {
+        event.preventDefault();
+        console.log("Main: Received open-url event:", url);
+        onOpenUrl(url);
+      });
+    };
+    getMainWindow = () => {
+      const waveformWindow2 = getWaveformWindow();
+      return import_electron4.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow2);
+    };
+  }
+});
+
 // src/main/index.ts
 var import_electron10 = require("electron");
 
@@ -16093,178 +16292,8 @@ var createTray = (mainWindow, onQuit) => {
   return tray;
 };
 
-// src/main/protocol/deepLinkHandler.ts
-var import_electron4 = require("electron");
-var import_path5 = require("path");
-
-// src/main/windows/waveformWindow.ts
-var import_electron3 = require("electron");
-var import_path3 = require("path");
-var import_child_process = require("child_process");
-var import_path4 = __toESM(require("path"));
-var import_fs = __toESM(require("fs"));
-var waveformWindow = null;
-var isFullscreen = false;
-var currentActiveApp = "Unknown";
-var getBinaryPath = () => {
-  const binName = "active-window";
-  const devPath = import_path4.default.resolve(process.cwd(), "resources/bin", binName);
-  if (import_fs.default.existsSync(devPath)) return devPath;
-  return devPath;
-};
-var binaryPath = getBinaryPath();
-var checkActiveWindow = () => {
-  (0, import_child_process.execFile)(binaryPath, (error, stdout, stderr) => {
-    if (error) {
-      return;
-    }
-    try {
-      const win = JSON.parse(stdout);
-      if (win.debug) console.log(win.debug);
-      currentActiveApp = win ? `${win.appName} (${win.windowTitle})` : "Unknown";
-      const newIsFullscreen = win ? win.fullscreen : false;
-      if (isFullscreen !== newIsFullscreen) {
-        console.log(`Fullscreen state changed: ${isFullscreen} -> ${newIsFullscreen}`);
-        isFullscreen = newIsFullscreen;
-        if (waveformWindow && !waveformWindow.isDestroyed()) {
-          waveformWindow.setVisibleOnAllWorkspaces(isFullscreen, { visibleOnFullScreen: isFullscreen });
-          const level = isFullscreen ? "screen-saver" : "floating";
-          waveformWindow.setAlwaysOnTop(true, level);
-          waveformWindow.webContents.send("fullscreen-state-changed", isFullscreen);
-        }
-        updateWaveformPosition();
-      }
-    } catch (e) {
-      console.error("Failed to parse active-window output", e);
-    }
-  });
-};
-var checkFullscreenState = async () => {
-  checkActiveWindow();
-};
-var updateWaveformPosition = () => {
-  if (!waveformWindow || waveformWindow.isDestroyed()) return;
-  const cursorPoint = import_electron3.screen.getCursorScreenPoint();
-  const display = import_electron3.screen.getDisplayNearestPoint(cursorPoint);
-  const { x, y, width, height } = display.workArea;
-  const winBounds = waveformWindow.getBounds();
-  let targetX = Math.floor(x + width / 2 - winBounds.width / 2);
-  let targetY = Math.floor(y + height - winBounds.height - 8);
-  if (isFullscreen) {
-    const absoluteBottom = display.bounds.y + display.bounds.height;
-    targetY = Math.floor(absoluteBottom - winBounds.height - 8);
-  }
-  if (winBounds.x !== targetX || winBounds.y !== targetY) {
-    waveformWindow.setPosition(targetX, targetY);
-  }
-};
-var createWaveformWindow = () => {
-  if (waveformWindow) return;
-  waveformWindow = new import_electron3.BrowserWindow({
-    width: 600,
-    height: 400,
-    // Increased height to fit warning toast
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    hasShadow: false,
-    focusable: true,
-    title: "Recording orb",
-    // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
-    webPreferences: {
-      preload: (0, import_path3.join)(__dirname, "../preload/index.js"),
-      sandbox: false,
-      backgroundThrottling: false
-    }
-  });
-  updateWaveformPosition();
-  const positionInterval = setInterval(() => {
-    if (!waveformWindow || waveformWindow.isDestroyed()) {
-      clearInterval(positionInterval);
-      return;
-    }
-    updateWaveformPosition();
-  }, 50);
-  const fullscreenInterval = setInterval(() => {
-    if (!waveformWindow || waveformWindow.isDestroyed()) {
-      clearInterval(fullscreenInterval);
-      return;
-    }
-    checkFullscreenState();
-  }, 1e3);
-  const handleDisplayChange = () => {
-    if (waveformWindow && !waveformWindow.isDestroyed()) {
-      checkFullscreenState();
-    }
-  };
-  import_electron3.screen.on("display-metrics-changed", handleDisplayChange);
-  if (process.env["ELECTRON_RENDERER_URL"]) {
-    waveformWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/#/waveform`);
-  } else {
-    waveformWindow.loadFile((0, import_path3.join)(__dirname, "../renderer/index.html"), { hash: "waveform" });
-  }
-  waveformWindow.on("closed", () => {
-    waveformWindow = null;
-    clearInterval(positionInterval);
-    clearInterval(fullscreenInterval);
-    import_electron3.screen.removeListener("display-metrics-changed", handleDisplayChange);
-  });
-  waveformWindow.on("enter-full-screen", () => {
-    console.log("Window entered full-screen state change start");
-    setTimeout(() => {
-      console.log("Window is now stable on the new Space.");
-      const isNowFull = waveformWindow?.isFullScreen();
-      console.log("Confirmation status:", isNowFull);
-      checkFullscreenState();
-    }, 600);
-  });
-};
-var showWaveformWindow = () => {
-  if (!waveformWindow) {
-    createWaveformWindow();
-  } else {
-    waveformWindow.show();
-  }
-};
-var getWaveformWindow = () => {
-  return waveformWindow;
-};
-
-// src/main/protocol/deepLinkHandler.ts
-var registerProtocol = () => {
-  if (process.defaultApp) {
-    if (process.argv.length >= 2) {
-      import_electron4.app.setAsDefaultProtocolClient("smartscribe", process.execPath, [(0, import_path5.resolve)(process.argv[1])]);
-    }
-  } else {
-    import_electron4.app.setAsDefaultProtocolClient("smartscribe");
-  }
-};
-var setupSingleInstanceLock = (onSecondInstance) => {
-  const gotTheLock = import_electron4.app.requestSingleInstanceLock();
-  if (!gotTheLock) {
-    import_electron4.app.quit();
-    return false;
-  }
-  import_electron4.app.on("second-instance", (_event, commandLine) => {
-    const url = commandLine.find((arg) => arg.startsWith("smartscribe://"));
-    onSecondInstance(url);
-  });
-  return true;
-};
-var setupMacOSProtocolHandler = (onOpenUrl) => {
-  import_electron4.app.on("open-url", (event, url) => {
-    event.preventDefault();
-    console.log("Main: Received open-url event:", url);
-    onOpenUrl(url);
-  });
-};
-var getMainWindow = () => {
-  const waveformWindow2 = getWaveformWindow();
-  return import_electron4.BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w !== waveformWindow2);
-};
+// src/main/index.ts
+init_deepLinkHandler();
 
 // src/main/ipc/permissionsHandlers.ts
 var import_electron5 = require("electron");
@@ -16497,9 +16526,17 @@ var initializeGlobalShortcuts = () => {
 
 // src/main/ipc/windowHandlers.ts
 var import_electron8 = require("electron");
+init_waveformWindow();
 var registerWindowHandlers = () => {
   import_electron8.ipcMain.handle("open-waveform", () => {
     showWaveformWindow();
+  });
+  import_electron8.ipcMain.on("transcript-created", (_event, data) => {
+    const { getMainWindow: getMainWindow2 } = (init_deepLinkHandler(), __toCommonJS(deepLinkHandler_exports));
+    const mainWindow = getMainWindow2();
+    if (mainWindow) {
+      mainWindow.webContents.send("transcript-created", data);
+    }
   });
 };
 

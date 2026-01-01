@@ -238,41 +238,13 @@
     color: #9ca3af;
 }
 
-.snippet-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 1rem;
-    transition: background-color 150ms;
-    cursor: pointer;
-    border-bottom: 1px solid transparent;
-}
 
-.snippet-item:not(:last-child) {
-    border-bottom-color: #f3f4f6;
-    /* border-gray-100 */
-}
-
-:global(.dark) .snippet-item:not(:last-child) {
-    border-bottom-color: rgba(255, 255, 255, 0.05);
-}
-
-.snippet-item:hover {
-    background-color: #f9fafb;
-    /* hover:bg-gray-50 */
-}
-
-:global(.dark) .snippet-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
 
 .snippet-content-wrapper {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     flex: 1;
-    padding-right: 1.5rem;
-    /* pr-6 */
 }
 
 .snippet-title-row {
@@ -315,18 +287,7 @@
     /* dark:text-gray-400 */
 }
 
-.snippet-actions {
-    opacity: 0;
-    transition: opacity 150ms;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    align-self: center;
-}
 
-.snippet-item:hover .snippet-actions {
-    opacity: 1;
-}
 
 .snippet-action-btn {
     padding: 0.375rem;
@@ -346,53 +307,7 @@
     /* hover:text-red-500 */
 }
 
-/* Modal */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
 
-.modal-content {
-    background-color: #1e1e1e;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    width: 100%;
-    max-width: 28rem;
-    /* max-w-md */
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: scale(1);
-    transition: all 150ms;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.modal-title {
-    font-size: 1.125rem;
-    /* text-lg */
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.modal-close-btn {
-    color: #9ca3af;
-}
-
-.modal-close-btn:hover {
-    color: #ffffff;
-}
 
 .form-group {
     display: flex;

@@ -13,9 +13,14 @@ export const configService = {
     },
 
     saveDictionary: async (entries: any[]): Promise<void> => {
+        const payload = entries.map(entry => ({
+            id: entry.id,
+            incorrect_word: entry.incorrectWord,
+            correct_word: entry.correctWord
+        }));
         return apiClient.request<void>('/config/dictionary/save', {
             method: 'POST',
-            body: JSON.stringify({ entries })
+            body: JSON.stringify({ dictionary: { entries: payload } })
         });
     },
 

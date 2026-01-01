@@ -25,11 +25,13 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Transcripts do
     # Parse options for pagination and cache
     limit = Keyword.get(opts, :limit, 20)
     start_key = Keyword.get(opts, :start_key, nil)
-    use_cache = Keyword.get(opts, :cache, true)
+    # Disable cache by default for now to debug empty response issues and avoid pagination bugs
+    use_cache = Keyword.get(opts, :cache, false)
 
     try do
       # Check cache first if enabled
       if use_cache do
+        # Note: This cache key needs to include limit/start_key to be correct
         cache_key = "transcripts_#{user_id}"
 
         case get_cache(cache_key) do
@@ -69,14 +71,17 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Transcripts do
 
     case ExAws.request(query) do
       {:ok, result} ->
+        count = Map.get(result, "Count", 0)
+        Logger.info("DynamoDB Query Success for User #{user_id}. Found #{count} items.")
+
         # Cache the result for future requests
-        cache_key = "transcripts_#{user_id}"
-        # Cache for 60 seconds
-        set_cache(cache_key, result, 60)
+        # Cache disabled for debugging
+        # set_cache(...)
 
         {:ok, result}
 
       {:error, reason} ->
+        Logger.error("DynamoDB Query Failed: #{inspect(reason)}")
         {:error, reason}
     end
   end

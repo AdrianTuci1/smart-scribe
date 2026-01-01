@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { DataEntryItem } from '../../Shared/DataEntryItem';
+import { Modal } from '../../Shared/Modal';
 import { Snippet } from '../../../types';
 import { apiService } from '../../../services/api';
 import { Search, Plus, XCircle, MoreHorizontal, RotateCcw, Trash2, Edit2, Copy, ArrowUpDown } from 'lucide-react';
@@ -157,9 +159,25 @@ export const SnippetsView: React.FC = () => {
                         </div>
                     ) : (
                         filteredSnippets.map((snippet, index) => (
-                            <div key={snippet.id}
+                            <DataEntryItem
+                                key={snippet.id}
                                 onClick={() => setEditingSnippet(snippet)}
-                                className="snippet-item group"
+                                actions={
+                                    <>
+                                        <button className="snippet-action-btn">
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(snippet.id);
+                                            }}
+                                            className="snippet-action-btn delete"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </>
+                                }
                             >
                                 <div className="snippet-content-wrapper">
                                     <div className="snippet-title-row">
@@ -168,48 +186,27 @@ export const SnippetsView: React.FC = () => {
                                     </div>
                                     <p className="snippet-preview">{snippet.content}</p>
                                 </div>
-
-                                <div className="snippet-actions">
-                                    <button className="snippet-action-btn">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(snippet.id);
-                                        }}
-                                        className="snippet-action-btn delete"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
+                            </DataEntryItem>
                         ))
                     )}
                 </div>
 
                 {/* Add/Edit Modal */}
-                {(isAddModalOpen || editingSnippet) && (
-                    <div className="modal-overlay">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h3 className="modal-title">
-                                    {editingSnippet ? 'Edit Snippet' : 'Add Snippet'}
-                                </h3>
-                                <button onClick={() => { setIsAddModalOpen(false); setEditingSnippet(null); }} className="modal-close-btn"><XCircle size={20} /></button>
-                            </div>
-                            <SnippetForm
-                                initialTitle={editingSnippet?.title || ''}
-                                initialContent={editingSnippet?.content || ''}
-                                onCancel={() => {
-                                    setIsAddModalOpen(false);
-                                    setEditingSnippet(null);
-                                }}
-                                onSave={(title, content) => handleSave(title, content, editingSnippet?.id)}
-                            />
-                        </div>
-                    </div>
-                )}
+                <Modal
+                    isOpen={isAddModalOpen || !!editingSnippet}
+                    onClose={() => { setIsAddModalOpen(false); setEditingSnippet(null); }}
+                    title={editingSnippet ? 'Edit Snippet' : 'Add Snippet'}
+                >
+                    <SnippetForm
+                        initialTitle={editingSnippet?.title || ''}
+                        initialContent={editingSnippet?.content || ''}
+                        onCancel={() => {
+                            setIsAddModalOpen(false);
+                            setEditingSnippet(null);
+                        }}
+                        onSave={(title, content) => handleSave(title, content, editingSnippet?.id)}
+                    />
+                </Modal>
             </div>
         </div>
     );
