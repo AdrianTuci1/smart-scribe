@@ -168,10 +168,12 @@ export const FloatingWaveform: React.FC = () => {
     return (
         <div
             className="floating-waveform-wrapper"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
         >
-            <div className={`orb-container ${warningVisible ? 'has-warning' : ''}`}>
+            <div
+                className={`orb-container ${warningVisible ? 'has-warning' : ''}`}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
                 <HoverHint shortcutKey={pushToTalkKey} />
 
                 <WarningToast

@@ -38,8 +38,8 @@ erDiagram
     }
 
     UserConfig {
-        string userId PK
-        string configType "SK - dictionary, subscription, etc"
+        string userId PK "Can be actual UUID or 'TEAM_<UUID>' for shared items"
+        string configType "SK - dictionary, subscription, settings, team_metadata"
         map data "JSON blob"
     }
 

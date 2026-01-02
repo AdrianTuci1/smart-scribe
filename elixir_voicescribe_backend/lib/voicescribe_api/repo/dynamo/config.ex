@@ -160,4 +160,30 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Config do
   def update_subscription_config(user_id, data) do
     put_config(user_id, "subscription", data)
   end
+
+  # User Lookup (Scan)
+  def get_user_by_email(email) do
+    # Scan for configType = 'settings' and email inside the map
+    # Note: Scanning is expensive. Add GSI in production.
+    # We need to scan and filter manually or use FilterExpression if mapped
+    # Since 'data' is a map flattened into the item (because of Map.merge in put_config),
+    # we can check for attribute 'email'.
+
+    Dynamo.scan(@config_table,
+      filter_expression: "email = :email AND configType = :ctype",
+      expression_attribute_values: [email: email, ctype: "settings"]
+    )
+    |> ExAws.request()
+    |> case do
+      {:ok, %{"Items" => [item | _]}} ->
+        decoded = decode_item(item)
+        {:ok, decoded["userId"]}
+
+      {:ok, %{"Items" => []}} ->
+        {:error, :not_found}
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
 end

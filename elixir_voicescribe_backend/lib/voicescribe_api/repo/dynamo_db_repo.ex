@@ -3,7 +3,7 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
   Main entry point for DynamoDB operations.
   Refactored to delegate to specific context modules.
   """
-  alias VoiceScribeAPI.Repo.Dynamo.{Support, Notes, Config, Transcripts, Utils}
+  alias VoiceScribeAPI.Repo.Dynamo.{Support, Notes, Config, Transcripts, Utils, Notifications}
   alias ExAws.Dynamo
 
   # -- Delegation --
@@ -43,6 +43,14 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
   defdelegate update_transcript(user_id, transcript_id, transcript_data), to: Transcripts
   defdelegate delete_transcript(user_id, transcript_id), to: Transcripts
   defdelegate save_transcript(transcript), to: Transcripts
+
+  # Notifications
+  defdelegate list_notifications(user_id), to: Notifications
+  defdelegate create_notification(user_id, title, message, type, data \\ %{}), to: Notifications
+  defdelegate update_notification_status(user_id, config_type, status), to: Notifications
+
+  # User Lookup
+  defdelegate get_user_by_email(email), to: Config
 
   # -- Orchestration --
 

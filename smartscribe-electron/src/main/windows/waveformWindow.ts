@@ -105,7 +105,7 @@ export const createWaveformWindow = (): void => {
         skipTaskbar: true,
         resizable: false,
         hasShadow: false,
-        focusable: true,
+        focusable: false,
         title: 'Recording orb',
         // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
         webPreferences: {
@@ -114,6 +114,8 @@ export const createWaveformWindow = (): void => {
             backgroundThrottling: false
         }
     })
+
+    waveformWindow.setIgnoreMouseEvents(true, { forward: true })
 
     updateWaveformPosition()
 

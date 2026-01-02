@@ -1,6 +1,7 @@
 import React from 'react';
 import { PanelLeft } from 'lucide-react';
 import { UserMenu } from './UserMenu';
+import { NotificationBell } from './NotificationBell';
 import './TitleBar.css';
 
 interface TitleBarProps {
@@ -20,7 +21,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({ toggleSidebar, onManageAccou
             <div style={{ flex: 1 }}></div>
 
             {/* User Menu */}
-            <div style={{ WebkitAppRegion: 'no-drag', marginRight: '10px' } as any}>
+            <div style={{ WebkitAppRegion: 'no-drag', display: 'flex', alignItems: 'center', gap: '12px', marginRight: '10px' } as any}>
+                <NotificationBell />
                 <UserMenu onManageAccount={onManageAccount} />
             </div>
         </div>

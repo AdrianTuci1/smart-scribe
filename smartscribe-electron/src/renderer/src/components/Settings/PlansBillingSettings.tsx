@@ -1,16 +1,49 @@
 import React, { useState } from 'react';
-import { CheckCircle, FileText, ChevronRight } from 'lucide-react';
+import { CheckCircle, FileText, ChevronRight, Loader2 } from 'lucide-react';
 import { SettingsTabProps } from './types';
+import { apiService } from '../../services/api';
 
 const plans = [
-    { id: 'free', name: 'Free', price: '$0', features: ['Basic transcription', '100 minutes/month'] },
-    { id: 'basic', name: 'Basic', price: '$9.99', features: ['Advanced transcription', '500 minutes/month', 'Basic formatting'] },
-    { id: 'pro', name: 'Pro', price: '$19.99', features: ['Unlimited transcription', 'Advanced formatting', 'Priority support'] },
-    { id: 'enterprise', name: 'Enterprise', price: 'Custom', features: ['Custom features', 'Dedicated support', 'SLA guarantee'] },
+    { id: 'free', name: 'Free', price: '$0', features: ['Advanced transcription', '2000 words/month'] },
+    { id: 'pro', name: 'Pro', price: '$9.99', features: ['Advanced transcription', 'Unlimited Words'] },
 ];
 
 export const PlansBillingSettings: React.FC<SettingsTabProps> = () => {
     const [selectedPlan, setSelectedPlan] = useState<string>('free');
+    const [isLoading, setIsLoading] = useState<string | null>(null);
+
+    const handleUpgrade = async (planId: string) => {
+        if (planId === 'free') return;
+
+        try {
+            setIsLoading(planId);
+            // Default to monthly for the Pro button in this simplified UI
+            const { url } = await apiService.createCheckoutSession('monthly');
+            if (url) {
+                // Open in default browser ideally, or verify behavior
+                window.open(url, '_blank');
+            }
+        } catch (error) {
+            console.error('Failed to start checkout:', error);
+            // TODO: Show toast error
+        } finally {
+            setIsLoading(null);
+        }
+    };
+
+    const handleManageBilling = async () => {
+        try {
+            setIsLoading('portal');
+            const { url } = await apiService.createPortalSession();
+            if (url) {
+                window.open(url, '_blank');
+            }
+        } catch (error) {
+            console.error('Failed to open billing portal:', error);
+        } finally {
+            setIsLoading(null);
+        }
+    };
 
     return (
         <>
@@ -31,6 +64,22 @@ export const PlansBillingSettings: React.FC<SettingsTabProps> = () => {
                                     </div>
                                 ))}
                             </div>
+                            {plan.id !== 'free' && selectedPlan !== plan.id && (
+                                <button
+                                    className="plan-action-button"
+                                    onClick={() => handleUpgrade(plan.id)}
+                                    disabled={!!isLoading}
+                                >
+                                    {isLoading === plan.id ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        'Upgrade'
+                                    )}
+                                </button>
+                            )}
+                            {selectedPlan === plan.id && (
+                                <div className="current-plan-badge">Current Plan</div>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -39,9 +88,13 @@ export const PlansBillingSettings: React.FC<SettingsTabProps> = () => {
             <div className="settings-section">
                 <h3 className="settings-section-title">Billing History</h3>
                 <div className="settings-card">
-                    <button className="settings-action-button">
-                        <FileText size={18} />
-                        <span>View Billing History</span>
+                    <button
+                        className="settings-action-button"
+                        onClick={handleManageBilling}
+                        disabled={!!isLoading}
+                    >
+                        {isLoading === 'portal' ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
+                        <span>View Billing History & Manage Subscription</span>
                         <ChevronRight size={18} style={{ marginLeft: 'auto' }} />
                     </button>
                 </div>
@@ -49,3 +102,4 @@ export const PlansBillingSettings: React.FC<SettingsTabProps> = () => {
         </>
     );
 };
+

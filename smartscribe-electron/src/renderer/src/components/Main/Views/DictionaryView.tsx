@@ -3,31 +3,42 @@ import React, { useState, useEffect } from 'react';
 import { DataEntryItem } from '../../Shared/DataEntryItem';
 import { Modal } from '../../Shared/Modal';
 import { DictionaryEntry } from '../../../types';
-import { apiService } from '../../../services/api';
+import { apiService, teamService } from '../../../services/api';
 import { Search, Plus, XCircle, MoreHorizontal, RotateCcw, ArrowRight, ArrowUpDown, Trash2, Edit2 } from 'lucide-react';
 import clsx from 'clsx';
 import './DictionaryView.css';
-
+// ...
 export const DictionaryView: React.FC = () => {
     const [entries, setEntries] = useState<DictionaryEntry[]>([]);
     const [searchText, setSearchText] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingEntry, setEditingEntry] = useState<DictionaryEntry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('All');
 
     // Filtered entries
-    const filteredEntries = entries.filter(entry =>
-        !searchText ||
-        entry.incorrectWord.toLowerCase().includes(searchText.toLowerCase()) ||
-        entry.correctWord.toLowerCase().includes(searchText.toLowerCase())
-    ).sort((a, b) => a.incorrectWord.localeCompare(b.incorrectWord));
+    const filteredEntries = entries.filter(entry => {
+        // Tab Filter
+        if (activeTab === 'Personal' && (entry as any).type !== 'personal') return false;
+        if (activeTab === 'Shared with team' && (entry as any).type !== 'shared') return false;
+
+        return !searchText ||
+            entry.incorrectWord.toLowerCase().includes(searchText.toLowerCase()) ||
+            entry.correctWord.toLowerCase().includes(searchText.toLowerCase())
+    }).sort((a, b) => a.incorrectWord.localeCompare(b.incorrectWord));
 
     const loadEntries = async () => {
         setIsLoading(true);
         try {
-            const data = await apiService.getDictionary();
-            const list = Array.isArray(data) ? data : [];
-            setEntries(list);
+            const [personalData, sharedData] = await Promise.all([
+                apiService.getDictionary(),
+                teamService.getSharedItems('dictionary')
+            ]);
+
+            const personal = Array.isArray(personalData) ? personalData.map(e => ({ ...e, type: 'personal' })) : [];
+            const shared = Array.isArray(sharedData) ? sharedData.map(e => ({ ...e, type: 'shared' })) : [];
+
+            setEntries([...personal, ...shared]);
         } catch (error) {
             console.error('Failed to load dictionary', error);
         } finally {
@@ -97,13 +108,14 @@ export const DictionaryView: React.FC = () => {
                         {['All', 'Personal', 'Shared with team'].map((tab, i) => (
                             <button
                                 key={tab}
+                                onClick={() => setActiveTab(tab)}
                                 className={clsx(
                                     "dictionary-tab-btn",
-                                    i === 0 && "active"
+                                    activeTab === tab && "active"
                                 )}
                             >
                                 {tab}
-                                {i === 0 && (
+                                {activeTab === tab && (
                                     <div className="tab-indicator" />
                                 )}
                             </button>

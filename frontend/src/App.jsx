@@ -16,13 +16,15 @@ const VoiceHabitsArticle = lazy(() => import('./pages/VoiceHabitsArticle'));
 const TechnicalChallengesArticle = lazy(() => import('./pages/TechnicalChallengesArticle'));
 const TryNow = lazy(() => import('./pages/TryNow'));
 
+import { AuthProvider } from './contexts/AuthContext';
+
 function App() {
-
-
   return (
     <Router>
-      <ScrollToTop />
-      <AppContent />
+      <AuthProvider>
+        <ScrollToTop />
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 }

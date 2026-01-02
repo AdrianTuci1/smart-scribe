@@ -3,31 +3,48 @@ import React, { useState, useEffect } from 'react';
 import { DataEntryItem } from '../../Shared/DataEntryItem';
 import { Modal } from '../../Shared/Modal';
 import { Snippet } from '../../../types';
-import { apiService } from '../../../services/api';
+import { apiService, teamService } from '../../../services/api';
 import { Search, Plus, XCircle, MoreHorizontal, RotateCcw, Trash2, Edit2, Copy, ArrowUpDown } from 'lucide-react';
 import clsx from 'clsx';
 import './SnippetsView.css';
-
+// ...
 export const SnippetsView: React.FC = () => {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [searchText, setSearchText] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('All');
 
     // Filtered snippets
-    const filteredSnippets = snippets.filter(snippet =>
-        !searchText ||
-        snippet.title.toLowerCase().includes(searchText.toLowerCase()) ||
-        snippet.content.toLowerCase().includes(searchText.toLowerCase())
-    ).sort((a, b) => a.title.localeCompare(b.title));
+    const filteredSnippets = snippets.filter(snippet => {
+        // Tab Filter
+        if (activeTab === 'Personal' && (snippet as any).type !== 'personal') return false;
+        if (activeTab === 'Shared with team' && (snippet as any).type !== 'shared') return false;
+
+        return !searchText ||
+            snippet.title.toLowerCase().includes(searchText.toLowerCase()) ||
+            snippet.content.toLowerCase().includes(searchText.toLowerCase())
+    }).sort((a, b) => a.title.localeCompare(b.title));
+
 
     const loadSnippets = async () => {
         setIsLoading(true);
         try {
-            const data = await apiService.getSnippets();
-            const list = Array.isArray(data) ? data : [];
-            setSnippets(list);
+            const [personalData, sharedData] = await Promise.all([
+                apiService.getSnippets(),
+                teamService.getSharedItems('snippets')
+            ]);
+
+            const personal = Array.isArray(personalData) ? personalData.map(s => ({ ...s, type: 'personal' })) : [];
+            const shared = Array.isArray(sharedData) ? sharedData.map(s => ({ ...s, type: 'shared' })) : [];
+
+            // For now, combine them or keep separate lists? 
+            // The view uses `snippets` state. Let's combine them and filter by tab.
+            // But wait, `filteredSnippets` currently filters by search.
+            // Tabs logic is in the UI rendering but `filteredSnippets` relies on `snippets`.
+            // We should store them with a type.
+            setSnippets([...personal, ...shared]);
         } catch (error) {
             console.error('Failed to load snippets', error);
         } finally {
@@ -100,13 +117,14 @@ export const SnippetsView: React.FC = () => {
                         {['All', 'Personal', 'Shared with team'].map((tab, i) => (
                             <button
                                 key={tab}
+                                onClick={() => setActiveTab(tab)}
                                 className={clsx(
                                     "snippets-tab-btn",
-                                    i === 0 && "active"
+                                    activeTab === tab && "active"
                                 )}
                             >
                                 {tab}
-                                {i === 0 && (
+                                {activeTab === tab && (
                                     <div className="tab-indicator" />
                                 )}
                             </button>

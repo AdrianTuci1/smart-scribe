@@ -16030,7 +16030,7 @@ var init_waveformWindow = __esm({
         skipTaskbar: true,
         resizable: false,
         hasShadow: false,
-        focusable: true,
+        focusable: false,
         title: "Recording orb",
         // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
         webPreferences: {
@@ -16039,6 +16039,7 @@ var init_waveformWindow = __esm({
           backgroundThrottling: false
         }
       });
+      waveformWindow.setIgnoreMouseEvents(true, { forward: true });
       updateWaveformPosition();
       const positionInterval = setInterval(() => {
         if (!waveformWindow || waveformWindow.isDestroyed()) {

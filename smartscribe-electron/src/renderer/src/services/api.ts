@@ -3,9 +3,14 @@ import { transcriptService } from './api/transcripts';
 import { notesService } from './api/notes';
 import { configService } from './api/config';
 import { supportService } from './api/support';
+import { subscriptionService } from './api/subscription';
+import { referralService } from './api/referral';
+import { teamService } from './api/team';
+import { notificationService } from './api/notification';
 
 // Re-export services
-export { apiClient, transcriptService, notesService, configService, supportService };
+export * from './api/notification'; // This exports NotificationItem and notificationService
+export { apiClient, transcriptService, notesService, configService, supportService, subscriptionService, referralService, teamService };
 
 // Maintain partial Backward Compatibility if needed, or better, 
 // expose a unified object that mimics the old ApiService if extensive refactoring of callsites 
@@ -134,6 +139,15 @@ class ApiServiceFacade {
     // Support
     public async sendTicket(message: string, email?: string) {
         return supportService.sendTicket({ message, email });
+    }
+
+    // Subscription
+    public async createCheckoutSession(plan: 'monthly' | 'yearly') {
+        return subscriptionService.createCheckoutSession(plan);
+    }
+
+    public async createPortalSession() {
+        return subscriptionService.createPortalSession();
     }
 }
 

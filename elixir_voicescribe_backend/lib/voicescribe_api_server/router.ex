@@ -72,6 +72,19 @@ defmodule VoiceScribeAPIServer.Router do
     # Subscriptions
     post("/subscriptions/checkout", SubscriptionController, :create_checkout_session)
     post("/subscriptions/portal", SubscriptionController, :create_portal_session)
+
+    # Referral
+    get("/referral", ReferralController, :get_referral_info)
+
+    # Team
+    get("/team/members", TeamController, :index)
+    post("/team/invite", TeamController, :invite)
+    get("/team/shared/:type", TeamController, :shared_items)
+    post("/team/shared/:type", TeamController, :update_shared_items)
+
+    # Notifications
+    get("/notifications", NotificationController, :index)
+    post("/notifications/:id/action", NotificationController, :perform_action)
   end
 
   # Public routes

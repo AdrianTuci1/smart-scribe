@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OnboardingLayout } from './OnboardingLayout';
 import './ReferralStep.css';
 import { ChevronLeft, Share2, Award, PartyPopper, Link as LinkIcon } from 'lucide-react';
+import { referralService } from '../../services/api';
 
 interface ReferralStepProps {
     onComplete: () => void;
@@ -16,8 +17,26 @@ export const ReferralStep: React.FC<ReferralStepProps> = ({
     currentStep,
     totalSteps
 }) => {
-    const referralLink = "https://smartscribe.ai/r?TUCEAN1"; // Example from screenshot
+    const [referralLink, setReferralLink] = useState("https://smartscribe.ai/r/...");
+    const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        const fetchReferral = async () => {
+            try {
+                const data = await referralService.getReferralInfo();
+                if (data && data.referralLink) {
+                    setReferralLink(data.referralLink);
+                }
+            } catch (err) {
+                console.error("Failed to fetch referral link", err);
+                // Fallback or keep loading/error state
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReferral();
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralLink);
@@ -79,9 +98,14 @@ export const ReferralStep: React.FC<ReferralStepProps> = ({
                 <div className="referral-link-box">
                     <div className="referral-input-wrapper">
                         <LinkIcon size={16} className="link-icon" />
-                        <input type="text" readOnly value={referralLink} className="referral-input" />
+                        <input
+                            type="text"
+                            readOnly
+                            value={loading ? "Loading..." : referralLink}
+                            className="referral-input"
+                        />
                     </div>
-                    <button className="copy-button" onClick={handleCopy}>
+                    <button className="copy-button" onClick={handleCopy} disabled={loading}>
                         {copied ? "Copied" : "Copy"}
                     </button>
                 </div>
