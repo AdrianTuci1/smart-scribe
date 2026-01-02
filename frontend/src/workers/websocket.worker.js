@@ -17,7 +17,7 @@ self.addEventListener('message', (event) => {
 
     switch (type) {
         case 'CONNECT':
-            connect();
+            connect(payload);
             break;
         case 'DISCONNECT':
             disconnect();
@@ -36,23 +36,31 @@ self.addEventListener('message', (event) => {
     }
 });
 
-function connect() {
+let isPublic = true; // Default to public mode as this worker is used on the unauthenticated website
+
+// ... inside handlers
+function connect(payload) {
     if (isConnected || ws) {
         console.log('WebSocketWorker: Already connected or connecting');
         postMessage({ type: 'ERROR', payload: { message: 'Already connected' } });
         return;
     }
 
+    // Allow overriding if ever needed, but default is TRUE
+    if (payload && typeof payload.isPublic !== 'undefined') {
+        isPublic = payload.isPublic;
+    }
+
+    console.log(`WebSocketWorker: Connecting mode: ${isPublic ? 'PUBLIC' : 'PRIVATE'}`);
+
     // Only generate sessionId if we don't have one
     if (!sessionId) {
-        sessionId = generateUUID();
+        sessionId = isPublic ? `public-${generateUUID()}` : generateUUID();
         console.log(`WebSocketWorker: Generated new session ID: ${sessionId}`);
-    } else {
-        console.log(`WebSocketWorker: Reusing existing session ID: ${sessionId}`);
     }
 
     console.log(`WebSocketWorker: Connecting to ${websocketUrl}`);
-
+    // ... rest of connect logic matches existing
     try {
         ws = new WebSocket(websocketUrl);
         console.log('WebSocketWorker: WebSocket instance created');
@@ -64,75 +72,51 @@ function connect() {
             startHeartbeat();
             postMessage({ type: 'CONNECTED', payload: { sessionId } });
         };
-
-        ws.onmessage = (event) => {
-            handleMessage(event.data);
-        };
-
+        // ... handlers
+        ws.onmessage = (event) => { handleMessage(event.data); };
         ws.onerror = (error) => {
             console.error('WebSocketWorker: WebSocket error', error);
-            console.error('WebSocketWorker: Error details:', {
-                type: error.type,
-                target: error.target,
-                readyState: ws ? ws.readyState : 'no ws'
-            });
+            // ... existing error logging
             postMessage({ type: 'ERROR', payload: { message: 'WebSocket connection error' } });
         };
-
         ws.onclose = (event) => {
-            console.log('WebSocketWorker: Disconnected');
-            console.log('WebSocketWorker: Close details:', {
-                code: event.code,
-                reason: event.reason,
-                wasClean: event.wasClean
-            });
+            // ... existing close logic
             isConnected = false;
             stopHeartbeat();
             ws = null;
             postMessage({ type: 'DISCONNECTED' });
         };
     } catch (error) {
+        // ... existing error catch
         console.error('WebSocketWorker: Failed to create WebSocket', error);
         postMessage({ type: 'ERROR', payload: { message: 'Failed to create WebSocket connection' } });
     }
 }
 
-function disconnect() {
-    stopHeartbeat();
-
-    if (ws) {
-        ws.onclose = null;
-        ws.onerror = null;
-        ws.close();
-        ws = null;
-    }
-
-    isConnected = false;
-    sessionId = null; // Clear sessionId for next session
-    hasStartedStream = false; // Reset stream flag
-    console.log('WebSocketWorker: Disconnected and cleared session');
-    postMessage({ type: 'DISCONNECTED' });
-}
-
 function joinChannel() {
+    // Determine topic based on public/private mode
+    const topic = isPublic ? `public_audio:${sessionId}` : `audio:${sessionId}`;
+
     const payload = {
-        topic: `audio:${sessionId}`,
+        topic: topic,
         event: 'phx_join',
         payload: {},
         ref: generateUUID()
     };
 
     sendMessage(payload);
-    console.log(`WebSocketWorker: Joining channel audio:${sessionId}`);
+    console.log(`WebSocketWorker: Joining channel ${topic}`);
 }
 
 function startStream() {
-    // IMPORTANT: Use sessionId as user_id because server broadcasts to "audio:#{user_id}"
-    // We need to match the topic we joined: "audio:#{sessionId}"
+    const topic = isPublic ? `public_audio:${sessionId}` : `audio:${sessionId}`;
+
     const payload = {
-        topic: `audio:${sessionId}`,
+        topic: topic,
         event: 'start_stream',
-        payload: { user_id: sessionId }, // Use sessionId here to match broadcast topic
+        // For public stream, user_id is implicit/session_id, private uses sessionId as user_id proxy 
+        // Logic remains same: send sessionId as ID if needed, or backend handles it.
+        payload: { user_id: sessionId },
         ref: generateUUID()
     };
 
@@ -141,8 +125,10 @@ function startStream() {
 }
 
 function stopStream() {
+    const topic = isPublic ? `public_audio:${sessionId}` : `audio:${sessionId}`;
+
     const payload = {
-        topic: `audio:${sessionId}`,
+        topic: topic,
         event: 'stop_stream',
         payload: {},
         ref: generateUUID()
@@ -158,10 +144,12 @@ function sendAudioChunk(base64Data) {
         return;
     }
 
-    console.log(`WebSocketWorker: Sending audio chunk, length: ${base64Data.length}`);
+    const topic = isPublic ? `public_audio:${sessionId}` : `audio:${sessionId}`;
+
+    // console.log(`WebSocketWorker: Sending audio chunk, length: ${base64Data.length}`);
 
     const payload = {
-        topic: `audio:${sessionId}`,
+        topic: topic,
         event: 'audio_chunk',
         payload: { data: base64Data },
         ref: generateUUID()

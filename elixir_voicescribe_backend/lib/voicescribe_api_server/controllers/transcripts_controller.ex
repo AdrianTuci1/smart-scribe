@@ -71,51 +71,65 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
       |> put_status(:bad_request)
       |> json(%{error: "Transcript content cannot be empty"})
     else
-      # 2. Check Subscription and Usage
-      can_save? =
-        case DynamoDBRepo.get_subscription_config(user_id) do
-          %{"plan" => "pro"} ->
-            true
+      # 1.5. Idempotency Check
+      case DynamoDBRepo.get_transcript(user_id, transcript_id) do
+        {:ok, result} when result != %{} ->
+          # Already exists! Return success but DO NOT increment usage.
+          Logger.info(
+            "Idempotency: Transcript #{transcript_id} already exists for user #{user_id}. Skipping creation and usage update."
+          )
 
-          _ ->
-            # Free tier (or unknown) - Check usage
-            usage = DynamoDBRepo.get_usage(user_id)
-            current_count = Map.get(usage, "wordCount", 0)
-            new_words = count_words(content)
+          json(conn, %{status: "ok", transcriptId: transcript_id})
 
-            # Limit: 2000 words
-            if current_count + new_words > 2000 do
-              {:error, :limit_exceeded}
-            else
-              true
+        _ ->
+          # 2. Check Subscription and Usage
+          can_save? =
+            case DynamoDBRepo.get_subscription_config(user_id) do
+              %{"plan" => "pro"} ->
+                true
+
+              _ ->
+                # Free tier (or unknown) - Check usage
+                usage = DynamoDBRepo.get_usage(user_id)
+                current_count = Map.get(usage, "wordCount", 0)
+                new_words = count_words(content)
+
+                # Limit: 2000 words
+                # User modification: Check if we are ALREADY at/over the limit.
+                # If we are at 1999, we allow the next one no matter how big.
+                if current_count >= 2000 do
+                  {:error, :limit_exceeded}
+                else
+                  true
+                end
             end
-        end
 
-      case can_save? do
-        {:error, :limit_exceeded} ->
-          conn
-          # 402 Payment Required
-          |> put_status(:payment_required)
-          |> json(%{error: "Free tier limit exceeded (2000 words/month). Please upgrade to Pro."})
-
-        true ->
-          transcript_data =
-            Map.merge(params, %{
-              "transcriptId" => transcript_id,
-              "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
-              "isFlagged" => false
-            })
-
-          case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
-            {:ok, _} ->
-              # 3. Update Usage (Increment logic handles monthly reset)
-              DynamoDBRepo.update_usage(user_id, count_words(content))
-              json(conn, %{status: "ok", transcriptId: transcript_id})
-
-            {:error, reason} ->
+          case can_save? do
+            {:error, :limit_exceeded} ->
               conn
-              |> put_status(:bad_request)
-              |> json(%{error: inspect(reason)})
+              # 402 Payment Required
+              |> put_status(:payment_required)
+              |> json(%{error: "Free tier limit exceeded. Please upgrade to Pro."})
+
+            true ->
+              transcript_data =
+                Map.merge(params, %{
+                  "transcriptId" => transcript_id,
+                  "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+                  "isFlagged" => false
+                })
+
+              case DynamoDBRepo.create_transcript(user_id, transcript_id, transcript_data) do
+                {:ok, _} ->
+                  # 3. Update Usage (Increment logic handles monthly reset)
+                  DynamoDBRepo.update_usage(user_id, count_words(content))
+                  json(conn, %{status: "ok", transcriptId: transcript_id})
+
+                {:error, reason} ->
+                  conn
+                  |> put_status(:bad_request)
+                  |> json(%{error: inspect(reason)})
+              end
           end
       end
     end

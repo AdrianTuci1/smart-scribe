@@ -20,8 +20,9 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Config do
             %{}
         end
 
-      {:error, _reason} ->
-        %{}
+      {:error, reason} ->
+        # Propagate error instead of masking it as empty
+        {:error, reason}
     end
   end
 
@@ -107,6 +108,11 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Config do
       |> DateTime.to_iso8601()
 
     case get_usage(user_id) do
+      {:error, reason} ->
+        # If DB is down, we should probably fail or log, but definitely NOT create a new usage record from scratch
+        # which would reset their usage count.
+        {:error, reason}
+
       usage when usage == %{} ->
         # Initialize usage
         new_usage = %{
@@ -142,7 +148,7 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Config do
         end
 
       _ ->
-        # Fallback for weird state
+        # Fallback for weird state (but not error state)
         new_usage = %{
           "wordCount" => word_count,
           "periodStart" => current_month_start

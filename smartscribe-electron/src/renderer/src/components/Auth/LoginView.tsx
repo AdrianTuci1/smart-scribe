@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ChevronRight, Search, Home, Inbox, ListTodo, Users, Map, Globe, HelpCircle, ArrowLeft } from 'lucide-react';
 import loginBg from '../../assets/login-bg.png';
+import logo from '../../assets/logo.png';
 import { TicketModal } from '../Shared/TicketModal';
 import './LoginView.css';
 
@@ -80,12 +81,14 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                     {/* Logo */}
                     <div className="brand-section">
                         <div className="brand-logo">
-                            <div className="logo-icon">ll</div>
-                            <span>Flow</span>
+                            <div className="logo-icon">
+                                <img src={logo} alt="Flow Logo" />
+                            </div>
+                            <span>Smartscribe</span>
                         </div>
                     </div>
 
-                    <h1 className="section-title">Get started with Flow</h1>
+                    <h1 className="section-title">Start transcribing smartly</h1>
                     <p className="section-subtitle">Write faster in every app using your voice.</p>
 
                     {/* SSO Buttons - Only show on Email step? Usually yes. */}
@@ -95,13 +98,7 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                                 <span className="sso-icon">G</span> Google
                             </button>
                             <button onClick={handleSSO} className="sso-button">
-                                <span className="sso-icon">M</span> Microsoft
-                            </button>
-                            <button onClick={handleSSO} className="sso-button">
                                 <span className="sso-icon"></span> Apple
-                            </button>
-                            <button onClick={handleSSO} className="sso-button">
-                                <div className="sso-icon"><Globe size={16} /></div> SSO
                             </button>
                         </div>
                     )}
@@ -275,16 +272,7 @@ export const LoginView = ({ onLoginSuccess }: { onLoginSuccess: () => void }) =>
                     </div>
                 </div>
 
-                <div className="visual-footer">
 
-                    <h2 className="feature-title">Works in any app</h2>
-                    <div className="pagination-dots">
-                        <div className="dot active"></div>
-                        <div className="dot" style={{ opacity: 0.4 }}></div>
-                        <div className="dot" style={{ opacity: 0.4 }}></div>
-                        <div className="dot" style={{ opacity: 0.4 }}></div>
-                    </div>
-                </div>
 
                 {/* Scroll/Progress Bar */}
                 <div className="scroll-indicator">
