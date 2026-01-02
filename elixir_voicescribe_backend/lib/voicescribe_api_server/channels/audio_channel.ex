@@ -14,15 +14,30 @@ defmodule VoiceScribeAPIServer.AudioChannel do
     Logger.info("Starting audio stream for user: #{user_id}")
 
     # Check Usage Limits
+    subscription_config = DynamoDBRepo.get_subscription_config(user_id)
+    Logger.info("Subscription config for user #{user_id}: #{inspect(subscription_config)}")
+
     can_stream? =
-      case DynamoDBRepo.get_subscription_config(user_id) do
+      case subscription_config do
         %{"plan" => "pro"} ->
+          Logger.info("User #{user_id} has pro plan")
           true
 
         _ ->
           usage = DynamoDBRepo.get_usage(user_id)
-          current_count = Map.get(usage, "wordCount", 0)
-          if current_count >= 2000, do: false, else: true
+          # DynamoDB may store wordCount as string, so convert to integer
+          current_count =
+            case Map.get(usage, "wordCount", 0) do
+              count when is_integer(count) -> count
+              count when is_binary(count) -> String.to_integer(count)
+              _ -> 0
+            end
+
+          Logger.info("User #{user_id} usage: #{inspect(usage)}, current_count: #{current_count}")
+          # Free tier limit is 2000 words - user can stream only if under the limit
+          result = current_count < 2000
+          Logger.info("Can stream? #{result} (#{current_count} < 2000)")
+          result
       end
 
     if can_stream? do

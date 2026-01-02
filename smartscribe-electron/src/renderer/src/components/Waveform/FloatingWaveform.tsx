@@ -85,6 +85,26 @@ export const FloatingWaveform: React.FC = () => {
         isRecordingRef.current = isRecording;
     }, [isRecording]);
 
+    // Block arrow keys globally
+    useEffect(() => {
+        const blockArrowKeys = (e: KeyboardEvent) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            }
+        };
+
+        // Add listener at capture phase to intercept before other handlers
+        document.addEventListener('keydown', blockArrowKeys, true);
+        document.addEventListener('keyup', blockArrowKeys, true);
+
+        return () => {
+            document.removeEventListener('keydown', blockArrowKeys, true);
+            document.removeEventListener('keyup', blockArrowKeys, true);
+        };
+    }, []);
+
     // Keyboard interaction via Global Monitor
     useEffect(() => {
         const handleGlobalKey = (keyData: any) => {
@@ -165,9 +185,16 @@ export const FloatingWaveform: React.FC = () => {
         (window as any).electron.ipcRenderer.send('set-ignore-mouse-events', true, { forward: true })
     }
 
+    const handleWrapperWheel = (e: React.WheelEvent) => {
+        // Prevent scroll events from being processed
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
     return (
         <div
             className="floating-waveform-wrapper"
+            onWheel={handleWrapperWheel}
         >
             <div
                 className={`orb-container ${warningVisible ? 'has-warning' : ''}`}

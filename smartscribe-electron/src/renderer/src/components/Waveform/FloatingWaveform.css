@@ -9,6 +9,11 @@
     background: transparent !important;
     pointer-events: none;
     /* Let clicks pass through outside the button */
+    overflow: hidden;
+    /* Prevent scrolling */
+    user-select: none;
+    /* Prevent text selection */
+    -webkit-user-select: none;
 }
 
 /* Container for the button to enable pointer events */

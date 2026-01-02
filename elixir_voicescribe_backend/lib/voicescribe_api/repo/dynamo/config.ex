@@ -142,7 +142,14 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Config do
           put_config(user_id, "usage", new_usage)
         else
           # Increment
-          current_count = Map.get(usage, "wordCount", 0)
+          # DynamoDB may store wordCount as string, so convert to integer
+          current_count =
+            case Map.get(usage, "wordCount", 0) do
+              count when is_integer(count) -> count
+              count when is_binary(count) -> String.to_integer(count)
+              _ -> 0
+            end
+
           new_usage = Map.put(usage, "wordCount", current_count + word_count)
           put_config(user_id, "usage", new_usage)
         end

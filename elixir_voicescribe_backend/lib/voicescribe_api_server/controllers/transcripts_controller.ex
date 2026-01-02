@@ -91,7 +91,14 @@ defmodule VoiceScribeAPIServer.TranscriptsController do
               _ ->
                 # Free tier (or unknown) - Check usage
                 usage = DynamoDBRepo.get_usage(user_id)
-                current_count = Map.get(usage, "wordCount", 0)
+                # DynamoDB may store wordCount as string, so convert to integer
+                current_count =
+                  case Map.get(usage, "wordCount", 0) do
+                    count when is_integer(count) -> count
+                    count when is_binary(count) -> String.to_integer(count)
+                    _ -> 0
+                  end
+
                 new_words = count_words(content)
 
                 # Limit: 2000 words

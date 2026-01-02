@@ -106,6 +106,7 @@ export const createWaveformWindow = (): void => {
         resizable: false,
         hasShadow: false,
         focusable: false,
+        acceptFirstMouse: false, // Prevents keyboard/scroll events when not focused
         title: 'Recording orb',
         // type: 'panel', // Causes NSWindow styleMask warning on some macOS versions
         webPreferences: {

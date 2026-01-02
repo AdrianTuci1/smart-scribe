@@ -92,7 +92,14 @@ let callback: CGEventTapCallBack = { (proxy, type, event, refcon) in
         timestamp: Date().timeIntervalSince1970
     )
     
-    output(event: keyEvent)
+    // ARROW KEY FILTERING:
+    // Don't send arrow keys to the app (they should not interact with the waveform window)
+    // Arrow Left: 123, Arrow Right: 124, Arrow Down: 125, Arrow Up: 126
+    let isArrowKey = [123, 124, 125, 126].contains(Int(keyCode))
+    
+    if !isArrowKey {
+        output(event: keyEvent)
+    }
     
     // BLOCKING LOGIC:
     // If Fn key (63), swallow the event to prevent system Emoji picker.

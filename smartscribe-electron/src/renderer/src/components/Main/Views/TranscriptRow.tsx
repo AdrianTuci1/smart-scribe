@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Transcript } from '../../../types';
 import { Copy, Flag, Trash2, RotateCcw, MoreVertical, Download, RefreshCw, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
@@ -31,11 +32,34 @@ export const TranscriptRow: React.FC<TranscriptRowProps> = ({
 }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const toggleMenu = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (showMenu) {
+            setShowMenu(false);
+        } else {
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setMenuPos({
+                    top: rect.bottom + window.scrollY,
+                    left: rect.right + window.scrollX - 192 // 192px = 12rem (width of menu)
+                });
+                setShowMenu(true);
+            }
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            if (
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
                 setShowMenu(false);
             }
         };
@@ -102,9 +126,10 @@ export const TranscriptRow: React.FC<TranscriptRowProps> = ({
                     </button>
 
                     {/* Simplified More Menu */}
-                    <div className="menu-container" ref={menuRef}>
+                    <div className="menu-container">
                         <button
-                            onClick={() => setShowMenu(!showMenu)}
+                            ref={buttonRef}
+                            onClick={toggleMenu}
                             className={clsx(
                                 "action-btn",
                                 showMenu && "menu-open"
@@ -113,15 +138,26 @@ export const TranscriptRow: React.FC<TranscriptRowProps> = ({
                             <MoreVertical size={16} />
                         </button>
 
-                        {showMenu && (
-                            <div className="dropdown-menu">
+                        {showMenu && menuPos && createPortal(
+                            <div
+                                ref={menuRef}
+                                className="dropdown-menu"
+                                style={{
+                                    position: 'absolute',
+                                    top: `${menuPos.top}px`,
+                                    left: `${menuPos.left}px`,
+                                    marginTop: '0.25rem',
+                                    right: 'auto'
+                                }}
+                            >
                                 <MenuItem onClick={() => onUndoAIEdit(transcript)} icon={<Undo2 size={14} />} label="Undo AI edit" />
                                 <MenuItem onClick={() => onRetry(transcript)} icon={<RefreshCw size={14} />} label="Retry transcript" />
                                 <div className="menu-divider" />
                                 <MenuItem onClick={() => onDelete(transcript)} icon={<Trash2 size={14} />} label="Delete transcript" className="danger" />
                                 <div className="menu-divider" />
                                 <MenuItem onClick={() => onDownloadAudio(transcript)} icon={<Download size={14} />} label="Download audio" />
-                            </div>
+                            </div>,
+                            document.body
                         )}
                     </div>
                 </div>
