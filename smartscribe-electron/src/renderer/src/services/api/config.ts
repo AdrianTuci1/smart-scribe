@@ -2,14 +2,16 @@ import { apiClient } from './core';
 
 export const configService = {
     // Dictionary
-    getDictionary: async (): Promise<any[]> => {
-        const res = await apiClient.request<{ data: any[] }>('/config/dictionary');
+    getDictionary: async (params?: { page?: number, limit?: number, search?: string, sort?: string }): Promise<{ data: any[], meta?: any }> => {
+        const query = new URLSearchParams(params as any).toString();
+        const res = await apiClient.request<{ data: any[], meta?: any }>(`/config/dictionary?${query}`);
         const list = res.data || [];
-        return list.map(item => ({
+        const data = list.map(item => ({
             id: item.id || crypto.randomUUID(),
             incorrectWord: item.incorrectWord || item.incorrect_word || '',
             correctWord: item.correctWord || item.correct_word || ''
         }));
+        return { data, meta: res.meta };
     },
 
     saveDictionary: async (entries: any[]): Promise<void> => {
@@ -24,21 +26,70 @@ export const configService = {
         });
     },
 
+    addDictionaryEntry: async (entry: any): Promise<void> => {
+        // Map camelCase to snake_case if backend expects it?
+        // ConfigController uses Map.get(entry, "incorrectWord") so camelCase is fine if sent as such.
+        // Wait, saving sends snake_case in saveDictionary.
+        // But ConfigController.filter uses incorrectWord.
+        // Let's verify standard.
+        // BedrockClient.extract_rules checks both.
+        // I will send valid object.
+        return apiClient.request<void>('/config/dictionary/add', {
+            method: 'POST',
+            body: JSON.stringify({ entry })
+        });
+    },
+
+    updateDictionaryEntry: async (entry: any): Promise<void> => {
+        return apiClient.request<void>('/config/dictionary/update', {
+            method: 'POST',
+            body: JSON.stringify({ entry })
+        });
+    },
+
+    deleteDictionaryEntry: async (id: string): Promise<void> => {
+        return apiClient.request<void>(`/config/dictionary/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
     // Snippets
-    getSnippets: async (): Promise<any[]> => {
-        const res = await apiClient.request<{ data: any[] }>('/config/snippets');
+    getSnippets: async (params?: { page?: number, limit?: number, search?: string, sort?: string }): Promise<{ data: any[], meta?: any }> => {
+        const query = new URLSearchParams(params as any).toString();
+        const res = await apiClient.request<{ data: any[], meta?: any }>(`/config/snippets?${query}`);
         const list = res.data || [];
-        return list.map(item => ({
+        const data = list.map(item => ({
             id: item.id || crypto.randomUUID(),
             title: item.title || '',
             content: item.content || ''
         }));
+        return { data, meta: res.meta };
     },
 
     saveSnippets: async (snippets: any[]): Promise<void> => {
         return apiClient.request<void>('/config/snippets/save', {
             method: 'POST',
             body: JSON.stringify({ snippets })
+        });
+    },
+
+    addSnippet: async (snippet: any): Promise<void> => {
+        return apiClient.request<void>('/config/snippets/add', {
+            method: 'POST',
+            body: JSON.stringify({ snippet })
+        });
+    },
+
+    updateSnippet: async (snippet: any): Promise<void> => {
+        return apiClient.request<void>('/config/snippets/update', {
+            method: 'POST',
+            body: JSON.stringify({ snippet })
+        });
+    },
+
+    deleteSnippet: async (id: string): Promise<void> => {
+        return apiClient.request<void>(`/config/snippets/${id}`, {
+            method: 'DELETE'
         });
     },
 

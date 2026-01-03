@@ -230,6 +230,16 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
         if (bypassTimer) {
             startRealRecording();
         } else {
+            // Check settings for Mute Music
+            if ((window as any).electron && (window as any).electron.ipcRenderer) {
+                (window as any).electron.ipcRenderer.getAllSettings().then((settings: any) => {
+                    if (settings && settings.muteMusicWhileDictating) {
+                        console.log('Mute Music enabled. Sending mute-music IPC...');
+                        (window as any).electron.ipcRenderer.send('mute-music');
+                    }
+                });
+            }
+
             // Start a timer. If user releases before this fires, it's a short press.
             startTimerRef.current = setTimeout(startRealRecording, 600);
         }

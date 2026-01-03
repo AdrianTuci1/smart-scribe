@@ -1,50 +1,73 @@
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { DataEntryItem } from '../../Shared/DataEntryItem';
 import { Modal } from '../../Shared/Modal';
+import { Switch } from '../../Shared/Switch';
+import { SortMenu } from '../../Shared/SortMenu/SortMenu';
 import { Snippet } from '../../../types';
-import { apiService, teamService } from '../../../services/api';
-import { Search, Plus, XCircle, MoreHorizontal, RotateCcw, Trash2, Edit2, Copy, ArrowUpDown } from 'lucide-react';
+import { apiService, teamService, configService } from '../../../services/api';
+import { Search, RotateCcw, Trash2, Edit2, ArrowUpDown } from 'lucide-react';
 import clsx from 'clsx';
 import './SnippetsView.css';
-// ...
+
 export const SnippetsView: React.FC = () => {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [searchText, setSearchText] = useState('');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('All');
 
-    // Filtered snippets
-    const filteredSnippets = snippets.filter(snippet => {
-        // Tab Filter
-        if (activeTab === 'Personal' && (snippet as any).type !== 'personal') return false;
-        if (activeTab === 'Shared with team' && (snippet as any).type !== 'shared') return false;
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [sortOrder, setSortOrder] = useState('newest');
+    const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+    const [hasTeam, setHasTeam] = useState(false);
+    const sortButtonRef = useRef<HTMLButtonElement>(null);
 
-        return !searchText ||
-            snippet.title.toLowerCase().includes(searchText.toLowerCase()) ||
-            snippet.content.toLowerCase().includes(searchText.toLowerCase())
-    }).sort((a, b) => a.title.localeCompare(b.title));
+    useEffect(() => {
+        configService.getSettings().then(s => setHasTeam(!!s.teamId));
+    }, []);
 
-
-    const loadSnippets = async () => {
+    const loadSnippets = async (reset = false) => {
         setIsLoading(true);
         try {
-            const [personalData, sharedData] = await Promise.all([
-                apiService.getSnippets(),
-                teamService.getSharedItems('snippets')
+            const currentPage = reset ? 1 : page;
+            const limit = 20;
+
+            const params = {
+                page: currentPage,
+                limit,
+                search: searchText,
+                sort: sortOrder
+            };
+
+            const [personalRes, sharedRes] = await Promise.all([
+                apiService.getSnippets(params),
+                teamService.getSharedItems('snippets', params)
             ]);
 
-            const personal = Array.isArray(personalData) ? personalData.map(s => ({ ...s, type: 'personal' })) : [];
-            const shared = Array.isArray(sharedData) ? sharedData.map(s => ({ ...s, type: 'shared' })) : [];
+            const personal = Array.isArray(personalRes.data) ? personalRes.data.map(s => ({ ...s, type: 'personal' })) : [];
+            const shared = Array.isArray(sharedRes.data) ? sharedRes.data.map(s => ({ ...s, type: 'shared' })) : [];
 
-            // For now, combine them or keep separate lists? 
-            // The view uses `snippets` state. Let's combine them and filter by tab.
-            // But wait, `filteredSnippets` currently filters by search.
-            // Tabs logic is in the UI rendering but `filteredSnippets` relies on `snippets`.
-            // We should store them with a type.
-            setSnippets([...personal, ...shared]);
+            if (reset) {
+                setSnippets([...personal, ...shared]);
+                setPage(1);
+            } else {
+                setSnippets(prev => {
+                    // Start with ALL previous items
+                    // Filter out any that we are about to replace?
+                    // Pagination usually implies appending new pages.
+                    // But if we have mixed sources...
+                    // Let's just append new results to the accumulation.
+                    // We need to deduplicate based on ID if necessary, but assuming clean pagination:
+                    return [...prev, ...personal, ...shared];
+                });
+                setPage(currentPage);
+            }
+            setHasMore(personalRes.meta?.has_more || sharedRes.meta?.has_more || false);
         } catch (error) {
             console.error('Failed to load snippets', error);
         } finally {
@@ -52,47 +75,101 @@ export const SnippetsView: React.FC = () => {
         }
     };
 
+    const displaySnippets = snippets.filter(snippet => {
+        if (activeTab === 'Personal' && (snippet as any).type !== 'personal') return false;
+        if (activeTab === 'Shared with team' && (snippet as any).type !== 'shared') return false;
+        return true;
+    });
+
     useEffect(() => {
-        loadSnippets();
+        loadSnippets(true);
     }, []);
 
-    const handleSave = async (title: string, content: string, id?: string) => {
-        if (!title || !content) return;
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            loadSnippets(true);
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [searchText, sortOrder]);
 
-        let newSnippets = [...snippets];
-        if (id) {
-            // Update
-            const updated = { id, title, content };
-            newSnippets = newSnippets.map(s => s.id === id ? updated : s);
-        } else {
-            // Add
-            const newSnippet = { id: crypto.randomUUID(), title, content };
-            newSnippets.push(newSnippet);
-        }
+    const handleLoadMore = () => {
+        loadNextPage();
+    };
 
-        // Optimistic
-        setSnippets(newSnippets);
-        setEditingSnippet(null);
-        setIsAddModalOpen(false);
-
+    const loadNextPage = async () => {
+        const nextPage = page + 1;
+        setIsLoading(true);
         try {
-            await apiService.syncSnippets(newSnippets);
+            const limit = 20;
+            const params = {
+                page: nextPage,
+                limit,
+                search: searchText,
+                sort: sortOrder
+            };
+            const [personalRes, sharedRes] = await Promise.all([
+                apiService.getSnippets(params),
+                teamService.getSharedItems('snippets', params)
+            ]);
+
+            const personal = Array.isArray(personalRes.data) ? personalRes.data.map(s => ({ ...s, type: 'personal' })) : [];
+            const shared = Array.isArray(sharedRes.data) ? sharedRes.data.map(s => ({ ...s, type: 'shared' })) : [];
+
+            setSnippets(prev => [...prev, ...personal, ...shared]);
+            setPage(nextPage);
+            setHasMore(personalRes.meta?.has_more || sharedRes.meta?.has_more || false);
         } catch (e) {
             console.error(e);
-            loadSnippets(); // Revert
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSave = async (title: string, content: string, isShared: boolean, id?: string, type?: string) => {
+        if (!title || !content) return;
+
+        try {
+            const snippet = { id, title, content };
+
+            if (id) {
+                // Update
+                if (type === 'shared') {
+                    await teamService.updateSharedItem('snippets', snippet);
+                } else {
+                    await apiService.updateSnippet(snippet);
+                }
+            } else {
+                // Add
+                if (isShared) {
+                    await teamService.addSharedItem('snippets', snippet);
+                } else {
+                    await apiService.addSnippet(snippet);
+                }
+            }
+
+            loadSnippets(true);
+            setEditingSnippet(null);
+            setIsAddModalOpen(false);
+        } catch (e) {
+            console.error(e);
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this snippet?')) return;
 
-        const newSnippets = snippets.filter(s => s.id !== id);
-        setSnippets(newSnippets);
+        const snippet = snippets.find(s => s.id === id);
+        if (!snippet) return;
+
         try {
-            await apiService.syncSnippets(newSnippets);
+            if ((snippet as any).type === 'shared') {
+                await teamService.deleteSharedItem('snippets', id);
+            } else {
+                await apiService.deleteSnippet(id);
+            }
+            loadSnippets(true);
         } catch (e) {
             console.error(e);
-            loadSnippets();
         }
     };
 
@@ -136,7 +213,7 @@ export const SnippetsView: React.FC = () => {
                         {/* Search Expandable */}
                         <div className={clsx(
                             "search-container",
-                            searchText && "open"
+                            isSearchOpen && "open"
                         )}>
                             <input
                                 autoFocus
@@ -145,25 +222,39 @@ export const SnippetsView: React.FC = () => {
                                 placeholder="Search..."
                                 value={searchText}
                                 onChange={e => setSearchText(e.target.value)}
-                                onBlur={() => !searchText && setSearchText('')}
+                                onBlur={() => {
+                                    if (!searchText) {
+                                        setIsSearchOpen(false);
+                                    }
+                                }}
                             />
                         </div>
                         <button
                             onClick={() => {
-                                if (searchText) setSearchText('');
-                                else {
-                                    setSearchText(' ');
-                                    setTimeout(() => setSearchText(''), 0);
+                                if (isSearchOpen && !searchText) {
+                                    setIsSearchOpen(false);
+                                } else if (isSearchOpen && searchText) {
+                                    setSearchText('');
+                                    setIsSearchOpen(false);
+                                } else {
+                                    setIsSearchOpen(true);
                                 }
                             }}
                             className="action-icon-btn"
                         >
                             <Search size={16} />
                         </button>
-                        <button className="action-icon-btn">
+                        <button
+                            ref={sortButtonRef}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsSortMenuOpen(!isSortMenuOpen);
+                            }}
+                            className="action-icon-btn"
+                        >
                             <ArrowUpDown size={16} />
                         </button>
-                        <button onClick={loadSnippets} className="action-icon-btn">
+                        <button onClick={() => loadSnippets(true)} className="action-icon-btn">
                             <RotateCcw size={16} />
                         </button>
                     </div>
@@ -171,18 +262,24 @@ export const SnippetsView: React.FC = () => {
 
                 {/* List Section */}
                 <div className="snippets-list">
-                    {filteredSnippets.length === 0 ? (
+                    {displaySnippets.length === 0 ? (
                         <div className="empty-state">
                             <p className="empty-text">{searchText ? 'No matching snippets' : 'No snippets found'}</p>
                         </div>
                     ) : (
-                        filteredSnippets.map((snippet, index) => (
+                        displaySnippets.map((snippet, index) => (
                             <DataEntryItem
                                 key={snippet.id}
                                 onClick={() => setEditingSnippet(snippet)}
                                 actions={
                                     <>
-                                        <button className="snippet-action-btn">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingSnippet(snippet);
+                                            }}
+                                            className="snippet-action-btn"
+                                        >
                                             <Edit2 size={16} />
                                         </button>
                                         <button
@@ -207,13 +304,23 @@ export const SnippetsView: React.FC = () => {
                             </DataEntryItem>
                         ))
                     )}
+                    {hasMore && (
+                        <div className="py-4 flex justify-center">
+                            <button
+                                onClick={handleLoadMore}
+                                disabled={isLoading}
+                                className="text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                            >
+                                {isLoading ? 'Loading...' : 'Load More'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Add/Edit Modal */}
                 <Modal
                     isOpen={isAddModalOpen || !!editingSnippet}
                     onClose={() => { setIsAddModalOpen(false); setEditingSnippet(null); }}
-                    title={editingSnippet ? 'Edit Snippet' : 'Add Snippet'}
                 >
                     <SnippetForm
                         initialTitle={editingSnippet?.title || ''}
@@ -222,9 +329,20 @@ export const SnippetsView: React.FC = () => {
                             setIsAddModalOpen(false);
                             setEditingSnippet(null);
                         }}
-                        onSave={(title, content) => handleSave(title, content, editingSnippet?.id)}
+                        onSave={(title, content, isShared) => handleSave(title, content, isShared, editingSnippet?.id, (editingSnippet as any)?.type)}
+                        hasTeam={hasTeam}
+                        isEditing={!!editingSnippet}
                     />
                 </Modal>
+
+                {/* Sort Menu */}
+                <SortMenu
+                    isOpen={isSortMenuOpen}
+                    onClose={() => setIsSortMenuOpen(false)}
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                    buttonRef={sortButtonRef}
+                />
             </div>
         </div>
     );
@@ -234,13 +352,27 @@ const SnippetForm: React.FC<{
     initialTitle: string;
     initialContent: string;
     onCancel: () => void;
-    onSave: (title: string, content: string) => void;
-}> = ({ initialTitle, initialContent, onCancel, onSave }) => {
+    onSave: (title: string, content: string, isShared: boolean) => void;
+    hasTeam: boolean;
+    isEditing: boolean;
+}> = ({ initialTitle, initialContent, onCancel, onSave, hasTeam, isEditing }) => {
     const [title, setTitle] = useState(initialTitle);
     const [content, setContent] = useState(initialContent);
+    const [isShared, setIsShared] = useState(false);
 
     return (
-        <div className="space-y-4">
+        <div className="snippet-form">
+            {/* Share Switch */}
+            <div className="switches-group">
+                <Switch
+                    label="Share with Team"
+                    checked={isShared}
+                    onChange={setIsShared}
+                    disabled={!hasTeam}
+                />
+            </div>
+
+
             <div className="form-group">
                 <label className="form-label">Snippet Title</label>
                 <input
@@ -265,7 +397,7 @@ const SnippetForm: React.FC<{
                     Cancel
                 </button>
                 <button
-                    onClick={() => onSave(title, content)}
+                    onClick={() => onSave(title, content, isShared)}
                     disabled={!title || !content}
                     className="submit-btn"
                 >

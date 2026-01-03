@@ -24,12 +24,22 @@ export const ShortcutRecorderModal: React.FC<ShortcutRecorderModalProps> = ({
 
     // Reset state when opened
     useEffect(() => {
+        const electron = (window as any).electron;
         if (isOpen) {
             setCurrentShortcut(initialShortcut || '');
             setIsRecording(true);
+            electron?.ipcRenderer.send('set-shortcut-recording-state', true);
         } else {
             setIsRecording(false);
+            electron?.ipcRenderer.send('set-shortcut-recording-state', false);
         }
+
+        return () => {
+            // Ensure we reset when unmounting if it was open
+            if (isOpen) {
+                electron?.ipcRenderer.send('set-shortcut-recording-state', false);
+            }
+        };
     }, [isOpen, initialShortcut]);
 
     useEffect(() => {

@@ -3,7 +3,6 @@
     inset: 0;
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
-    /* Increased blur */
     z-index: 50;
     display: flex;
     align-items: center;
@@ -13,14 +12,12 @@
 }
 
 .modal-content {
+    position: relative;
     background-color: #1a1a1a;
-    border-radius: 1.25rem;
-    /* rounded-2xl */
-    padding: 2rem;
-    /* increased padding */
+    border-radius: 1rem;
+    padding: 1.5rem;
     width: 100%;
-    max-width: 32rem;
-    /* max-w-lg */
+    max-width: 28rem;
     box-shadow:
         0 20px 25px -5px rgba(0, 0, 0, 0.4),
         0 10px 10px -5px rgba(0, 0, 0, 0.3);
@@ -52,41 +49,25 @@
     }
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    /* Increased spacing */
-}
-
-.modal-title {
-    font-size: 1.5rem;
-    /* text-2xl */
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.025em;
-}
-
 .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
     color: #a1a1aa;
     background: transparent;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 9999px;
-    /* circular */
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 200ms ease;
-    border: 1px solid transparent;
+    z-index: 10;
 }
 
 .modal-close-btn:hover {
     color: #ffffff;
     background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.1);
     transform: rotate(90deg);
-    /* Playful interaction */
 }

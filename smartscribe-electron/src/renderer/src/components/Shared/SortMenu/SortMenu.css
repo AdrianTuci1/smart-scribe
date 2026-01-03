@@ -1,0 +1,65 @@
+/* Sort Menu Modal */
+.sort-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    z-index: 999;
+}
+
+.sort-menu-modal {
+    position: fixed;
+    width: 160px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    z-index: 1000;
+}
+
+@media (prefers-color-scheme: dark) {
+    .sort-menu-modal {
+        background-color: #1a1a1a;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.sort-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #374151;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+    background: none;
+    border: none;
+}
+
+.sort-menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sort-menu-item.active {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+    .sort-menu-item {
+        color: #9ca3af;
+    }
+
+    .sort-menu-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .sort-menu-item.active {
+        color: #ffffff;
+    }
+}

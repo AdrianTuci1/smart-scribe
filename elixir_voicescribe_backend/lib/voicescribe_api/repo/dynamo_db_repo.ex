@@ -25,6 +25,7 @@ defmodule VoiceScribeAPI.DynamoDBRepo do
   defdelegate create_note(user_id, note_id, note_data), to: Notes
   defdelegate get_note(user_id, note_id), to: Notes
   defdelegate list_notes(user_id), to: Notes
+  defdelegate list_all_notes(user_id), to: Notes
   defdelegate delete_note(user_id, note_id), to: Notes
 
   # Config

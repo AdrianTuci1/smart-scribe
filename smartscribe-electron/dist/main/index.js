@@ -15890,16 +15890,16 @@ var require_electron_store = __commonJS({
   "node_modules/electron-store/index.js"(exports2, module2) {
     "use strict";
     var path4 = require("path");
-    var { app: app5, ipcMain: ipcMain6, ipcRenderer, shell } = require("electron");
+    var { app: app6, ipcMain: ipcMain6, ipcRenderer, shell } = require("electron");
     var Conf = require_source();
     var isInitialized = false;
     var initDataListener = () => {
-      if (!ipcMain6 || !app5) {
+      if (!ipcMain6 || !app6) {
         throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
       }
       const appData = {
-        defaultCwd: app5.getPath("userData"),
-        appVersion: app5.getVersion()
+        defaultCwd: app6.getPath("userData"),
+        appVersion: app6.getVersion()
       };
       if (isInitialized) {
         return appData;
@@ -15920,7 +15920,7 @@ var require_electron_store = __commonJS({
             throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
           }
           ({ defaultCwd, appVersion } = appData);
-        } else if (ipcMain6 && app5) {
+        } else if (ipcMain6 && app6) {
           ({ defaultCwd, appVersion } = initDataListener());
         }
         options = {
@@ -16470,6 +16470,41 @@ var registerNativeHandlers = () => {
     const { shell } = await import("electron");
     await shell.openExternal(url);
   });
+  import_electron6.ipcMain.on("mute-music", () => {
+    if (process.platform === "darwin") {
+      console.log("Main: mute-music handler triggered. Pausing media players...");
+      const script = `
+                tell application "System Events"
+                    set runningApps to name of every application process
+                end tell
+                
+                if "Music" is in runningApps then
+                    try
+                        tell application "Music" to pause
+                        log "Paused Music"
+                    on error
+                        log "Failed to pause Music"
+                    end try
+                end if
+                
+                if "Spotify" is in runningApps then
+                    try
+                        tell application "Spotify" to pause
+                        log "Paused Spotify"
+                    on error
+                        log "Failed to pause Spotify"
+                    end try
+                end if
+            `;
+      (0, import_child_process2.exec)(`osascript -e '${script}'`, (error, stdout) => {
+        if (error) {
+          console.error("Failed to execute mute-music AppleScript:", error);
+        } else {
+          console.log("Mute-music script output:", stdout.trim());
+        }
+      });
+    }
+  });
 };
 
 // src/main/ipc/settingsHandlers.ts
@@ -16515,12 +16550,37 @@ var registerSettingsHandlers = () => {
   });
   import_electron7.ipcMain.handle("set-setting", (_event, key, value) => {
     store2.set(key, value);
+    if (key === "launchAtLogin") {
+      import_electron7.app.setLoginItemSettings({
+        openAtLogin: value,
+        path: import_electron7.app.getPath("exe")
+      });
+    }
     if (key === "pushToTalkKey" || key === "handsFreeModeKey") {
       updateGlobalShortcuts();
     }
+    import_electron7.BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send("setting-changed", key, value);
+    });
   });
   import_electron7.ipcMain.handle("get-all-settings", () => {
     return store2.store;
+  });
+  import_electron7.ipcMain.handle("reset-settings", () => {
+    store2.clear();
+    import_electron7.app.setLoginItemSettings({
+      openAtLogin: true,
+      path: import_electron7.app.getPath("exe")
+    });
+    import_electron7.BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send("setting-changed", "showFlowBarAlways", true);
+      win.webContents.send("setting-changed", "pushToTalkKey", "Fn");
+    });
+  });
+  import_electron7.ipcMain.on("set-shortcut-recording-state", (_event, isRecording) => {
+    import_electron7.BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.send("shortcut-recording-state-changed", isRecording);
+    });
   });
 };
 var initializeGlobalShortcuts = () => {

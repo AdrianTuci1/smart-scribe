@@ -76,18 +76,30 @@ class ApiServiceFacade {
         return transcriptService.retry(id);
     }
 
-    // Dictionary
-    public async getDictionary() {
-        return configService.getDictionary();
+    // Dictionary (Supports params now)
+    public async getDictionary(params?: any) {
+        return configService.getDictionary(params);
     }
 
     public async syncDictionary(entries: any[]) {
         return configService.saveDictionary(entries);
     }
 
+    public async addDictionaryEntry(entry: any) {
+        return configService.addDictionaryEntry(entry);
+    }
+
+    public async updateDictionaryEntry(entry: any) {
+        return configService.updateDictionaryEntry(entry);
+    }
+
+    public async deleteDictionaryEntry(id: string) {
+        return configService.deleteDictionaryEntry(id);
+    }
+
     // Notes
-    public async getNotes() {
-        return notesService.getAll();
+    public async getNotes(params?: any) {
+        return notesService.getAll(params);
     }
 
     public async syncNote(note: any) {
@@ -95,12 +107,24 @@ class ApiServiceFacade {
     }
 
     // Snippets
-    public async getSnippets() {
-        return configService.getSnippets();
+    public async getSnippets(params?: any) {
+        return configService.getSnippets(params);
     }
 
     public async syncSnippets(snippets: any[]) {
         return configService.saveSnippets(snippets);
+    }
+
+    public async addSnippet(snippet: any) {
+        return configService.addSnippet(snippet);
+    }
+
+    public async updateSnippet(snippet: any) {
+        return configService.updateSnippet(snippet);
+    }
+
+    public async deleteSnippet(id: string) {
+        return configService.deleteSnippet(id);
     }
 
     // Config

@@ -21,17 +21,41 @@ export const teamService = {
     /**
      * Get shared items (snippets or dictionary)
      */
-    getSharedItems: async (type: 'snippets' | 'dictionary') => {
-        return apiClient.request(`/team/shared/${type}`);
+    getSharedItems: async (type: 'snippets' | 'dictionary', params?: { page?: number, limit?: number, search?: string, sort?: string }): Promise<{ data: any[], meta?: any }> => {
+        const query = new URLSearchParams(params as any).toString();
+        return apiClient.request<{ data: any[], meta?: any }>(`/team/shared/${type}?${query}`);
     },
 
     /**
-     * Update shared items
+     * Update shared items (Legacy)
      */
     updateSharedItems: async (type: 'snippets' | 'dictionary', data: any[]) => {
         return apiClient.request(`/team/shared/${type}`, {
             method: 'POST',
             body: JSON.stringify({ type, data })
+        });
+    },
+
+    /**
+     * Granular Team Add
+     */
+    addSharedItem: async (type: 'snippets' | 'dictionary', item: any) => {
+        return apiClient.request(`/team/shared/${type}/add`, {
+            method: 'POST',
+            body: JSON.stringify({ type, item })
+        });
+    },
+
+    updateSharedItem: async (type: 'snippets' | 'dictionary', item: any) => {
+        return apiClient.request(`/team/shared/${type}/update`, {
+            method: 'POST',
+            body: JSON.stringify({ type, item })
+        });
+    },
+
+    deleteSharedItem: async (type: 'snippets' | 'dictionary', id: string) => {
+        return apiClient.request(`/team/shared/${type}/${id}`, {
+            method: 'DELETE'
         });
     }
 };

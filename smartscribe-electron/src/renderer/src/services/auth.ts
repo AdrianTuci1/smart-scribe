@@ -63,8 +63,9 @@ class AuthService {
                     // Check exp
                     const now = Math.floor(Date.now() / 1000);
                     if (payload.exp && payload.exp < now) {
-                        console.log('Token expired');
-                        this.logout();
+                        console.log('Token expired, attempting refresh...');
+                        // Attempt refresh instead of immediate logout
+                        this.refreshManualSession();
                         return;
                     }
 
@@ -80,6 +81,11 @@ class AuthService {
                     };
 
                     console.log('Restored manual session from localStorage');
+
+                    // Schedule refresh based on expiration
+                    if (payload.exp) {
+                        this.scheduleTokenRefresh(null, payload.exp);
+                    }
                 } catch (e) {
                     console.error('Failed to restore manual session', e);
                     this.logout();
@@ -161,37 +167,125 @@ class AuthService {
         this.scheduleTokenRefresh(session);
     }
 
-    private scheduleTokenRefresh(session: CognitoUserSession) {
+    private scheduleTokenRefresh(session: CognitoUserSession | null, expTime?: number) {
         if (this.tokenRefreshTimeout) {
             clearTimeout(this.tokenRefreshTimeout);
         }
 
         const now = Math.floor(Date.now() / 1000);
-        const exp = session.getAccessToken().getExpiration();
+        let exp = 0;
+
+        if (session) {
+            exp = session.getAccessToken().getExpiration();
+        } else if (expTime) {
+            exp = expTime;
+        } else {
+            return;
+        }
+
         const timeRemaining = (exp - now) * 1000;
 
-        // Refresh 5 minutes before expiration
-        const refreshTime = timeRemaining - (5 * 60 * 1000);
+        // Refresh 5 minutes before expiration OR if less than 5 minutes remaining
+        // If timeRemaining is already small (e.g. < 5 mins), we refresh immediately (or very soon)
+
+        const buffer = 5 * 60 * 1000;
+        const refreshTime = timeRemaining - buffer;
 
         if (refreshTime > 0) {
+            console.log(`Scheduling token refresh in ${Math.round(refreshTime / 1000)} seconds.`);
             this.tokenRefreshTimeout = setTimeout(() => {
                 this.refreshSession();
             }, refreshTime);
+        } else {
+            // Token is valid but close to expiration or already passed buffer
+            // Refresh immediately
+            console.log('Token close to expiration, refreshing now...');
+            this.refreshSession();
         }
     }
 
     private refreshSession() {
+        // Try SDK refresh first
         const cognitoUser = this.userPool.getCurrentUser();
+
         if (cognitoUser) {
             cognitoUser.getSession((err: any, session: CognitoUserSession) => {
                 if (err) {
-                    console.error('Refresh error', err);
+                    console.error('Refresh error (SDK)', err);
+                    // Fallback to manual refresh if SDK fails but we have tokens? 
+                    // Usually if SDK fails, it clears storage. 
+                    // Let's try manual refresh as backup if we have a refresh token stored manually.
+                    this.refreshManualSession();
                     return;
                 }
                 if (session.isValid()) {
+                    console.log('Session refreshed via SDK');
                     this.handleSession(session, cognitoUser);
                 }
             });
+        } else {
+            // Try manual refresh
+            this.refreshManualSession();
+        }
+    }
+
+    private async refreshManualSession() {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+            console.warn('No refresh token available');
+            // Do not logout immediately if we just failed a background refresh, 
+            // but if the token is actually expired, the api calls will 401 and handle logout.
+            // However, if we know we can't refresh, we might want to clear state if current token is expired.
+            // For now, let's just stop.
+            return;
+        }
+
+        console.log('Attempting manual token refresh...');
+        const tokenUrl = `${COGNITO_DOMAIN}/oauth2/token`;
+        const clientId = POOL_DATA.ClientId;
+
+        try {
+            const response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    client_id: clientId,
+                    refresh_token: refreshToken
+                    // redirect_uri is not required for refresh_token grant usually, but defined in some specs
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Manual refresh successful', data);
+
+                const accessToken = data.access_token;
+                const idToken = data.id_token;
+
+                apiService.setToken(accessToken);
+                localStorage.setItem('auth_token', accessToken);
+                if (idToken) localStorage.setItem('id_token', idToken);
+                if (data.refresh_token) {
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                }
+
+                // Decode to get expiration
+                const payload = JSON.parse(atob((idToken || accessToken).split('.')[1]));
+
+                if (payload.exp) {
+                    this.scheduleTokenRefresh(null, payload.exp);
+                }
+
+            } else {
+                console.error('Manual refresh failed', await response.text());
+                this.logout();
+            }
+        } catch (e) {
+            console.error('Manual refresh error', e);
+            // Network error? Don't logout immediately, retry logic could go here.
         }
     }
 
@@ -278,7 +372,14 @@ class AuthService {
                     // Let's store in localStorage for manual hydration fallback in constructor if SDK fails
                     localStorage.setItem('auth_token', data.access_token);
                     localStorage.setItem('id_token', data.id_token);
-                    // localStorage.setItem('refresh_token', data.refresh_token); // If needed
+                    if (data.refresh_token) {
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                    }
+
+                    // Schedule refresh
+                    if (payload.exp) {
+                        this.scheduleTokenRefresh(null, payload.exp);
+                    }
 
                     return true;
                 }
@@ -300,6 +401,8 @@ class AuthService {
         this.isAuthenticated = false;
         this.user = null;
         localStorage.removeItem('auth_token');
+        localStorage.removeItem('id_token');
+        localStorage.removeItem('refresh_token');
 
         // Optional: Redirect to Cognito logout logic
         const clientId = POOL_DATA.ClientId;

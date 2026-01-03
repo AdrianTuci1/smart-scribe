@@ -55,12 +55,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose, initialTab 
         { id: 'dataPrivacy', label: 'Data & Privacy', icon: Shield },
     ];
 
+    const handleResetSettings = async () => {
+        if (confirm('Are you sure you want to reset all settings to default?')) {
+            setSettings(defaultSettings);
+            // Assuming we'll add 'reset-settings' handler in main process
+            if ((window as any).electron && (window as any).electron.ipcRenderer) {
+                await (window as any).electron.ipcRenderer.invoke('reset-settings');
+            }
+        }
+    };
+
     const renderContent = () => {
         const tabProps = { settings, onSettingChange: handleSettingChange };
 
         switch (selectedCategory) {
             case 'general': return <GeneralSettings {...tabProps} />;
-            case 'system': return <SystemSettings {...tabProps} />;
+            case 'system': return <SystemSettings {...tabProps} onReset={handleResetSettings} />;
             case 'vibeCoding': return <VibeCodingSettings {...tabProps} />;
             case 'experimental': return <ExperimentalSettings {...tabProps} />;
             case 'account': return <AccountSettings {...tabProps} />;

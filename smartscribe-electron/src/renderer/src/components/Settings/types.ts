@@ -12,6 +12,7 @@ export interface UserSettings {
     // General
     pushToTalkKey: string;
     handsFreeModeKey: string;
+    commandModeKey: string;
     commandModeEnabled: boolean;
     pasteLastTranscriptEnabled: boolean;
     selectedMicrophone: string;
@@ -44,12 +45,13 @@ export interface UserSettings {
 export const defaultSettings: UserSettings = {
     pushToTalkKey: 'Fn',
     handsFreeModeKey: 'Cmd+Shift+H',
+    commandModeKey: 'Ctrl+Space',
     commandModeEnabled: false,
     pasteLastTranscriptEnabled: true,
     selectedMicrophone: 'Auto Detect',
     selectedLanguage: 'English (US)',
-    launchAtLogin: false,
-    showFlowBarAlways: false,
+    launchAtLogin: true,
+    showFlowBarAlways: true,
     showInDock: true,
     dictationSoundEffect: true,
     muteMusicWhileDictating: false,

@@ -1,15 +1,14 @@
 import React, { useEffect } from 'react';
-import { XCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import './Modal.css';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    title: string;
     children: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -27,12 +26,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h3 className="modal-title">{title}</h3>
-                    <button onClick={onClose} className="modal-close-btn">
-                        <X size={20} />
-                    </button>
-                </div>
+                <button onClick={onClose} className="modal-close-btn">
+                    <X size={20} />
+                </button>
                 {children}
             </div>
         </div>

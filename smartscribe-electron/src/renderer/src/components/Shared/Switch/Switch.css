@@ -1,0 +1,58 @@
+.switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+}
+
+.switch-label {
+    font-size: 0.875rem;
+    color: #d1d5db;
+    font-weight: 500;
+    width: 150px;
+}
+
+.switch-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.switch-track:hover:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.switch-track.checked {
+    background-color: #3b82f6;
+}
+
+.switch-track.checked:hover:not(.disabled) {
+    background-color: #2563eb;
+}
+
+.switch-track.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-thumb.checked {
+    transform: translateX(20px);
+}

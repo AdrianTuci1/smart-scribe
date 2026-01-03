@@ -26,14 +26,35 @@ export const FloatingWaveform: React.FC = () => {
         pushToTalkKeyRef.current = pushToTalkKey;
     }, [pushToTalkKey]);
 
+    const isShortcutRecordingRef = useRef(false);
+
+    useEffect(() => {
+        // Listen for shortcut recording state from other windows/modals
+        const handleStateChange = (_event: any, isRecording: boolean) => {
+            isShortcutRecordingRef.current = isRecording;
+        };
+
+        const removeListener = (window as any).electron.ipcRenderer.on('shortcut-recording-state-changed', handleStateChange);
+        return () => {
+            if (removeListener) removeListener();
+        };
+    }, []);
+
     // Load Settings & Check Permissions
+    const [showFlowBarAlways, setShowFlowBarAlways] = useState(false);
+
     useEffect(() => {
         const loadSettings = async () => {
             try {
                 if ((window as any).electron && (window as any).electron.ipcRenderer) {
                     const settings = await (window as any).electron.ipcRenderer.getAllSettings();
-                    if (settings && settings.pushToTalkKey) {
-                        setPushToTalkKey(settings.pushToTalkKey);
+                    if (settings) {
+                        if (settings.pushToTalkKey) {
+                            setPushToTalkKey(settings.pushToTalkKey);
+                        }
+                        if (settings.showFlowBarAlways !== undefined) {
+                            setShowFlowBarAlways(settings.showFlowBarAlways);
+                        }
                     }
                 }
             } catch (err) {
@@ -58,6 +79,21 @@ export const FloatingWaveform: React.FC = () => {
 
         loadSettings();
         checkPermissions();
+
+        // Listen for setting changes
+        const handleSettingChanged = (_event: any, key: string, value: any) => {
+            if (key === 'showFlowBarAlways') {
+                setShowFlowBarAlways(value);
+            }
+            if (key === 'pushToTalkKey') {
+                setPushToTalkKey(value);
+            }
+        };
+
+        const removeListener = (window as any).electron?.ipcRenderer.on('setting-changed', handleSettingChanged);
+        return () => {
+            if (removeListener) removeListener();
+        }
     }, []);
 
     // Helper: Screen transparency & Fullscreen listener
@@ -148,7 +184,7 @@ export const FloatingWaveform: React.FC = () => {
             }
 
             if (isMatch) {
-                if (!isRecordingRef.current) {
+                if (!isRecordingRef.current && !isShortcutRecordingRef.current) {
                     console.log('Hotkey match! Starting recording...');
                     setIsRecording(true);
                 }
@@ -177,11 +213,15 @@ export const FloatingWaveform: React.FC = () => {
         setTimeout(() => setWarningVisible(false), 5000);
     };
 
+    const [isHovered, setIsHovered] = useState(false);
+
     const handleMouseEnter = () => {
+        setIsHovered(true);
         (window as any).electron.ipcRenderer.send('set-ignore-mouse-events', false)
     }
 
     const handleMouseLeave = () => {
+        setIsHovered(false);
         (window as any).electron.ipcRenderer.send('set-ignore-mouse-events', true, { forward: true })
     }
 
@@ -201,7 +241,7 @@ export const FloatingWaveform: React.FC = () => {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
-                <HoverHint shortcutKey={pushToTalkKey} />
+                {(isHovered || showFlowBarAlways) && <HoverHint shortcutKey={pushToTalkKey} />}
 
                 <WarningToast
                     visible={warningVisible}

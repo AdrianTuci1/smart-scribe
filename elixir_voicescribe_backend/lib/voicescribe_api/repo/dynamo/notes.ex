@@ -23,6 +23,16 @@ defmodule VoiceScribeAPI.Repo.Dynamo.Notes do
     |> ExAws.request()
   end
 
+  def list_all_notes(user_id) do
+    # Use ExAws.stream! to automatically handle pagination and fetch all items
+    Dynamo.query(@notes_table,
+      expression_attribute_values: [userId: user_id],
+      key_condition_expression: "userId = :userId"
+    )
+    |> ExAws.stream!()
+    |> Enum.to_list()
+  end
+
   def delete_note(user_id, note_id) do
     Dynamo.delete_item(@notes_table, %{userId: user_id, noteId: note_id}) |> ExAws.request()
   end

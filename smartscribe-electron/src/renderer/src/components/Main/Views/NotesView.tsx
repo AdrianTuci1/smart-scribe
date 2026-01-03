@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { DataEntryItem } from '../../Shared/DataEntryItem';
+import { SortMenu } from '../../Shared/SortMenu/SortMenu';
 import { Note } from '../../../types';
 import { apiService } from '../../../services/api';
-import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle } from 'lucide-react';
+import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle, ArrowUpDown } from 'lucide-react';
 import { useAudioRecording } from '../../../hooks/useAudioRecording';
 import { format } from 'date-fns';
 import clsx from 'clsx';
@@ -18,19 +20,86 @@ export const NotesView: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    const loadNotes = async () => {
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [sortOrder, setSortOrder] = useState('newest');
+    const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false); // Controls search input visibility
+    const [searchQuery, setSearchQuery] = useState('');
+    const sortButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Close sort menu when clicking outside
+    useEffect(() => {
+        if (!isSortMenuOpen) return;
+        const handleClickOutside = () => setIsSortMenuOpen(false);
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [isSortMenuOpen]);
+
+    const loadNotes = async (reset = false) => {
         setIsLoading(true);
         try {
-            const data = await apiService.getNotes();
-            const list = Array.isArray(data) ? data : [];
-            // Sort by updated desc
-            list.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-            setNotes(list);
+            const currentPage = reset ? 1 : page;
+            const res = await apiService.getNotes({
+                page: currentPage,
+                limit: 20,
+                search: searchQuery,
+                sort: sortOrder
+            });
+
+            const list = res.data || [];
+            if (reset) {
+                setNotes(list);
+                setPage(1);
+            } else {
+                setNotes(prev => [...prev, ...list]);
+                setPage(currentPage);
+            }
+            setHasMore(res.meta?.has_more || false);
         } catch (error) {
             console.error('Failed to load notes', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    useEffect(() => {
+        loadNotes(true);
+    }, []);
+
+    // Search and Sort effect
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            loadNotes(true);
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [searchQuery, sortOrder]);
+
+    const handleLoadMore = () => {
+        const nextPage = page + 1;
+        setPage(nextPage); // set state update
+        // Helper local func because `page` state might not update linearly in closure? 
+        // `loadNotes` uses `reset ? 1 : page`.
+        // We should implement `loadNextPage` for clarity or rely on state.
+        // Relying on state require useEffect?
+        // Simplest: pass explicit page to fetch, but update state.
+        loadNextPage(nextPage);
+    };
+
+    const loadNextPage = async (nextPage: number) => {
+        setIsLoading(true);
+        try {
+            const res = await apiService.getNotes({
+                page: nextPage,
+                limit: 20,
+                search: searchQuery,
+                sort: sortOrder
+            });
+            const list = res.data || [];
+            setNotes(prev => [...prev, ...list]);
+            setHasMore(res.meta?.has_more || false);
+        } catch (e) { console.error(e); }
+        finally { setIsLoading(false); }
     };
 
     useEffect(() => {
@@ -157,9 +226,47 @@ export const NotesView: React.FC = () => {
                     <div className="recents-header">
                         <span className="recents-title">RECENTS</span>
                         <div className="recents-actions">
-                            <button className="recents-action-btn"><Search size={16} /></button>
-                            <button className="recents-action-btn"><MoreHorizontal size={16} /></button>
-                            <button onClick={loadNotes} className="recents-action-btn"><RotateCcw size={16} /></button>
+                            {/* Search */}
+                            <div className={clsx("relative flex items-center transition-all bg-[#2a2a2a] rounded", isSearchOpen ? "w-48 px-2" : "w-8 bg-transparent")}>
+                                <button
+                                    onClick={() => {
+                                        if (isSearchOpen && !searchQuery) {
+                                            setIsSearchOpen(false);
+                                        } else if (isSearchOpen && searchQuery) {
+                                            setSearchQuery('');
+                                            setIsSearchOpen(false);
+                                        } else {
+                                            setIsSearchOpen(true);
+                                        }
+                                    }}
+                                    className="recents-action-btn"
+                                >
+                                    <Search size={16} />
+                                </button>
+                                {isSearchOpen && (
+                                    <input
+                                        autoFocus
+                                        className="bg-transparent border-none outline-none text-xs text-white ml-2 w-full"
+                                        placeholder="Search..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Sort */}
+                            <button
+                                ref={sortButtonRef}
+                                className="recents-action-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsSortMenuOpen(!isSortMenuOpen);
+                                }}
+                            >
+                                <ArrowUpDown size={16} />
+                            </button>
+
+                            <button onClick={() => loadNotes(true)} className="recents-action-btn"><RotateCcw size={16} /></button>
                         </div>
                     </div>
 
@@ -183,8 +290,28 @@ export const NotesView: React.FC = () => {
                                 </DataEntryItem>
                             ))
                         )}
+                        {hasMore && (
+                            <div className="py-4 flex justify-center">
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={isLoading}
+                                    className="text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                                >
+                                    {isLoading ? 'Loading...' : 'Load More'}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Sort Menu */}
+                <SortMenu
+                    isOpen={isSortMenuOpen}
+                    onClose={() => setIsSortMenuOpen(false)}
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                    buttonRef={sortButtonRef}
+                />
             </div>
         </div >
     );

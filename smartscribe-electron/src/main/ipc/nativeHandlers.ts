@@ -161,4 +161,42 @@ export const registerNativeHandlers = (): void => {
         const { shell } = await import('electron');
         await shell.openExternal(url);
     });
+
+    // Mute Music (Pause Players)
+    ipcMain.on('mute-music', () => {
+        if (process.platform === 'darwin') {
+            console.log('Main: mute-music handler triggered. Pausing media players...');
+            const script = `
+                tell application "System Events"
+                    set runningApps to name of every application process
+                end tell
+                
+                if "Music" is in runningApps then
+                    try
+                        tell application "Music" to pause
+                        log "Paused Music"
+                    on error
+                        log "Failed to pause Music"
+                    end try
+                end if
+                
+                if "Spotify" is in runningApps then
+                    try
+                        tell application "Spotify" to pause
+                        log "Paused Spotify"
+                    on error
+                        log "Failed to pause Spotify"
+                    end try
+                end if
+            `;
+
+            exec(`osascript -e '${script}'`, (error, stdout) => {
+                if (error) {
+                    console.error('Failed to execute mute-music AppleScript:', error);
+                } else {
+                    console.log('Mute-music script output:', stdout.trim());
+                }
+            });
+        }
+    });
 }

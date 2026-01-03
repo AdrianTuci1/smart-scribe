@@ -2,16 +2,18 @@ import { apiClient } from './core';
 import { Note } from '../../types';
 
 export const notesService = {
-    getAll: async (): Promise<Note[]> => {
-        const res = await apiClient.request<{ data: any[] }>('/notes');
+    getAll: async (params?: { page?: number, limit?: number, search?: string, sort?: string }): Promise<{ data: Note[], meta?: any }> => {
+        const query = new URLSearchParams(params as any).toString();
+        const res = await apiClient.request<{ data: any[], meta?: any }>(`/notes?${query}`);
         const notes = res.data || [];
-        return notes.map(n => ({
+        const data = notes.map(n => ({
             id: n.noteId || n.id, // Support noteId from backend or id fallback
             content: n.content,
             timestamp: n.timestamp,
             createdAt: n.timestamp || new Date().toISOString(),
             updatedAt: n.timestamp || new Date().toISOString()
         }));
+        return { data, meta: res.meta };
     },
 
     create: async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'timestamp'>): Promise<Note> => {

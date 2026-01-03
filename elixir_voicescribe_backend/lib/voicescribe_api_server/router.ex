@@ -46,8 +46,18 @@ defmodule VoiceScribeAPIServer.Router do
 
     # New endpoints for dictionary and style preferences
     post("/config/dictionary/save", ConfigController, :save_dictionary)
+    # Granular Dictionary
+    post("/config/dictionary/add", ConfigController, :add_dictionary_entry)
+    post("/config/dictionary/update", ConfigController, :update_dictionary_entry)
+    delete("/config/dictionary/:id", ConfigController, :delete_dictionary_entry)
+
     post("/config/style_preferences/save", ConfigController, :save_style_preferences)
+
     post("/config/snippets/save", ConfigController, :save_snippets)
+    # Granular Snippets
+    post("/config/snippets/add", ConfigController, :add_snippet)
+    post("/config/snippets/update", ConfigController, :update_snippet)
+    delete("/config/snippets/:id", ConfigController, :delete_snippet)
 
     get("/config/style_preferences", ConfigController, :get_config,
       defaults: %{"type" => "style_preferences"}
@@ -79,8 +89,15 @@ defmodule VoiceScribeAPIServer.Router do
     # Team
     get("/team/members", TeamController, :index)
     post("/team/invite", TeamController, :invite)
+
     get("/team/shared/:type", TeamController, :shared_items)
+    # Keep for now
     post("/team/shared/:type", TeamController, :update_shared_items)
+
+    # Granular Team Shared
+    post("/team/shared/:type/add", TeamController, :add_shared_item)
+    post("/team/shared/:type/update", TeamController, :update_shared_item)
+    delete("/team/shared/:type/:id", TeamController, :delete_shared_item)
 
     # Notifications
     get("/notifications", NotificationController, :index)

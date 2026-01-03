@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Book, Scissors, Type, StickyNote, Settings, HelpCircle, UserPlus, Gift, Info, Smartphone, Command, Mic, Globe, LifeBuoy, MessageSquare, Briefcase } from 'lucide-react';
 import clsx from 'clsx';
 import { SettingsCategory } from '../../Settings/types';
 import { TicketModal } from '../../Shared/TicketModal';
+import { configService } from '../../../services/api/config';
+import { LanguageModal } from '../../Shared/LanguageModal/LanguageModal';
+import { MicrophoneModal } from '../../Shared/MicrophoneModal/MicrophoneModal';
+import { ShortcutsModal } from '../../Shared/ShortcutsModal/ShortcutsModal';
 import './Sidebar.css';
 
 export type ViewType = 'home' | 'dictionary' | 'snippets' | 'style' | 'notes';
@@ -49,13 +53,53 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
     const [showHelpMenu, setShowHelpMenu] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [showTicketModal, setShowTicketModal] = useState(false);
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
+    const [showMicrophoneModal, setShowMicrophoneModal] = useState(false);
+    const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+    const [selectedLanguages, setSelectedLanguages] = useState<Set<string>>(new Set(['en']));
 
-    const handleHelpItemClick = (itemId: string) => {
+    // Shortcut keys state
+    const [pushToTalkKey, setPushToTalkKey] = useState<string>('Fn');
+    const [handsFreeModeKey, setHandsFreeModeKey] = useState<string>('Cmd+Shift+H');
+    const [commandModeKey, setCommandModeKey] = useState<string>('Ctrl+Space');
+
+    // Load settings on mount
+    useEffect(() => {
+        loadShortcutSettings();
+    }, []);
+
+    const loadShortcutSettings = async () => {
+        try {
+            const settings = await configService.getSettings();
+            if (settings.pushToTalkKey) setPushToTalkKey(settings.pushToTalkKey);
+            if (settings.handsFreeModeKey) setHandsFreeModeKey(settings.handsFreeModeKey);
+            if (settings.commandModeKey) setCommandModeKey(settings.commandModeKey);
+        } catch (error) {
+            console.error('Failed to load shortcut settings:', error);
+        }
+    };
+
+    const handleHelpItemClick = async (itemId: string) => {
         console.log('Help item clicked:', itemId);
         setShowHelpMenu(false);
 
         if (itemId === 'support') {
             setShowTicketModal(true);
+        } else if (itemId === 'languages') {
+            try {
+                const settings = await configService.getSettings();
+                if (settings.languages && Array.isArray(settings.languages)) {
+                    setSelectedLanguages(new Set(settings.languages));
+                }
+                setShowLanguageModal(true);
+            } catch (error) {
+                console.error('Failed to fetch languages:', error);
+                setShowLanguageModal(true);
+            }
+        } else if (itemId === 'microphone') {
+            setShowMicrophoneModal(true);
+        } else if (itemId === 'shortcuts') {
+            setShowShortcutsModal(true);
         }
         // TODO: Implement other help items
     };
@@ -66,6 +110,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
 
     const handleGetFreeMonth = () => {
         setShowInviteModal(true);
+    };
+
+    const handleLanguageToggle = (id: string) => {
+        setSelectedLanguages(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleSaveLanguages = async () => {
+        try {
+            await configService.updateSettings({
+                languages: Array.from(selectedLanguages)
+            });
+            setShowLanguageModal(false);
+        } catch (error) {
+            console.error('Failed to save languages:', error);
+        }
+    };
+
+    const handleSaveShortcut = async (key: 'pushToTalkKey' | 'handsFreeModeKey' | 'commandModeKey', value: string) => {
+        try {
+            // Update local state
+            if (key === 'pushToTalkKey') setPushToTalkKey(value);
+            else if (key === 'handsFreeModeKey') setHandsFreeModeKey(value);
+            else if (key === 'commandModeKey') setCommandModeKey(value);
+
+            // Save to backend
+            await configService.updateSettings({ [key]: value });
+        } catch (error) {
+            console.error('Failed to save shortcut:', error);
+        }
     };
 
     return (
@@ -232,6 +313,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
             <TicketModal
                 isOpen={showTicketModal}
                 onClose={() => setShowTicketModal(false)}
+            />
+
+            {/* Language Modal */}
+            <LanguageModal
+                isOpen={showLanguageModal}
+                onClose={() => setShowLanguageModal(false)}
+                selectedIds={selectedLanguages}
+                onToggle={handleLanguageToggle}
+                onSave={handleSaveLanguages}
+                darkTheme={true}
+            />
+
+            {/* Microphone Modal */}
+            <MicrophoneModal
+                isOpen={showMicrophoneModal}
+                onClose={() => setShowMicrophoneModal(false)}
+            />
+
+            {/* Shortcuts Modal */}
+            <ShortcutsModal
+                isOpen={showShortcutsModal}
+                onClose={() => setShowShortcutsModal(false)}
+                pushToTalkKey={pushToTalkKey}
+                handsFreeModeKey={handsFreeModeKey}
+                commandModeKey={commandModeKey}
+                onSave={handleSaveShortcut}
             />
         </>
     );
