@@ -103,7 +103,13 @@ defmodule VoiceScribeAPIServer.AudioChannel do
   end
 
   @impl true
-  def handle_info({:transcription_complete, _user_id, transcript}, socket) do
+  def handle_info({:transcription_complete, user_id, transcript}, socket) do
+    # Fallback to 0 duration for legacy calls
+    handle_info({:transcription_complete, user_id, transcript, 0}, socket)
+  end
+
+  @impl true
+  def handle_info({:transcription_complete, _user_id, transcript, duration}, socket) do
     # This is the final full transcript.
     # 1. Process with Bedrock
     # 2. Save to DynamoDB
@@ -132,6 +138,7 @@ defmodule VoiceScribeAPIServer.AudioChannel do
             "transcriptId" => session_id,
             "originalText" => transcript,
             "enhancedText" => final_text,
+            "durationSeconds" => duration,
             "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
           }
 

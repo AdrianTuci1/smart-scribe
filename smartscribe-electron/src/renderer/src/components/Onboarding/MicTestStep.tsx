@@ -4,9 +4,11 @@ import './MicTestStep.css';
 
 interface MicTestStepProps {
     onNext: () => void;
+    onBack: () => void;
+    visualImage?: string;
 }
 
-export const MicTestStep: React.FC<MicTestStepProps> = ({ onNext }) => {
+export const MicTestStep: React.FC<MicTestStepProps> = ({ onNext, onBack, visualImage }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null); // Optional if using canvas, but sticking to DOM bars for simplicity of React state or just CSS anims
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
     const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
@@ -98,11 +100,12 @@ export const MicTestStep: React.FC<MicTestStepProps> = ({ onNext }) => {
             totalSteps={8}
             showVisual={true}
             visualContent={VisualizerCard}
+            visualImage={visualImage}
         >
             <div className="mic-test-container">
                 <button
                     className="back-button-simple"
-                    onClick={() => { }}
+                    onClick={onBack}
                     style={{
                         alignSelf: 'flex-start',
                         background: 'none',

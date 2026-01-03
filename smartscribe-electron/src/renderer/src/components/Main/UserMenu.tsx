@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Bell, Smartphone, QrCode } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 import './UserMenu.css';
 
 interface UserMenuProps {
@@ -15,12 +16,15 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Derived values
+    const [stats, setStats] = useState({ used: 0, limit: 2000, plan: 'free' });
+
     const userName = user?.username || 'Guest';
     const userEmail = user?.email || 'guest@example.com';
     const userAvatar = undefined; // We don't have avatar in Cognito yet
-    const planName = 'Flow Basic'; // Hardcoded for now
-    const wordsUsed = 0;
-    const wordsLimit = 2000;
+
+    const planName = stats.plan === 'pro' || stats.plan === 'yearly' ? 'Flow Pro' : 'Flow Basic';
+    const wordsUsed = stats.used;
+    const wordsLimit = stats.limit;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -31,6 +35,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            // Fetch usage
+            apiService.getUserStats().then(data => {
+                if (data) {
+                    setStats({
+                        used: data.usage?.wordsUsed || 0,
+                        limit: data.usage?.limit || 2000,
+                        plan: data.plan || 'free'
+                    });
+                }
+            }).catch(console.error);
         }
 
         return () => {

@@ -10,6 +10,7 @@ interface LanguageSelectionStepProps {
     totalSteps?: number;
     selectedIds: Set<string>;
     onToggle: (id: string) => void;
+    visualImage?: string;
 }
 
 const LANGUAGES = [
@@ -111,7 +112,8 @@ export const LanguageSelectionStep: React.FC<LanguageSelectionStepProps> = ({
     currentStep,
     totalSteps,
     selectedIds,
-    onToggle
+    onToggle,
+    visualImage
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -164,6 +166,7 @@ export const LanguageSelectionStep: React.FC<LanguageSelectionStepProps> = ({
                 totalSteps={totalSteps}
                 showVisual={true}
                 visualContent={VisualCard}
+                visualImage={visualImage}
             >
                 <div className="language-selection-container">
                     <button

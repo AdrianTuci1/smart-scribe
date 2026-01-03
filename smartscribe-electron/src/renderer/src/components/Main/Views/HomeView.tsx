@@ -29,7 +29,7 @@ export const HomeView: React.FC = () => {
     const { user } = useAuth();
     const [transcripts, setTranscripts] = useState<Transcript[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [stats, setStats] = useState({ streak: 1, words: 0, wpm: 0 }); // Mock stats for now
+    const [stats, setStats] = useState({ streak: 1, words: 0, wpm: 0 });
 
     const loadData = async () => {
         setIsLoading(true);
@@ -77,9 +77,9 @@ export const HomeView: React.FC = () => {
                 // Fallback: Calculate stats from transcripts
                 const words = list.reduce((acc, t) => acc + (t.text ? t.text.split(' ').length : 0), 0);
                 setStats({
-                    streak: 1, // Mock
+                    streak: 1, // Default fallback
                     words,
-                    wpm: words > 0 ? 65 : 0 // Mock/Simple calc
+                    wpm: words > 0 ? 65 : 0 // Estimated fallback
                 });
             }
         } catch (error) {

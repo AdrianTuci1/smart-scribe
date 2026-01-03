@@ -4,6 +4,7 @@ import { DataEntryItem } from '../../Shared/DataEntryItem';
 import { Note } from '../../../types';
 import { apiService } from '../../../services/api';
 import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle } from 'lucide-react';
+import { useAudioRecording } from '../../../hooks/useAudioRecording';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import './NotesView.css';
@@ -11,7 +12,10 @@ import './NotesView.css';
 export const NotesView: React.FC = () => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [textInput, setTextInput] = useState('');
-    const [isRecording, setIsRecording] = useState(false);
+    const { isRecording, toggleRecording, recordingSource } = useAudioRecording({
+        bypassTimer: true,
+        onTranscript: (text) => setTextInput(prev => prev + (prev ? ' ' : '') + text)
+    });
     const [isLoading, setIsLoading] = useState(false);
 
     const loadNotes = async () => {
@@ -56,16 +60,9 @@ export const NotesView: React.FC = () => {
         }
     };
 
-    const handleMicToggle = () => {
-        setIsRecording(!isRecording);
-        // Mock recording logic: if stopping and has text, save. 
-        // Real app would transcribe audio. 
-        if (isRecording) {
-            if (textInput) handleSaveNote();
-        } else {
-            // Start recording... (simulate dictation)
-            // For now just focus input
-        }
+    const handleFinishAndSave = () => {
+        if (isRecording) toggleRecording();
+        handleSaveNote();
     };
 
     return (
@@ -94,24 +91,64 @@ export const NotesView: React.FC = () => {
                     <div className="notes-controls">
                         <div className="notes-spacer"></div> {/* Spacer */}
 
-                        {/* Mic Toggle (Top Right or inline?) Image shows Mic in top right, Finish button bottom right. */}
-                        <button
-                            onClick={handleMicToggle}
-                            className={clsx(
-                                "mic-btn",
-                                isRecording && "recording"
-                            )}
-                        >
-                            <Mic size={18} fill={isRecording ? "currentColor" : "none"} />
-                        </button>
+                        {/* Mic Toggle - Hidden if recording (per requirements) */}
+                        {!isRecording && (
+                            <button
+                                onClick={toggleRecording}
+                                className="mic-btn"
+                            >
+                                <Mic size={18} />
+                            </button>
+                        )}
 
-                        <button
-                            onClick={handleSaveNote}
-                            disabled={!textInput}
-                            className="finish-btn"
-                        >
-                            Finish
-                        </button>
+                        {/* Finish Button - Only if recording started locally */}
+                        {isRecording && recordingSource === 'local' && (
+                            <button
+                                onClick={handleFinishAndSave}
+                                className="finish-btn"
+                            >
+                                Finish
+                            </button>
+                        )}
+
+                        {/* If not recording, show nothing or just Save? Original had Finish disabled until text. 
+                            Requirements say "Finish button appears ONLY if recording is started in notesview".
+                            Does it imply we can't save manually without recording?
+                            Probably just meant the "Finish Recording" button.
+                            If I type manually, I should be able to save.
+                            But "Finish" usually means "Finish Note".
+                            If isRecording is FALSE, should we show a Save button?
+                            Original code showed "Finish" button always (disabled if no text).
+                            New requirement: "Buttonul de finish apare doar daca inregistrarea e pornita in notesview".
+                            This might be strict.
+                            But if I *type* a note, how do I save it?
+                            Maybe the user implies the "Recording Finish" button.
+                            I will assume if NOT recording, we still need a way to save.
+                            Or maybe the UI changes mode.
+                            Let's keep "Finish" available if NOT recording but has text? 
+                            User said "Finish button appears ONLY if recording is started".
+                            This might effectively hide it for manual entry?
+                            I will implement strictly first: Only if `isRecording && local`.
+                            Wait, manual entry needs save. 
+                            I'll assume "Finish" for *Recording* context.
+                            I'll add a "Save" or "Add" button for manual? Or keep the "Finish" button logic as:
+                            Visible if (isRecording && local) OR (!isRecording && textInput)
+                            But "record button from notesview disappears".
+                            If I implement exactly:
+                            - Recording (Local): Show Finish. Hide Mic.
+                            - Recording (External): Hide Mic. Hide Finish.
+                            - IDLE: Show Mic. Show Finish (if text)?
+                            Use logic: `(isRecording && source === 'local') || (!isRecording && textInput)`
+                            This preserves manual save capability.
+                        */}
+                        {!isRecording && textInput && (
+                            <button
+                                onClick={handleSaveNote}
+                                className="finish-btn"
+                            >
+                                Save
+                            </button>
+                        )}
                     </div>
                 </div>
 

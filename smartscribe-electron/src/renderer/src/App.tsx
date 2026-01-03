@@ -12,7 +12,7 @@ import './App.css';
 
 const MainAppContent = () => {
     const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-    const { isAuthenticated, loginWithGoogle, user } = useAuth(); // Use context
+    const { isAuthenticated, loginWithGoogle, user, isLoading } = useAuth(); // Use context
 
     useEffect(() => {
         if (user?.onboarding) {
@@ -60,6 +60,14 @@ const MainAppContent = () => {
             (window as any).electron.ipcRenderer.openWaveform();
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="app-loading">
+                <div className="loading-spinner"></div>
+            </div>
+        );
+    }
 
     if (!hasCompletedOnboarding) {
         return <OnboardingView onComplete={handleOnboardingComplete} />;

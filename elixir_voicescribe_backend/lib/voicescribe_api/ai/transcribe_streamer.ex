@@ -33,6 +33,7 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
         user_id: user_id,
         transcript: "",
         last_partial: "",
+        start_time: DateTime.utc_now(),
         # The session manager process to notify
         caller_pid: args[:caller_pid]
       })
@@ -123,9 +124,12 @@ defmodule VoiceScribeAPI.AI.TranscribeStreamer do
         state.transcript
       end
 
-    # Notify caller with the final transcript
+    # Calculate duration
+    duration = DateTime.diff(DateTime.utc_now(), state.start_time, :second)
+
+    # Notify caller with the final transcript and duration
     if state.caller_pid do
-      send(state.caller_pid, {:transcription_complete, state.user_id, final_text})
+      send(state.caller_pid, {:transcription_complete, state.user_id, final_text, duration})
     end
 
     {:ok, state}

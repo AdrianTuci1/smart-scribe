@@ -6,9 +6,11 @@ import './MicTestStep.css'; // Reuse button styles
 
 interface ShortcutTestStepProps {
     onNext: () => void;
+    onBack: () => void;
+    visualImage?: string;
 }
 
-export const ShortcutTestStep: React.FC<ShortcutTestStepProps> = ({ onNext }) => {
+export const ShortcutTestStep: React.FC<ShortcutTestStepProps> = ({ onNext, onBack, visualImage }) => {
     const [isPressed, setIsPressed] = useState(false);
     const [targetShortcut, setTargetShortcut] = useState<string>('Fn');
     const [isRecording, setIsRecording] = useState(false);
@@ -138,11 +140,12 @@ export const ShortcutTestStep: React.FC<ShortcutTestStepProps> = ({ onNext }) =>
             totalSteps={8}
             showVisual={true}
             visualContent={VisualizerCard}
+            visualImage={visualImage}
         >
             <div className="shortcut-test-container">
                 <button
                     className="back-button-simple"
-                    onClick={() => { /* Navigation handled by caller usually, but here stubbed */ }}
+                    onClick={onBack}
                     style={{
                         alignSelf: 'flex-start',
                         background: 'none',

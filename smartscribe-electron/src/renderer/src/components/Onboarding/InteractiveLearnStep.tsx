@@ -8,6 +8,7 @@ interface InteractiveLearnStepProps {
     onSkip?: () => void;
     currentStep?: number;
     totalSteps?: number;
+    visualImage?: string;
 }
 
 type TabType = 'message' | 'email' | 'note';
@@ -16,7 +17,8 @@ export const InteractiveLearnStep: React.FC<InteractiveLearnStepProps> = ({
     onNext,
     onSkip,
     currentStep,
-    totalSteps
+    totalSteps,
+    visualImage
 }) => {
     const [activeTab, setActiveTab] = useState<TabType>('message');
 
@@ -217,6 +219,7 @@ Let me know if you have any questions.`)}
             totalSteps={totalSteps}
             showVisual={true}
             visualContent={VisualContent}
+            visualImage={visualImage}
         >
             <div className="interactive-learn-container">
                 <button

@@ -85,6 +85,9 @@ defmodule VoiceScribeAPIServer.Router do
     # Notifications
     get("/notifications", NotificationController, :index)
     post("/notifications/:id/action", NotificationController, :perform_action)
+
+    # Stats
+    get("/user/stats", StatsController, :index)
   end
 
   # Public routes

@@ -72,7 +72,7 @@ export const configService = {
     getOnboarding: async (): Promise<any> => {
         // defaults: %{"type" => "onboarding"}
         const res = await apiClient.request<{ data: any }>('/config/onboarding');
-        return res.data || {};
+        return res.data; // Return raw data (null or object), do not default to {}
     },
 
     updateOnboarding: async (data: any): Promise<void> => {

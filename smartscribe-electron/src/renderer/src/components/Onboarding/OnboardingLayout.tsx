@@ -87,13 +87,20 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                 </div>
 
                 {/* Right Side - Visual */}
+                {/* Right Side - Visual */}
                 {showVisual && (
                     <div className="onboarding-visual-side">
-                        {visualContent ? (
-                            visualContent
-                        ) : visualImage ? (
+                        {visualImage && (
                             <img src={visualImage} alt="Visual" className="visual-image" />
-                        ) : (
+                        )}
+
+                        {visualContent && (
+                            <div className="visual-content-overlay">
+                                {visualContent}
+                            </div>
+                        )}
+
+                        {!visualImage && !visualContent && (
                             <div className="visual-placeholder" />
                         )}
 

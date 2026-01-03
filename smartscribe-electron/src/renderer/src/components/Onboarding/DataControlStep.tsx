@@ -6,9 +6,10 @@ import './DataControlStep.css';
 
 interface DataControlStepProps {
     onNext: () => void;
+    visualImage?: string;
 }
 
-export const DataControlStep: React.FC<DataControlStepProps> = ({ onNext }) => {
+export const DataControlStep: React.FC<DataControlStepProps> = ({ onNext, visualImage }) => {
     const [selectedMode, setSelectedMode] = useState<'improve' | 'privacy'>('improve');
 
     return (
@@ -22,7 +23,7 @@ export const DataControlStep: React.FC<DataControlStepProps> = ({ onNext }) => {
             // 4: THIS STEP
             totalSteps={8}
             showVisual={true}
-            visualImage="" // We will need the specific circular lock image if available, else placeholder
+            visualImage={visualImage || ""} // We will need the specific circular lock image if available, else placeholder
         >
             <div className="data-control-container">
                 <button

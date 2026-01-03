@@ -122,13 +122,7 @@ class ApiServiceFacade {
     // We will return mock or throw, or just comment it/log it.
     // For now, let's just make it return empty object to prevent crashes if called.
     public async getUserStats(): Promise<any> {
-        console.warn('getUserStats: Endpoint /user/stats not available in backend.');
-        // Return mock data to satisfy HomeView types
-        return {
-            streak: 0,
-            totalWords: 0,
-            averageWpm: 0
-        };
+        return apiClient.request('/user/stats');
     }
 
     // Audio Download

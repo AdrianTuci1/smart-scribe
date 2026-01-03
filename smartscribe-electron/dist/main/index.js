@@ -16641,6 +16641,13 @@ import_electron10.ipcMain.on("clipboard-write", (_event, text) => {
     console.log("Main: Copied text to clipboard:", text.substring(0, 50) + "...");
   }
 });
+import_electron10.ipcMain.on("sync-recording-state", (event, { isRecording, source }) => {
+  import_electron10.BrowserWindow.getAllWindows().forEach((win) => {
+    if (win.webContents.id !== event.sender.id) {
+      win.webContents.send("recording-state-updated", { isRecording, source });
+    }
+  });
+});
 import_electron10.app.whenReady().then(() => {
   const mainWindow = createMainWindow();
   const handleQuit = () => {

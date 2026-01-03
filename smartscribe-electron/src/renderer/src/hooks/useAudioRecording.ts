@@ -3,17 +3,26 @@ import webSocketService from '../services/WebSocketService';
 import audioRecordingService from '../services/AudioRecordingService';
 import { authService } from '../services/auth';
 
-export const useAudioRecording = () => {
+interface UseAudioRecordingOptions {
+    bypassTimer?: boolean;
+    onTranscript?: (text: string) => void;
+}
+
+export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudioRecordingOptions = {}) => {
     const [isRecording, setIsRecording] = useState(false);
+    const [recordingSource, setRecordingSource] = useState<'local' | 'external' | null>(null);
     const [warningVisible, setWarningVisible] = useState(false);
     const [limitReached, setLimitReached] = useState(false);
-    const wasRecordingRef = useRef(false);
 
-    // Timer ref to delay actual recording start
-    // Using any to avoid NodeJS vs Window timeout type conflicts
+    // Refs
+    const wasRecordingRef = useRef(false);
     const startTimerRef = useRef<any>(null);
-    // Flag to track if the REAL recording services have started
     const realRecordingStartedRef = useRef(false);
+    const isExternalRef = useRef(false); // Ref to track if current session is external to avoid closure staleness issues in effects if needed
+
+    // Keep 'onTranscript' ref to access latest callback in closure
+    const onTranscriptRef = useRef(onTranscript);
+    useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
 
     // Initialize services
     useEffect(() => {
@@ -28,7 +37,9 @@ export const useAudioRecording = () => {
 
         webSocketService.onError = (errorMsg) => {
             console.error('WebSocket error:', errorMsg);
-            (window as any).electron.ipcRenderer.send('log', 'WebSocket error:', errorMsg);
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'WebSocket error:', errorMsg);
+            }
 
             if (errorMsg === 'limit_exceeded') {
                 setLimitReached(true);
@@ -36,10 +47,9 @@ export const useAudioRecording = () => {
             }
 
             // If real recording was active, we should behave like a stop
-            if (realRecordingStartedRef.current) {
-                // UI update will trigger stopRecording logic if needed, 
-                // but direct error -> force reset
+            if (realRecordingStartedRef.current && recordingSource === 'local') {
                 setIsRecording(false);
+                setRecordingSource(null);
             }
         };
 
@@ -52,6 +62,11 @@ export const useAudioRecording = () => {
             if (!content) {
                 console.error('Empty content received');
                 return;
+            }
+
+            // Custom handler if provided
+            if (onTranscriptRef.current) {
+                onTranscriptRef.current(content);
             }
 
             // 1. ALWAYS Try to write to clipboard first as a safe fallback
@@ -101,13 +116,61 @@ export const useAudioRecording = () => {
         audioRecordingService.onError = (errorMsg) => {
             console.error('Audio recording error:', errorMsg);
             setIsRecording(false);
+            setRecordingSource(null);
         };
 
         return () => {
             audioRecordingService.cleanup();
             if (startTimerRef.current) clearTimeout(startTimerRef.current);
         }
+    }, [recordingSource]); // Re-bind if recordingSource changes? Actually listeners are static usually.
+
+    // IPC Synchronization
+    useEffect(() => {
+        if (!(window as any).electron) return;
+
+        const handleRemoteState = (_event: any, { isRecording: remoteIsRecording, source }: any) => {
+            console.log('IPC: Received recording state update:', remoteIsRecording, source);
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'IPC: Received recording state update:', remoteIsRecording, source);
+            }
+
+            if (remoteIsRecording) {
+                // Remote started recording
+                isExternalRef.current = true;
+                setRecordingSource('external');
+                setIsRecording(true);
+            } else {
+                // Remote stopped recording
+                isExternalRef.current = false;
+                setRecordingSource(null);
+                setIsRecording(false);
+            }
+        };
+
+        const removeListener = (window as any).electron.ipcRenderer.on('recording-state-updated', handleRemoteState);
+
+        return () => {
+            removeListener();
+        };
     }, []);
+
+    // Broadcast local state changes
+    useEffect(() => {
+        // Only broadcast if WE are the source or became the source
+        // Actually, whenever state changes, we might want to broadcast if it was a LOCAL change.
+        // But we distinguish local vs external set via the `recordingSource` state logic or refs.
+        // If `setIsRecording` was called by `toggleRecording` (user interaction), we set source to 'local'.
+        // If called by IPC, source is 'external'.
+
+        // We handle broadcast in the toggle function or effect?
+        // Let's do it in the effect BUT protect against loops using source.
+
+        if ((window as any).electron && recordingSource === 'local') {
+            (window as any).electron.ipcRenderer.send('sync-recording-state', { isRecording, source: 'local' });
+        }
+    }, [isRecording, recordingSource]);
+
 
     // Manage recording state changes from UI/Shortcut
     useEffect(() => {
@@ -120,15 +183,24 @@ export const useAudioRecording = () => {
     }, [isRecording]);
 
     const handleStartRequest = () => {
-        console.log('Start request received. Waiting 600ms...');
-        (window as any).electron.ipcRenderer.send('log', 'Start request received. Waiting 600ms...');
+        // If external, DO NOT start local audio services
+        if (recordingSource === 'external') {
+            console.log('Recording started externally. UI updated only.');
+            return;
+        }
+
+        console.log('Start request received.');
+        if ((window as any).electron) {
+            (window as any).electron.ipcRenderer.send('log', 'Start request received.');
+        }
 
         realRecordingStartedRef.current = false;
 
-        // Start a timer. If user releases before this fires, it's a short press.
-        startTimerRef.current = setTimeout(async () => {
-            console.log('600ms passed. Starting REAL recording...');
-            (window as any).electron.ipcRenderer.send('log', '600ms passed. Starting REAL recording...');
+        const startRealRecording = async () => {
+            console.log('Starting REAL recording...');
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'Starting REAL recording...');
+            }
 
             realRecordingStartedRef.current = true;
             startTimerRef.current = null;
@@ -141,26 +213,46 @@ export const useAudioRecording = () => {
             const success = await audioRecordingService.startRecording();
             if (!success) {
                 console.error('Failed to start recording');
-                (window as any).electron.ipcRenderer.send('log', 'Failed to start recording');
+                if ((window as any).electron) {
+                    (window as any).electron.ipcRenderer.send('log', 'Failed to start recording');
+                }
                 // Force stop
                 webSocketService.disconnect();
                 setIsRecording(false);
+                setRecordingSource(null);
             } else {
-                (window as any).electron.ipcRenderer.send('log', 'Real recording active.');
+                if ((window as any).electron) {
+                    (window as any).electron.ipcRenderer.send('log', 'Real recording active.');
+                }
             }
+        };
 
-        }, 600);
+        if (bypassTimer) {
+            startRealRecording();
+        } else {
+            // Start a timer. If user releases before this fires, it's a short press.
+            startTimerRef.current = setTimeout(startRealRecording, 600);
+        }
     };
 
     const handleStopRequest = () => {
         console.log('Stop request received.');
-        (window as any).electron.ipcRenderer.send('log', 'Stop request received.');
+        if ((window as any).electron) {
+            (window as any).electron.ipcRenderer.send('log', 'Stop request received.');
+        }
+
+        // If external, just allow state to reset (Ref is already handled)
+        if (recordingSource === 'external') {
+            return;
+        }
 
         // Check if we ever started real recording
         if (startTimerRef.current) {
             // Timer is still running -> We haven't reached 600ms yet!
             console.log('Short press detected (<600ms). Cancelling timer.');
-            (window as any).electron.ipcRenderer.send('log', 'Short press detected (<600ms). Cancelling timer.');
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'Short press detected (<600ms). Cancelling timer.');
+            }
 
             clearTimeout(startTimerRef.current);
             startTimerRef.current = null;
@@ -179,7 +271,9 @@ export const useAudioRecording = () => {
 
         if (realRecordingStartedRef.current) {
             console.log('Stopping REAL recording...');
-            (window as any).electron.ipcRenderer.send('log', 'Stopping REAL recording...');
+            if ((window as any).electron) {
+                (window as any).electron.ipcRenderer.send('log', 'Stopping REAL recording...');
+            }
 
             audioRecordingService.stopRecording();
             webSocketService.stopStream();
@@ -187,7 +281,9 @@ export const useAudioRecording = () => {
             // Wait for final transcription then disconnect
             setTimeout(() => {
                 webSocketService.disconnect();
-                (window as any).electron.ipcRenderer.send('log', 'WebSocket disconnected (timeout)');
+                if ((window as any).electron) {
+                    (window as any).electron.ipcRenderer.send('log', 'WebSocket disconnected (timeout)');
+                }
             }, 5000); // Keep connection alive for a bit for final results
 
             realRecordingStartedRef.current = false;
@@ -195,12 +291,21 @@ export const useAudioRecording = () => {
     };
 
     const toggleRecording = () => {
-        setIsRecording(prev => !prev);
+        setIsRecording(prev => {
+            const newState = !prev;
+            if (newState) {
+                setRecordingSource('local');
+            } else {
+                setRecordingSource(null);
+            }
+            return newState;
+        });
     };
 
     return {
         isRecording,
         setIsRecording,
+        recordingSource,
         warningVisible,
         setWarningVisible,
         toggleRecording,

@@ -9,13 +9,15 @@ interface ReferralStepProps {
     onBack: () => void;
     currentStep?: number;
     totalSteps?: number;
+    visualImage?: string;
 }
 
 export const ReferralStep: React.FC<ReferralStepProps> = ({
     onComplete,
     onBack,
     currentStep,
-    totalSteps
+    totalSteps,
+    visualImage
 }) => {
     const [referralLink, setReferralLink] = useState("https://smartscribe.ai/r/...");
     const [loading, setLoading] = useState(true);
@@ -65,6 +67,7 @@ export const ReferralStep: React.FC<ReferralStepProps> = ({
             totalSteps={totalSteps}
             showVisual={true}
             visualContent={VisualContent}
+            visualImage={visualImage}
         >
             <div className="referral-container">
                 <button className="back-button-simple" onClick={onBack}>

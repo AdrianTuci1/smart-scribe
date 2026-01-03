@@ -8,13 +8,15 @@ interface FreeTrialStepProps {
     onBack: () => void;
     currentStep?: number;
     totalSteps?: number;
+    visualImage?: string;
 }
 
 export const FreeTrialStep: React.FC<FreeTrialStepProps> = ({
     onNext,
     onBack,
     currentStep,
-    totalSteps
+    totalSteps,
+    visualImage
 }) => {
     const [isTrialEnabled, setIsTrialEnabled] = useState(true);
 
@@ -39,6 +41,7 @@ export const FreeTrialStep: React.FC<FreeTrialStepProps> = ({
             totalSteps={totalSteps}
             showVisual={true}
             visualContent={VisualContent}
+            visualImage={visualImage}
         >
             <div className="free-trial-container">
                 <button

@@ -12,18 +12,35 @@ import { InteractiveLearnStep } from './InteractiveLearnStep';
 import { FreeTrialStep } from './FreeTrialStep';
 import { ReferralStep } from './ReferralStep';
 import { configService } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+
+import onb1 from '../../assets/onboarding/onb1.jpg';
+import onb2 from '../../assets/onboarding/onb2.jpg';
+import onb3 from '../../assets/onboarding/onb3.jpg';
+import onb4 from '../../assets/onboarding/onb4.jpg';
+import onb5 from '../../assets/onboarding/onb5.jpg';
+import onb6 from '../../assets/onboarding/onb6.jpg';
 
 interface OnboardingViewProps {
     onComplete: () => void;
 }
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) => {
-    const [currentStep, setCurrentStep] = useState(0);
+    const { isAuthenticated } = useAuth();
+    // If already authenticated, start at step 1 (Source)
+    const [currentStep, setCurrentStep] = useState(isAuthenticated ? 1 : 0);
     const [source, setSource] = useState<Set<string>>(new Set());
     const [role, setRole] = useState<Set<string>>(new Set());
     const [usage, setUsage] = useState<Set<string>>(new Set());
     const [languages, setLanguages] = useState<Set<string>>(new Set(['en'])); // Default English
     const [permissionsSkipped, setPermissionsSkipped] = useState(false);
+
+    // Effect to auto-advance if auth happens while on step 0
+    React.useEffect(() => {
+        if (isAuthenticated && currentStep === 0) {
+            setCurrentStep(1);
+        }
+    }, [isAuthenticated, currentStep]);
 
 
     // 0: Login
@@ -133,6 +150,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     onSkip={nextStep}
                     currentStep={1}
                     totalSteps={TOTAL_STEPS}
+                    visualImage={onb1}
                 // visualImage / placeholder handled by component defaults
                 />
             );
@@ -150,6 +168,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     onSkip={nextStep}
                     currentStep={2}
                     totalSteps={TOTAL_STEPS}
+                    visualImage={onb2}
                 />
             );
         case 3:
@@ -166,6 +185,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     onSkip={nextStep}
                     currentStep={3}
                     totalSteps={TOTAL_STEPS}
+                    visualImage={onb3}
                 />
             );
         case 4:
@@ -190,16 +210,17 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     totalSteps={TOTAL_STEPS}
                     selectedIds={languages}
                     onToggle={handleLanguageToggle}
+                    visualImage={onb4}
                 />
             );
         case 5:
-            return <DataControlStep key="data" onNext={nextStep} />;
+            return <DataControlStep key="data" onNext={nextStep} visualImage={onb5} />;
         case 6:
-            return <PermissionsStep key="perms" onNext={nextStep} />;
+            return <PermissionsStep key="perms" onNext={nextStep} visualImage={onb6} />;
         case 7:
-            return <MicTestStep key="mictest" onNext={nextStep} />;
+            return <MicTestStep key="mictest" onNext={nextStep} onBack={() => setCurrentStep(prev => prev - 1)} />;
         case 8:
-            return <ShortcutTestStep key="shortcut" onNext={nextStep} />;
+            return <ShortcutTestStep key="shortcut" onNext={nextStep} onBack={() => setCurrentStep(prev => prev - 1)} />;
         case 9:
             return (
                 <InteractiveLearnStep

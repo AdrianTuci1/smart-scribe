@@ -58,6 +58,16 @@ ipcMain.on('clipboard-write', (_event, text) => {
     }
 });
 
+// Sync Recording State
+ipcMain.on('sync-recording-state', (event, { isRecording, source }) => {
+    // Broadcast to all other windows
+    BrowserWindow.getAllWindows().forEach(win => {
+        if (win.webContents.id !== event.sender.id) {
+            win.webContents.send('recording-state-updated', { isRecording, source });
+        }
+    });
+});
+
 // App ready
 app.whenReady().then(() => {
     const mainWindow = createMainWindow()

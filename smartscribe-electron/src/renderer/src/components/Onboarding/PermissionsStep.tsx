@@ -5,9 +5,10 @@ import './PermissionsStep.css';
 
 interface PermissionsStepProps {
     onNext: () => void;
+    visualImage?: string;
 }
 
-export const PermissionsStep: React.FC<PermissionsStepProps> = ({ onNext }) => {
+export const PermissionsStep: React.FC<PermissionsStepProps> = ({ onNext, visualImage }) => {
     const [accessibilityGranted, setAccessibilityGranted] = useState(false);
     const [microphoneGranted, setMicrophoneGranted] = useState(false);
 
@@ -64,6 +65,7 @@ export const PermissionsStep: React.FC<PermissionsStepProps> = ({ onNext }) => {
             currentStep={5}
             totalSteps={8}
             showVisual={true}
+            visualImage={visualImage}
         // visualImage should highlight the settings window as in the screenshot
         >
             <div className="permissions-container">
