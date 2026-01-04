@@ -49,10 +49,7 @@ defmodule VoiceScribeAPIServer.ConfigController do
             # Schema says "createdAt" added in put_dictionary_entry.
             sorted =
               case sort do
-                # Safety if nil?
                 "newest" ->
-                  Enum.sort_by(filtered, & &1["createdAt"], {:desc, Date})
-                  # Actually, check if createdAt exists. If not, fallback.
                   Enum.sort_by(filtered, fn e -> Map.get(e, "createdAt") || "" end, :desc)
 
                 "oldest" ->
@@ -147,7 +144,8 @@ defmodule VoiceScribeAPIServer.ConfigController do
     modify_config_list(conn, "dictionary", "entries", :update, entry)
   end
 
-  def delete_dictionary_entry(conn, %{"id" => id}) do
+  def delete_dictionary_entry(conn, params) do
+    id = params["id"]
     modify_config_list(conn, "dictionary", "entries", :delete, id)
   end
 
@@ -182,7 +180,11 @@ defmodule VoiceScribeAPIServer.ConfigController do
 
         :update ->
           Enum.map(list, fn item ->
-            if item["id"] == payload["id"], do: payload, else: item
+            if item["id"] == payload["id"] do
+              Map.merge(item, payload)
+            else
+              item
+            end
           end)
 
         :delete ->

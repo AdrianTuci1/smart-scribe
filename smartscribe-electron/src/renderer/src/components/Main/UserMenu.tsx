@@ -22,7 +22,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     const userEmail = user?.email || 'guest@example.com';
     const userAvatar = undefined; // We don't have avatar in Cognito yet
 
-    const planName = stats.plan === 'pro' || stats.plan === 'yearly' ? 'Flow Pro' : 'Flow Basic';
+    const planName = stats.plan === 'pro' || stats.plan === 'yearly' ? 'Pro' : 'Basic';
     const wordsUsed = stats.used;
     const wordsLimit = stats.limit;
 
@@ -97,13 +97,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                                 {wordsUsed.toLocaleString()} of {wordsLimit.toLocaleString()} words left this week
                             </div>
                         </div>
-                        <button className="plan-upgrade-button">Get Flow Pro</button>
+                        <button className="plan-upgrade-button">Get Scribe Pro</button>
                     </div>
 
                     {/* Referral Section */}
                     <div className="user-menu-section referral-section">
                         <div className="referral-info">
-                            <div className="referral-title">Get a free month of Flow Pro</div>
+                            <div className="referral-title">Get a free month of Scribe Pro</div>
                             <div className="referral-subtitle">Refer friends, earn rewards</div>
                         </div>
                         <button className="referral-button">Refer a friend</button>
@@ -113,7 +113,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                     <div className="user-menu-section ios-download">
                         <div className="ios-download-info">
                             <Smartphone size={20} />
-                            <span>Download Flow for iOS</span>
+                            <span>Download Scribe for iOS</span>
                         </div>
                         <QrCode size={20} className="qr-icon" />
                     </div>

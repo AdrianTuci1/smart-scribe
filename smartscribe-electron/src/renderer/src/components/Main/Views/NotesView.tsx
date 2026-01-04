@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DataEntryItem } from '../../Shared/DataEntryItem';
+import { Modal } from '../../Shared/Modal';
 import { SortMenu } from '../../Shared/SortMenu/SortMenu';
 import { Note } from '../../../types';
 import { apiService } from '../../../services/api';
-import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle, ArrowUpDown } from 'lucide-react';
+import { Mic, Search, RotateCcw, MoreHorizontal, LayoutGrid, XCircle, ArrowUpDown, Edit2, Trash2 } from 'lucide-react';
 import { useAudioRecording } from '../../../hooks/useAudioRecording';
 import { format } from 'date-fns';
 import clsx from 'clsx';
@@ -14,6 +15,7 @@ import './NotesView.css';
 export const NotesView: React.FC = () => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [textInput, setTextInput] = useState('');
+    const [editingNote, setEditingNote] = useState<Note | null>(null);
     const { isRecording, toggleRecording, recordingSource } = useAudioRecording({
         bypassTimer: true,
         onTranscript: (text) => setTextInput(prev => prev + (prev ? ' ' : '') + text)
@@ -109,23 +111,39 @@ export const NotesView: React.FC = () => {
     const handleSaveNote = async () => {
         if (!textInput.trim()) return;
 
-        const newNote: Note = {
-            id: crypto.randomUUID(),
-            content: textInput,
-            timestamp: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        // Optimistic
-        setNotes(prev => [newNote, ...prev]);
+        const content = textInput;
         setTextInput('');
 
         try {
-            await apiService.syncNote(newNote);
+            // Wait for backend to create the note and return it with proper ID
+            const createdNote = await apiService.syncNote({ content });
+            // Add the note with backend-generated ID to the list
+            setNotes(prev => [createdNote, ...prev]);
         } catch (e) {
             console.error(e);
-            loadNotes();
+            // Restore text input on error
+            setTextInput(content);
+        }
+    };
+
+    const handleUpdateNote = async (id: string, content: string) => {
+        if (!content.trim()) return;
+
+        try {
+            await apiService.updateNote({ id, content });
+            loadNotes(true);
+            setEditingNote(null);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleDeleteNote = async (id: string) => {
+        try {
+            await apiService.deleteNote(id);
+            loadNotes(true);
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -279,7 +297,29 @@ export const NotesView: React.FC = () => {
                             notes.map(note => (
                                 <DataEntryItem
                                     key={note.id}
-                                    onClick={() => setTextInput(prev => prev ? prev + ' ' + note.content : note.content)}
+                                    onClick={() => setEditingNote(note)}
+                                    actions={
+                                        <>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingNote(note);
+                                                }}
+                                                className="icon-action-btn"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteNote(note.id);
+                                                }}
+                                                className="icon-action-btn delete"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </>
+                                    }
                                 >
                                     <p className="note-content">
                                         {typeof note.content === 'string' ? note.content : JSON.stringify(note.content)}
@@ -304,6 +344,18 @@ export const NotesView: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Edit Modal */}
+                <Modal
+                    isOpen={!!editingNote}
+                    onClose={() => setEditingNote(null)}
+                >
+                    <NoteForm
+                        initialContent={editingNote?.content || ''}
+                        onCancel={() => setEditingNote(null)}
+                        onSave={(content) => handleUpdateNote(editingNote!.id, content)}
+                    />
+                </Modal>
+
                 {/* Sort Menu */}
                 <SortMenu
                     isOpen={isSortMenuOpen}
@@ -316,3 +368,39 @@ export const NotesView: React.FC = () => {
         </div >
     );
 };
+
+const NoteForm: React.FC<{
+    initialContent: string;
+    onCancel: () => void;
+    onSave: (content: string) => void;
+}> = ({ initialContent, onCancel, onSave }) => {
+    const [content, setContent] = useState(initialContent);
+
+    return (
+        <div className="snippet-form">
+            <div className="form-group">
+                <label className="form-label">Note Content</label>
+                <textarea
+                    className="form-textarea"
+                    value={content}
+                    onChange={e => setContent(e.target.value)}
+                    autoFocus
+                    rows={8}
+                />
+            </div>
+
+            <div className="form-actions">
+                <button onClick={onCancel} className="cancel-btn">
+                    Cancel
+                </button>
+                <button
+                    onClick={() => onSave(content)}
+                    disabled={!content.trim()}
+                    className="submit-btn"
+                >
+                    Save
+                </button>
+            </div>
+        </div>
+    )
+}

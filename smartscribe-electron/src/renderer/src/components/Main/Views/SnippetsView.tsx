@@ -156,8 +156,6 @@ export const SnippetsView: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this snippet?')) return;
-
         const snippet = snippets.find(s => s.id === id);
         if (!snippet) return;
 

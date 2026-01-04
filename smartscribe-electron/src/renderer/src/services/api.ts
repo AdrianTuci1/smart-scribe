@@ -106,6 +106,15 @@ class ApiServiceFacade {
         return notesService.create(note);
     }
 
+    public async updateNote(note: any) {
+        return notesService.update(note);
+    }
+
+    public async deleteNote(id: string) {
+        return notesService.delete(id);
+    }
+
+
     // Snippets
     public async getSnippets(params?: any) {
         return configService.getSnippets(params);

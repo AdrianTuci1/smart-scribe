@@ -153,6 +153,12 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
 
   defp extract_rules_from_entries(entries) do
     entries
+    |> Enum.filter(fn entry ->
+      incorrect = Map.get(entry, "incorrectWord", Map.get(entry, "incorrect_word", ""))
+      correct = Map.get(entry, "correctWord", Map.get(entry, "correct_word", ""))
+      # Only include entries where incorrect != correct (actual corrections)
+      incorrect != "" and correct != "" and incorrect != correct
+    end)
     |> Enum.map(fn entry ->
       incorrect = Map.get(entry, "incorrectWord", Map.get(entry, "incorrect_word", ""))
       correct = Map.get(entry, "correctWord", Map.get(entry, "correct_word", ""))

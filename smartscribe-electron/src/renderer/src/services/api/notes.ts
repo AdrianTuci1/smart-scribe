@@ -37,6 +37,25 @@ export const notesService = {
         };
     },
 
+    update: async (note: { id: string; content: string }): Promise<Note> => {
+        const payload = {
+            content: note.content,
+            timestamp: new Date().toISOString()
+        };
+        const res = await apiClient.request<{ data: any }>(`/notes/${note.id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+        const data = res.data || {};
+        return {
+            id: data.noteId || data.id,
+            content: data.content,
+            timestamp: data.timestamp,
+            createdAt: data.timestamp || new Date().toISOString(),
+            updatedAt: data.timestamp || new Date().toISOString()
+        };
+    },
+
     delete: async (id: string): Promise<void> => {
         return apiClient.request<void>(`/notes/${id}`, {
             method: 'DELETE'

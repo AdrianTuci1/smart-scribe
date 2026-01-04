@@ -278,7 +278,13 @@ export const DictionaryView: React.FC = () => {
                                         >
                                             <Edit2 size={16} />
                                         </button>
-                                        <button onClick={() => handleDelete(entry.id)} className="entry-action-btn delete">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(entry.id);
+                                            }}
+                                            className="entry-action-btn delete"
+                                        >
                                             <Trash2 size={16} />
                                         </button>
                                     </>
