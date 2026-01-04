@@ -119,50 +119,83 @@ defmodule VoiceScribeAPIServer.AudioChannel do
     session_id = socket.assigns[:session_id]
 
     Task.start(fn ->
-      if String.trim(transcript) != "" do
-        Logger.info("Processing complete transcription for session #{session_id}")
-        Logger.info("AudioChannel received transcript length: #{String.length(transcript)}")
+      try do
+        if String.trim(transcript) != "" do
+          Logger.info("Processing complete transcription for session #{session_id}")
+          Logger.info("AudioChannel received transcript length: #{String.length(transcript)}")
 
-        # 1. Correct
-        final_text =
-          case VoiceScribeAPI.AI.BedrockClient.correct_text(user_id, transcript) do
-            {:ok, corrected} -> corrected
-            _ -> transcript
+          # 1. Correct
+          final_text =
+            case VoiceScribeAPI.AI.BedrockClient.correct_text(user_id, transcript) do
+              {:ok, corrected} ->
+                Logger.info(
+                  "AudioChannel: Correction successful. Original: #{String.length(transcript)} chars, Corrected: #{String.length(corrected)} chars."
+                )
+
+                corrected
+
+              {:error, reason} ->
+                Logger.error("AudioChannel: Correction failed: #{inspect(reason)}")
+                transcript
+
+              _ ->
+                Logger.warn("AudioChannel: Correction returned unexpected format.")
+                transcript
+            end
+
+          # Check again if result isn't empty after correction (though unlikely to become empty if input wasn't)
+          if String.trim(final_text) != "" do
+            # 2. Save
+            transcript_record = %{
+              "userId" => user_id,
+              "transcriptId" => session_id,
+              "originalText" => transcript,
+              "enhancedText" => final_text,
+              "durationSeconds" => duration,
+              "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
+            }
+
+            try do
+              VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
+            rescue
+              e -> Logger.error("Failed to save transcript: #{inspect(e)}")
+            end
+
+            # 2.1 Update Usage (Count words of final text)
+            word_count =
+              final_text
+              |> String.split(~r/\s+/, trim: true)
+              |> length()
+
+            try do
+              DynamoDBRepo.update_usage(user_id, word_count)
+            rescue
+              e -> Logger.error("Failed to update usage: #{inspect(e)}")
+            end
+
+            # 3. Push to Client
+            Logger.info("Broadcasting to client: audio:#{user_id}")
+
+            VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
+              content: final_text
+            })
+
+            Logger.info("Session #{session_id} completed. Saved #{word_count} words.")
+          else
+            Logger.info("Session #{session_id} yielded empty text after correction. Ignoring.")
           end
-
-        # Check again if result isn't empty after correction (though unlikely to become empty if input wasn't)
-        if String.trim(final_text) != "" do
-          # 2. Save
-          transcript_record = %{
-            "userId" => user_id,
-            "transcriptId" => session_id,
-            "originalText" => transcript,
-            "enhancedText" => final_text,
-            "durationSeconds" => duration,
-            "createdAt" => DateTime.utc_now() |> DateTime.to_iso8601()
-          }
-
-          VoiceScribeAPI.DynamoDBRepo.save_transcript(transcript_record)
-
-          # 2.1 Update Usage (Count words of final text)
-          word_count =
-            final_text
-            |> String.split(~r/\s+/, trim: true)
-            |> length()
-
-          DynamoDBRepo.update_usage(user_id, word_count)
-
-          # 3. Push to Client
-          VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
-            content: final_text
-          })
-
-          Logger.info("Session #{session_id} completed. Saved #{word_count} words.")
         else
-          Logger.info("Session #{session_id} yielded empty text after correction. Ignoring.")
+          Logger.info("Session #{session_id} received empty transcript. Ignoring.")
         end
-      else
-        Logger.info("Session #{session_id} received empty transcript. Ignoring.")
+      rescue
+        e ->
+          Logger.error("CRITICAL ERROR in AudioChannel Task: #{inspect(e)}")
+          Logger.error(Exception.format(:error, e, __STACKTRACE__))
+
+          # Emergency fallback
+          VoiceScribeAPIServer.Endpoint.broadcast("audio:#{user_id}", "transcript_content", %{
+            content: transcript
+          })
       end
     end)
 

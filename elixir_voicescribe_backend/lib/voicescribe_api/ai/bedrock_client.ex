@@ -4,6 +4,21 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
 
   @model_id "us.amazon.nova-lite-v1:0"
 
+  @system_instructions """
+  Context: Work on a system for processing raw transcripts.
+
+  Task: Perform Text Sanitization, Disfluency Removal, and Content Correction on the following text segment.
+
+  Specific instructions:
+  - Remove noise elements (hesitations, pauses, filler words like 'ahm', 'um', 'uh').
+  - Resolve reparative disfluencies (e.g., if the speaker changes their mind mid-sentence, keep only the final, correct version).
+  - Correct grammar, spelling, and logic errors.
+  - STRICTLY apply the provided dictionary rules to replace specific terms.
+  - Maintain semantic integrity and all Named Entities (names, locations).
+  - The output must be a fluid text, not a summary; maintain the speaker's original style but cleaned of spontaneous speech defects.
+  - The input text can be in ANY language. Process it in its original language. DO NOT TRANSLATE.
+  """
+
   def correct_text(_user_id, text) when is_nil(text) or text == "", do: {:ok, ""}
 
   def correct_text(user_id, text) do
@@ -66,8 +81,15 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
             "No snippets available."
         end
 
-      system_prompt =
-        "You are an expert AI voice assistant. Your task is to transcribe and correct the user's input into clear, professional text. IMPORTANT instructions: 1. Format times as digits (e.g., 'half past eight' -> '8:30') in any language. 2. Handle uncertainty: if the user changes their mind (e.g., 'let's go to x, or better y'), keep only the final decision ('let's go to y'). 3. Remove filler words (um, er, uh, etc.). 4. Correct spelling and logic errors based on context (e.g., city names). 5. Support mixed languages (e.g., Romanian and English intermixed) but DO NOT TRANSLATE; keep the transcription in the original language. Apply the following dictionary corrections if applicable: #{rules}. Apply these style guidelines: #{style_guidelines}. Reference the provided snippets for context and formatting when relevant. Output ONLY the corrected text. Do NOT include 'Output:' or any other label. Do NOT provide explanations. Revisit the text to ensure it is clear and professional and nothing feels off."
+      system_prompt = """
+      #{@system_instructions}
+
+      Apply the following dictionary rules if applicable: #{rules}.
+      Apply these style guidelines: #{style_guidelines}.
+      Reference the provided snippets for context and formatting when relevant.
+
+      Output ONLY the corrected text. Do NOT include 'Output:' or any other label. Do NOT provide explanations.
+      """
 
       user_message = """
       Input text: #{text}
@@ -99,7 +121,7 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
       |> case do
         {:ok, %{"output" => %{"message" => %{"content" => content_list}}}} ->
           content = hd(content_list)["text"]
-          Logger.info("Received correction from Bedrock")
+          Logger.info("Received correction from Bedrock: '#{content}'")
           {:ok, content}
 
         {:ok, %{body: resp_body}} ->
@@ -115,7 +137,7 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
                 hd(decoded["content"])["text"]
             end
 
-          Logger.info("Received correction from Bedrock (via body)")
+          Logger.info("Received correction from Bedrock (via body): '#{content}'")
           {:ok, content}
 
         error ->

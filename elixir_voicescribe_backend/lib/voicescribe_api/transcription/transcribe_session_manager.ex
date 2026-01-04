@@ -131,22 +131,28 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
 
   # Handle message from Streamer when disconnected/finished
   @impl true
-  def handle_info({:transcription_complete, user_id, transcript_text}, state) do
+  def handle_info({:transcription_complete, user_id, transcript}, state) do
+    # Fallback to 0 duration for legacy calls
+    handle_info({:transcription_complete, user_id, transcript, 0}, state)
+  end
+
+  @impl true
+  def handle_info({:transcription_complete, user_id, transcript, duration}, state) do
     Logger.info(
-      "Received transcription complete via Streamer for user #{user_id}. Text length: #{String.length(transcript_text)}"
+      "Received transcription complete via Streamer for user #{user_id}. Text length: #{String.length(transcript)}"
     )
 
-    Logger.info("Text content: '#{transcript_text}'")
+    Logger.info("Text content: '#{transcript}'")
 
     with [{^user_id, session_data}] <- :ets.lookup(:transcribe_sessions, user_id) do
       # 1. Process with Bedrock
-      final_result = process_bedrock(user_id, transcript_text, session_data.session_id)
+      final_result = process_bedrock(user_id, transcript, session_data.session_id)
 
       # 2. Save to DynamoDB
       transcript_record = %{
         user_id: user_id,
         session_id: session_data.session_id,
-        original_text: transcript_text,
+        original_text: transcript,
         enhanced_text: final_result,
         created_at: session_data.created_at,
         updated_at: DateTime.utc_now()

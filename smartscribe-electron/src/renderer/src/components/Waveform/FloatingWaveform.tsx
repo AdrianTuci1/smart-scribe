@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './FloatingWaveform.css';
 import { useAudioRecording } from '../../hooks/useAudioRecording';
 import { WarningToast } from './WarningToast';
+import { ProcessingToast } from './ProcessingToast';
 import { LimitToast } from './LimitToast';
 import { RecordOrb } from './RecordOrb';
 import { HoverHint } from './HoverHint';
@@ -14,7 +15,8 @@ export const FloatingWaveform: React.FC = () => {
         setWarningVisible,
         toggleRecording,
         limitReached,
-        setLimitReached
+        setLimitReached,
+        isTranscribing
     } = useAudioRecording();
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -39,6 +41,56 @@ export const FloatingWaveform: React.FC = () => {
             if (removeListener) removeListener();
         };
     }, []);
+
+    // Processing Toast Logic
+    const [processingVisible, setProcessingVisible] = useState(false);
+    const processingTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const minDurationTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const showTimeRef = useRef<number>(0);
+
+    useEffect(() => {
+        if (isTranscribing) {
+            // Start timer to SHoW toast
+            processingTimerRef.current = setTimeout(() => {
+                setProcessingVisible(true);
+                showTimeRef.current = Date.now();
+            }, 2000);
+        } else {
+            // Processing finished
+            // 1. Cancel the start timer if it hasn't fired yet
+            if (processingTimerRef.current) {
+                clearTimeout(processingTimerRef.current);
+                processingTimerRef.current = null;
+            }
+
+            // 2. If it WAS showing, ensure it stays for at least 1s
+            if (processingVisible) {
+                const elapsed = Date.now() - showTimeRef.current;
+                const MIN_DURATION = 1000;
+                const remaining = MIN_DURATION - elapsed;
+
+                if (remaining > 0) {
+                    minDurationTimerRef.current = setTimeout(() => {
+                        setProcessingVisible(false);
+                    }, remaining);
+                } else {
+                    setProcessingVisible(false);
+                }
+            } else {
+                // Was not showing (or cancelled before show), so ensure hidden
+                setProcessingVisible(false);
+            }
+        }
+
+        return () => {
+            if (processingTimerRef.current) {
+                clearTimeout(processingTimerRef.current);
+            }
+            if (minDurationTimerRef.current) {
+                clearTimeout(minDurationTimerRef.current);
+            }
+        };
+    }, [isTranscribing, processingVisible]);
 
     // Load Settings & Check Permissions
     const [showFlowBarAlways, setShowFlowBarAlways] = useState(false);
@@ -251,6 +303,11 @@ export const FloatingWaveform: React.FC = () => {
                 <LimitToast
                     visible={limitReached}
                     onClose={() => setLimitReached(false)}
+                />
+
+                <ProcessingToast
+                    visible={processingVisible}
+                    onClose={() => setProcessingVisible(false)}
                 />
 
                 <RecordOrb

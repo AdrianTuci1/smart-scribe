@@ -13,6 +13,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
     const [recordingSource, setRecordingSource] = useState<'local' | 'external' | null>(null);
     const [warningVisible, setWarningVisible] = useState(false);
     const [limitReached, setLimitReached] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
 
     // Refs
     const wasRecordingRef = useRef(false);
@@ -45,6 +46,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
                 setLimitReached(true);
                 setTimeout(() => setLimitReached(false), 5000);
             }
+            setIsTranscribing(false);
 
             // If real recording was active, we should behave like a stop
             if (realRecordingStartedRef.current && recordingSource === 'local') {
@@ -58,6 +60,8 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
             if ((window as any).electron) {
                 (window as any).electron.ipcRenderer.send('log', 'HOOK: Transcript content received', content);
             }
+
+            setIsTranscribing(false);
 
             if (!content) {
                 console.error('Empty content received');
@@ -117,6 +121,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
             console.error('Audio recording error:', errorMsg);
             setIsRecording(false);
             setRecordingSource(null);
+            setIsTranscribing(false);
         };
 
         return () => {
@@ -287,6 +292,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
 
             audioRecordingService.stopRecording();
             webSocketService.stopStream();
+            setIsTranscribing(true);
 
             // Wait for final transcription then disconnect
             setTimeout(() => {
@@ -294,6 +300,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
                 if ((window as any).electron) {
                     (window as any).electron.ipcRenderer.send('log', 'WebSocket disconnected (timeout)');
                 }
+                setIsTranscribing(false);
             }, 5000); // Keep connection alive for a bit for final results
 
             realRecordingStartedRef.current = false;
@@ -320,6 +327,7 @@ export const useAudioRecording = ({ bypassTimer = false, onTranscript }: UseAudi
         setWarningVisible,
         toggleRecording,
         limitReached,
-        setLimitReached
+        setLimitReached,
+        isTranscribing
     };
 };
