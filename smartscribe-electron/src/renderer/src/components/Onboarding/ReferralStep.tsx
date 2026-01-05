@@ -19,7 +19,7 @@ export const ReferralStep: React.FC<ReferralStepProps> = ({
     totalSteps,
     visualImage
 }) => {
-    const [referralLink, setReferralLink] = useState("https://smartscribe.ai/r/...");
+    const [referralLink, setReferralLink] = useState("https://smartscribe.app/r/...");
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
 

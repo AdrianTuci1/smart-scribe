@@ -2,21 +2,23 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   require Logger
   alias VoiceScribeAPI.DynamoDBRepo
 
-  @model_id "us.amazon.nova-lite-v1:0"
+  @model_id "amazon.nova-2-lite-v1:0"
 
   @system_instructions """
-  Context: Work on a system for processing raw transcripts.
+  Context: You are an AI assistant that processes raw audio transcripts.
 
-  Task: Perform Text Sanitization, Disfluency Removal, and Content Correction on the following text segment.
+  CRITICAL CORE RULE: NEVER TRANSLATE THE TEXT. The output MUST be in the EXACT SAME LANGUAGE as the input. If the input is in Romanian, the output MUST be in Romanian. If the input is in English, the output MUST be in English. If the input mixes languages, the output MUST mix languages exactly as spoken.
+
+  Task: Perform Text Sanitization, Disfluency Removal, and Content Correction on the text.
 
   Specific instructions:
-  - Remove noise elements (hesitations, pauses, filler words like 'ahm', 'um', 'uh').
-  - Resolve reparative disfluencies (e.g., if the speaker changes their mind mid-sentence, keep only the final, correct version).
-  - Correct grammar, spelling, and logic errors.
-  - STRICTLY apply the provided dictionary rules to replace specific terms.
-  - Maintain semantic integrity and all Named Entities (names, locations).
-  - The output must be a fluid text, not a summary; maintain the speaker's original style but cleaned of spontaneous speech defects.
-  - The input text can be in ANY language. Process it in its original language. DO NOT TRANSLATE.
+  1. **NO TRANSLATION**: This is the most important rule. Do not translate code-switched terms. "email address" in a Romanian sentence stays "email address".
+  2. **Sanitization**: Remove filler words ('ahm', 'um', 'uh'), coughs, and hesitations.
+  3. **Disfluency**: Fix stuttering and self-corrections (keep only the final intended phrase).
+  4. **Grammar**: Correct grammar and spelling errors ONLY within the original language.
+  5. **Dictionary**: STRICTLY apply the provided dictionary rules.
+  6. **Style**: Maintain the speaker's original meaning and tone.
+  7. **Formatting**: If formatting is requested, apply it while preserving the language.
   """
 
   def correct_text(_user_id, text) when is_nil(text) or text == "", do: {:ok, ""}
@@ -26,35 +28,42 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
       {:ok, text}
     else
       # Fetch dictionary
-      dictionary =
+      dictionary_entries =
         case DynamoDBRepo.get_config(user_id, "dictionary") do
-          empty_map when empty_map == %{} -> %{"rules" => "No custom rules."}
-          {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-          _ -> %{"rules" => "No custom rules."}
+          %{"entries" => entries} when is_list(entries) ->
+            Logger.info("Dictionary loaded: #{length(entries)} entries")
+            entries
+
+          other ->
+            Logger.info("Dictionary load result (fallback): #{inspect(other)}")
+            []
         end
 
       # Fetch style preferences
       style_prefs =
         case DynamoDBRepo.get_config(user_id, "style_preferences") do
-          empty_map when empty_map == %{} ->
-            %{"context" => "No specific context", "style" => "No specific style"}
-
-          {:ok, %{"Item" => item}} ->
-            ExAws.Dynamo.decode_item(item)
+          prefs when is_map(prefs) and prefs != %{} ->
+            prefs
 
           _ ->
             %{"context" => "No specific context", "style" => "No specific style"}
         end
 
       # Fetch snippets
-      snippets =
+      snippets_list =
         case DynamoDBRepo.get_config(user_id, "snippets") do
-          empty_map when empty_map == %{} -> %{"snippets" => []}
-          {:ok, %{"Item" => item}} -> ExAws.Dynamo.decode_item(item)
-          _ -> %{"snippets" => []}
+          %{"snippets" => snippets} when is_list(snippets) ->
+            Logger.info("Snippets loaded: #{length(snippets)} snippets")
+            snippets
+
+          other ->
+            Logger.info("Snippets load result (fallback): #{inspect(other)}")
+            []
         end
 
-      rules = Map.get(dictionary, "rules", "No custom rules.")
+      Logger.info(
+        "Loaded context for user #{user_id}: Dictionary Entries: #{length(dictionary_entries)}, Snippets: #{length(snippets_list)}"
+      )
 
       style_guidelines =
         case style_prefs do
@@ -65,39 +74,111 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
             "No specific style preferences."
         end
 
-      # Format snippets for use in the prompt
-      snippets_context =
-        case snippets do
-          %{"snippets" => snippet_list} when is_list(snippet_list) and length(snippet_list) > 0 ->
-            snippet_list
-            |> Enum.map(fn snippet ->
-              title = Map.get(snippet, "title", "Untitled")
-              content = Map.get(snippet, "content", "")
-              "Title: #{title}\nContent: #{content}"
-            end)
-            |> Enum.join("\n\n---\n\n")
+      # Format Dictionary for Prompt
+      # Separating into Rules (Incorrect -> Correct) and Vocabulary (Just Correct words)
+      {correction_rules, vocabulary_terms} =
+        if length(dictionary_entries) > 0 do
+          Enum.reduce(dictionary_entries, {[], []}, fn entry, {rules, vocab} ->
+            incorrect = Map.get(entry, "incorrectWord", Map.get(entry, "incorrect_word", ""))
+            correct = Map.get(entry, "correctWord", Map.get(entry, "correct_word", ""))
 
-          _ ->
-            "No snippets available."
+            cond do
+              incorrect != "" and correct != "" ->
+                {["- Incorrect: \"#{incorrect}\" -> Correct: \"#{correct}\"" | rules], vocab}
+
+              correct != "" ->
+                {rules, ["- Term: \"#{correct}\"" | vocab]}
+
+              true ->
+                {rules, vocab}
+            end
+          end)
+        else
+          {[], []}
         end
+
+      dictionary_rules_context =
+        if correction_rules != [],
+          do: Enum.join(Enum.reverse(correction_rules), "\n"),
+          else: "No specific correction rules."
+
+      vocabulary_context =
+        if vocabulary_terms != [],
+          do: Enum.join(Enum.reverse(vocabulary_terms), "\n"),
+          else: "No specific vocabulary."
+
+      # Format Snippets for Prompt
+      snippets_context =
+        if length(snippets_list) > 0 do
+          snippets_list
+          |> Enum.map(fn snippet ->
+            title = Map.get(snippet, "title", "Untitled")
+            content = Map.get(snippet, "content", "")
+            "- Trigger Phrase: \"#{title}\" -> Replacement Content: \"#{content}\""
+          end)
+          |> Enum.join("\n")
+        else
+          "No snippets available."
+        end
+
+      # DEBUG LOGGING FOR PROMPT CONTEXT
+      Logger.info("""
+      Generated Bedrock Context:
+      --- Correction Rules ---
+      #{dictionary_rules_context}
+      --- Vocabulary ---
+      #{vocabulary_context}
+      --- Snippets ---
+      #{snippets_context}
+      ------------------------
+      """)
 
       system_prompt = """
       #{@system_instructions}
 
-      Apply the following dictionary rules if applicable: #{rules}.
-      Apply these style guidelines: #{style_guidelines}.
-      Reference the provided snippets for context and formatting when relevant.
+      ### DATA CONTEXT
+      You are provided with user-specific data to help with the correction.
+
+      #### 1. DICTIONARY CORRECTION RULES (Format: Incorrect -> Correct)
+      #{dictionary_rules_context}
+
+      #### 2. VOCABULARY / ENTITIES (Format: Term)
+      #{vocabulary_context}
+
+      #### 3. SNIPPET TRIGGERS (Format: Trigger -> Content)
+      #{snippets_context}
+
+      ### INSTRUCTIONS
+
+      **PRIORITY 1: SMART REPLACEMENTS (Aggressive Fuzzy Matching)**
+      - Scan the input text for phrases that sound like or are similar to the Dictionary Rules, Vocabulary, or Snippet Triggers.
+      - **PHONETIC MATCHING IS CRITICAL**. Users may speak triggers imperfectly (e.g., "mai email" sounds like "my email").
+      - **Vocabulary Logic**: If a word in the text sounds like a term in the 'VOCABULARY' list, replace it with the exact spelling from the list (e.g., input "Victor" -> match 'Victor' from Vocabulary).
+      - **Exception to Translation Rule**: If a phrase matches a Snippet Trigger or Dictionary Rule phonetically (even if it sounds like a different language), APPLY THE REPLACEMENT.
+      - **Examples**:
+         - Input: "write to mai email" | Trigger: "my email" -> Content: "john@example.com" | Action: Output "write to john@example.com" (Phonetic match 'mai' -> 'my').
+         - Input: "park lig" | Dictionary "Park League" -> "ParkLake" | Action: Output "ParkLake".
+         - Input: "vecter" | Vocabulary: "Victor" | Action: Output "Victor".
+
+      **PRIORITY 2: FORMATTING REQUESTS**
+      - If the user explicitly asks to "format", "organize thoughts", "structure", "make a list", "put in bullet points" (in ANY language):
+        - Output the content as a bulleted list.
+        - Preserve introductory sentences without the '-' line.
+        - Do NOT output the formatting request phrase itself.
+
+      **PRIORITY 3: LANGUAGE PRESERVATION**
+      - **General Rule**: Keep the exact language of each word as spoken.
+      - **Exception**: If a fuzzy match is found in Priority 1, that matching rule takes precedence over language preservation.
+      - If the input is code-switched (mixed languages), the output MUST be code-switched.
+
+      **PRIORITY 4: STYLE**
+      - Apply these style guidelines: #{style_guidelines}
 
       Output ONLY the corrected text. Do NOT include 'Output:' or any other label. Do NOT provide explanations.
       """
 
       user_message = """
       Input text: #{text}
-
-      Style guidelines: #{style_guidelines}
-
-      Reference snippets:
-      #{snippets_context}
       """
 
       Logger.info("Sending text to Bedrock for correction: #{String.slice(text, 0, 20)}...")

@@ -254,11 +254,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
                         <div className="invite-modal-content">
                             <div className="invite-card">
                                 <div className="invite-card-badge">
-                                    <span className="flow-logo">III Flow</span>
+                                    <span className="flow-logo">III Scribe</span>
                                     <span className="pro-badge">Pro</span>
                                 </div>
                                 <div className="invite-card-subtitle">UNLIMITED WORDS FOR 1 MONTH</div>
-                                <div className="invite-card-footer">Gifted by flowscribe</div>
+                                <div className="invite-card-footer">Gifted by smartscribe</div>
                             </div>
 
                             <div className="invite-how-it-works">
@@ -282,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, isC
                                 <div className="invite-link-input">
                                     <input
                                         type="text"
-                                        value="https://wisprflow.ai/?TUCICOVENCO1"
+                                        value="https://smartscribe.app/?TUCICOVENCO1"
                                         readOnly
                                     />
                                     <button className="copy-button">Copy</button>
