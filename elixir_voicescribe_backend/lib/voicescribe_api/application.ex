@@ -19,7 +19,10 @@ defmodule VoiceScribeAPI.Application do
       # Start TranscribeSessionManager for handling transcription sessions
       {VoiceScribeAPI.Transcription.TranscribeSessionManager, []},
       # Start to serve requests, typically the last entry
-      VoiceScribeAPIServer.Endpoint
+      # Start to serve requests, typically the last entry
+      VoiceScribeAPIServer.Endpoint,
+      # Start Scheduler
+      VoiceScribeAPIServer.Scheduler
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

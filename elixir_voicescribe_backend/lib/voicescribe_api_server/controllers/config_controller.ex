@@ -3,6 +3,9 @@ defmodule VoiceScribeAPIServer.ConfigController do
   alias VoiceScribeAPI.DynamoDBRepo
   alias VoiceScribeAPI.AI.BedrockClient
 
+  alias VoiceScribeAPI.Emails
+  alias VoiceScribeAPI.Mailer
+
   def get_config(conn, params) do
     # Extract type from params or use default based on path
     type = Map.get(params, "type", get_default_type_from_path(conn.request_path))
@@ -129,9 +132,30 @@ defmodule VoiceScribeAPIServer.ConfigController do
 
     user_id = conn.assigns.current_user
 
+    should_send_welcome =
+      if type == "onboarding" do
+        curr = DynamoDBRepo.get_config(user_id, "onboarding")
+        curr == %{}
+      else
+        false
+      end
+
     case DynamoDBRepo.put_config(user_id, type, params) do
-      {:ok, _} -> json(conn, %{status: "ok"})
-      {:error, reason} -> json(conn, %{error: inspect(reason)})
+      {:ok, _} ->
+        if should_send_welcome do
+          # Try to find email from settings
+          settings = DynamoDBRepo.get_config(user_id, "settings")
+          email = Map.get(settings, "email")
+
+          if email do
+            Emails.welcome_email(email) |> Mailer.deliver()
+          end
+        end
+
+        json(conn, %{status: "ok"})
+
+      {:error, reason} ->
+        json(conn, %{error: inspect(reason)})
     end
   end
 

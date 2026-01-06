@@ -2,7 +2,7 @@ defmodule VoiceScribeAPI.AI.BedrockClient do
   require Logger
   alias VoiceScribeAPI.DynamoDBRepo
 
-  @model_id "amazon.nova-2-lite-v1:0"
+  @model_id "us.amazon.nova-2-lite-v1:0"
 
   @system_instructions """
   Context: You are an AI assistant that processes raw audio transcripts.

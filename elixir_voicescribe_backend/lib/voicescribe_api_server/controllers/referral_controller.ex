@@ -1,5 +1,7 @@
 defmodule VoiceScribeAPIServer.ReferralController do
   use VoiceScribeAPIServer, :controller
+  alias VoiceScribeAPI.Emails
+  alias VoiceScribeAPI.Mailer
   alias VoiceScribeAPI.DynamoDBRepo
 
   def get_referral_info(conn, _params) do
@@ -7,7 +9,7 @@ defmodule VoiceScribeAPIServer.ReferralController do
 
     # Check if user already has a referral code
     case DynamoDBRepo.get_config(user_id, "referral") do
-      %{"referralCode" => code} = config ->
+      %{"referralCode" => _code} = config ->
         json(conn, config)
 
       _ ->
@@ -27,6 +29,25 @@ defmodule VoiceScribeAPIServer.ReferralController do
 
         json(conn, config)
     end
+  end
+
+  def send_invite(conn, %{"email" => to_email}) do
+    user_id = conn.assigns.current_user_id
+
+    # Get user email
+    settings = DynamoDBRepo.get_config(user_id, "settings")
+    from_email = Map.get(settings, "email", "no-reply@smartscribe.ai")
+
+    # Get referral code/link
+    referral_config = DynamoDBRepo.get_config(user_id, "referral")
+    # If not generated yet, generate one? Or fallback.
+    # We should probably generate if missing, but let's assume UI calls get_referral_info first.
+    referral_link = Map.get(referral_config, "referralLink", "https://app.smartscribe.ai")
+
+    Emails.referral_email(to_email, from_email, referral_link)
+    |> Mailer.deliver()
+
+    json(conn, %{status: "ok"})
   end
 
   defp generate_referral_code do

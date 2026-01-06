@@ -172,14 +172,6 @@ defmodule VoiceScribeAPI.Transcription.TranscribeSessionManager do
     {:noreply, state}
   end
 
-  # Wait! I can't leave it broken.
-  # I will update `TranscribeStreamer` FIRST in the next tool call, then this one.
-
-  # Or better: I will write `TranscribeStreamer` again with the fix, THEN this file.
-  # But I already wrote TranscribeStreamer in step 78.
-
-  # OK, I will rewrite `TranscribeStreamer` to include `user_id` in the message.
-
   defp process_chunk_data(chunk_data) do
     # Same as before, decode base64
     case Base.decode64(chunk_data) do

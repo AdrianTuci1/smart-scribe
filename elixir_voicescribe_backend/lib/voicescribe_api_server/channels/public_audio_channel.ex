@@ -2,6 +2,7 @@ defmodule VoiceScribeAPIServer.PublicAudioChannel do
   use Phoenix.Channel
   require Logger
   alias VoiceScribeAPI.AI.TranscribeStreamer
+  alias VoiceScribeAPI.AI.BedrockClient
 
   # 150 seconds
   @max_duration_ms 150_000
@@ -11,9 +12,11 @@ defmodule VoiceScribeAPIServer.PublicAudioChannel do
   @rate_limit_count 20
 
   @impl true
-  def join("public_audio:" <> _session_id, _payload, socket) do
+  def join("public_audio:" <> session_id, _payload, socket) do
+    Logger.info("PublicAudioChannel: Attempting to join public_audio:#{session_id}")
     remote_ip = socket.assigns[:remote_ip] || {127, 0, 0, 1}
     ip_string = :inet.ntoa(remote_ip) |> to_string()
+    Logger.info("PublicAudioChannel: Remote IP: #{ip_string}")
 
     # Rate Limiting Check
     case Hammer.check_rate(
@@ -22,9 +25,12 @@ defmodule VoiceScribeAPIServer.PublicAudioChannel do
            @rate_limit_count
          ) do
       {:allow, _count} ->
+        Logger.info("PublicAudioChannel: Rate limit check passed for #{ip_string}")
+        socket = assign(socket, :topic_id, session_id)
         {:ok, socket}
 
       {:deny, _limit} ->
+        Logger.warning("PublicAudioChannel: Rate limit exceeded for #{ip_string}")
         {:error, %{reason: "rate_limit_exceeded"}}
     end
   end
@@ -92,19 +98,27 @@ defmodule VoiceScribeAPIServer.PublicAudioChannel do
   end
 
   @impl true
-  def handle_info({:transcription_complete, _user_id, transcript}, socket) do
-    # For public route:
-    # 1. NO Bedrock correction (save costs) OR simple correction if desired?
-    #    Let's stick to raw transcript or minimal correction to keep it cheap/fast for demo.
-    #    User requested NO saving to DynamoDB.
+  @impl true
+  def handle_info({:transcription_complete, _user_id, transcript, _duration}, socket) do
+    # 1. Process with Bedrock
+    # Use the session_id as the user_id context for Bedrock (though it likely won't have personalized dictionaries)
+    enhanced_text =
+      if String.trim(transcript) != "" do
+        case BedrockClient.correct_text(socket.assigns.session_id, transcript) do
+          {:ok, text} -> text
+          {:error, _} -> transcript
+        end
+      else
+        transcript
+      end
 
     # 2. Push to client
-    if String.trim(transcript) != "" do
+    if String.trim(enhanced_text) != "" do
       VoiceScribeAPIServer.Endpoint.broadcast(
-        "public_audio:#{socket.assigns.session_id}",
+        "public_audio:#{socket.assigns.topic_id}",
         "transcript_content",
         %{
-          content: transcript
+          content: enhanced_text
         }
       )
     end

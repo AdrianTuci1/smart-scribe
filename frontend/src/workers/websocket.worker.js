@@ -93,6 +93,16 @@ function connect(payload) {
     }
 }
 
+function disconnect() {
+    if (ws) {
+        ws.close();
+    } else {
+        isConnected = false;
+        stopHeartbeat();
+        postMessage({ type: 'DISCONNECTED' });
+    }
+}
+
 function joinChannel() {
     // Determine topic based on public/private mode
     const topic = isPublic ? `public_audio:${sessionId}` : `audio:${sessionId}`;

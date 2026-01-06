@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You've been invited to SmartScribe</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f7; color: #333333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 40px; margin-bottom: 40px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #111827; text-decoration: none; }
+        .content { font-size: 16px; line-height: 1.6; color: #4b5563; }
+        .cta-button { display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #9ca3af; }
+        .quote { background-color: #f3f4f6; padding: 15px; border-left: 4px solid #10b981; margin: 20px 0; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="row">
+        <div class="container">
+            <div class="header">
+                <a href="https://smartscribe.ai" class="logo">SmartScribe</a>
+            </div>
+            <div class="content">
+                <h1 style="color: #111827; margin-top: 0;">You've been invited!</h1>
+                <p>Hello,</p>
+                <p>Your friend <strong><%= @from_email %></strong> thinks you'd love SmartScribe.</p>
+
+                <p>SmartScribe uses advanced AI to turn your voice notes into perfectly structured text.</p>
+
+                <p>Use the link below to get a <strong>free month</strong> of SmartScribe Pro when you sign up.</p>
+
+                <div style="text-align: center;">
+                    <a href="<%= @referral_link %>" class="cta-button">Claim Free Month</a>
+                </div>
+
+                <p style="font-size: 14px; margin-top: 20px; color: #6b7280; text-align: center;">
+                    Or copy this link: <br>
+                    <a href="<%= @referral_link %>" style="color: #2563eb;"><%= @referral_link %></a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>&copy; <%= Date.utc_today().year %> SmartScribe AI. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -47,6 +47,11 @@
   <!-- Preconnect for performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script>
+    if (typeof global === 'undefined') {
+      window.global = window;
+    }
+  </script>
 </head>
 
 <body>

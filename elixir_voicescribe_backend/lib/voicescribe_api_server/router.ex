@@ -85,6 +85,7 @@ defmodule VoiceScribeAPIServer.Router do
 
     # Referral
     get("/referral", ReferralController, :get_referral_info)
+    post("/referral/invite", ReferralController, :send_invite)
 
     # Team
     get("/team/members", TeamController, :index)
