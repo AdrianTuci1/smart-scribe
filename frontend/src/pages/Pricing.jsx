@@ -117,13 +117,13 @@ const Pricing = () => {
 
                         <ul className="pricing-features">
                             <li className="pricing-feature-item">
-                                <CheckIcon color="#ffffff" /> Unlimited transcription
+                                <CheckIcon /> Unlimited transcription
                             </li>
                             <li className="pricing-feature-item">
-                                <CheckIcon color="#ffffff" /> Advanced AI correction
+                                <CheckIcon /> Advanced AI correction
                             </li>
                             <li className="pricing-feature-item">
-                                <CheckIcon color="#ffffff" /> Desktop & Mobile access
+                                <CheckIcon /> Desktop & Mobile access
                             </li>
                         </ul>
 
@@ -145,7 +145,7 @@ const Pricing = () => {
     );
 };
 
-const CheckIcon = ({ color = "#3b82f6" }) => (
+const CheckIcon = ({ color = "#000000" }) => (
     <svg
         className="pricing-feature-icon"
         viewBox="0 0 24 24"

@@ -4,11 +4,18 @@
     gap: 12px;
 }
 
+.ticket-modal-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
 .ticket-input-group label {
     display: block;
     font-size: 13px;
     font-weight: 500;
-    color: #374151;
+    color: #d1d5db;
     margin-bottom: 4px;
 }
 

@@ -11,3 +11,7 @@ node_modules
 .env.production.local
 deps
 _build
+release
+dist
+
+

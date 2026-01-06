@@ -70,8 +70,8 @@ export const TicketModal: React.FC<TicketModalProps> = ({ isOpen, onClose, prefi
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Contact Support"
         >
+            <h2 className="ticket-modal-title">Contact Support</h2>
             {isSuccess ? (
                 <div className="ticket-modal-body">
                     <div className="success-message">
